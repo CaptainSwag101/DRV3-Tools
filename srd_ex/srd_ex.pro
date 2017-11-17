@@ -24,6 +24,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp
 
+unix|win32: LIBS += -ldetex
+
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../utils/ -lutils
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../utils/ -lutilsd
 else:unix: LIBS += -L$$OUT_PWD/../utils/ -lutils

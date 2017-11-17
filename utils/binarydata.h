@@ -7,7 +7,6 @@
 
 class BinaryData
 {
-
 public:
     QByteArray Bytes;
     int Position;

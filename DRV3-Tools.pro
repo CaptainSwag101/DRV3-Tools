@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     utils \
-    spc_ex
+    spc_ex \
+    srd_ex
