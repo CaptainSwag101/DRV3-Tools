@@ -21,6 +21,9 @@ public:
     uint get_u32();
     uint get_u32be();
     int size();
+    QByteArray& append(uchar c);
+    QByteArray& insert(int i, uchar c);
+    QByteRef operator[](int i);
 };
 
 #endif // BINARYDATA_H

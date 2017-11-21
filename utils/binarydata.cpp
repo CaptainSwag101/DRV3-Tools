@@ -85,3 +85,20 @@ int BinaryData::size()
 {
     return this->Bytes.size();
 }
+
+QByteArray& BinaryData::append(uchar c)
+{
+    this->Position++;
+    return this->Bytes.append((char)c);
+}
+
+QByteArray& BinaryData::insert(int i, uchar c)
+{
+    this->Position++;
+    return this->Bytes.insert(i, (char)c);
+}
+
+QByteRef BinaryData::operator[](int index)
+{
+    return this->Bytes[index];
+}

@@ -1,6 +1,7 @@
 #ifndef DRV3_DEC_H
 #define DRV3_DEC_H
 
+#include <cmath>
 #include "binarydata.h"
 
 inline uchar bit_reverse(uchar b);

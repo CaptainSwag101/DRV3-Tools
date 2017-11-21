@@ -11,7 +11,7 @@ inline uchar bit_reverse(uchar b)
 BinaryData spc_dec(BinaryData &data)
 {
     BinaryData result;
-    int data_size = data.Bytes.size();
+    int data_size = data.size();
     int flag = 1;
 
     while (data.Position < data_size)
@@ -29,7 +29,7 @@ BinaryData spc_dec(BinaryData &data)
         if (flag & 1)
         {
             // Raw byte
-            result.Bytes.append((char)data.get_u8());
+            result.append(data.get_u8());
         }
         else
         {
@@ -43,8 +43,8 @@ BinaryData spc_dec(BinaryData &data)
 
             for (int i = 0; i < count; i++)
             {
-                int reverse_index = result.Bytes.size() + offset - 1023 - 1;
-                result.Bytes.append(result.Bytes[reverse_index]);
+                int reverse_index = result.size() + offset - 1023 - 1;
+                result.append(result[reverse_index]);
             }
         }
 
@@ -59,20 +59,19 @@ BinaryData spc_dec(BinaryData &data)
 BinaryData spc_cmp(BinaryData &data)
 {
     BinaryData result;
-    int data_size = data.Bytes.size();
+    int data_size = data.size();
     uchar byte_num = 0;
     uchar flag = 0;
     int flag_pos = 0;
 
     // Leave the first 8 bytes of the file intact (header)
-    result.Bytes.append(0xFF);  //Flag
+    result.append(0xFF);    //Flag
     for (int i = 0; i < 8; i++)
     {
-        result.Bytes.append(data.get_u8());
+        result.append(data.get_u8());
     }
 
-    ushort last_found = 0;
-    while (data.Position < data_size - 1)
+    while (data.Position < data_size)
     {
         // We use an 8-bit flag to determine whether something is raw data,
         // or if we need to pull from the buffer, going from most to least significant bit.
@@ -81,63 +80,75 @@ BinaryData spc_cmp(BinaryData &data)
         // Leave save the position of where we'll write our flag byte
         if (byte_num == 0)
         {
-            flag_pos = result.size();
+            flag_pos = result.Position;
         }
 
         uchar b = data.get_u8();
-        ushort found = 0;
-        ushort at = 0;
-        int window_start = data.Position - 1023 - 1;
-        int start = window_start >= 0 ? window_start : 0;
+
+        bool found = false;
+        int count = 1;
+        int prev_count = 1;
+        int at = 0;
+        int old_pos = 0;
+        int start = std::min(std::abs(data.Position - 1023), 0);
         int end = data.Position - 1;
 
         for (int i = end - 1; i >= start; i--)
         {
-            if ((uchar)data.Bytes[i] == b)
+            if ((uchar)data[i] == b)
             {
-                // Count the number of consecutive times we use this byte
-                found++;
+                if (found)
+                {
+                    // Find the location of the first byte in the last occurence of its repetition
+                    // (i.e. find the first zero byte in the last group of zeroes)
+                    prev_count++;
+                }
+                else
+                {
+                    found = true;
+
+                    // Count the number of additional times this byte occurs consecutively, within the current 8-byte block
+                    old_pos = data.Position;
+                    while (data.get_u8() == b)// && count <=2)
+                        count++;
+
+                    data.Position--;
+                }
+            }
+            else if (found)
+            {
                 at = i;
-
-                int old_pos = data.Position;
-                while (data.get_u8() == b && data.Position - old_pos <= 8 - byte_num)
-                    found++;
-
-                data.Position--;
                 break;
             }
         }
 
-        if (found > 0)
+        if (found)
         {
-            ushort repeat_data = ((found - 2) << 10) | (1024 - (end - at) - last_found);
-            result.Bytes.append(repeat_data);
-            result.Bytes.append(repeat_data >> 8);
-            byte_num++;
-            if (last_found == 0)
-                last_found = found;
-            found = 0;
+            int repeat_data = 0;
+            repeat_data |= (count - 2) << 10;
+            repeat_data |= 1024 - (old_pos - at) + 2;
+            result.append(repeat_data);
+            result.append(repeat_data >> 8);
+
+            found = false;
             at = 0;
         }
         else
         {
-            result.Bytes.append(b);
+            result.append(b);
             flag |= (1 << byte_num);
-            byte_num++;
         }
+        byte_num++;
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
-        if (byte_num == 7)
+        if (byte_num == 8)
         {
-            flag = bit_reverse(flag) + 1;
-            result.Bytes.insert(flag_pos, flag);
+            flag = bit_reverse(flag);
+            result.insert(flag_pos, flag);
+
             byte_num = 0;
             flag = 0;
-            last_found = 0;
         }
-
-        if (data.Position >= data_size)
-            break;
     }
 
     return result;

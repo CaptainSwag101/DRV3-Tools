@@ -84,6 +84,8 @@ int extract()
         if (errCode != 0)
             return errCode;
     }
+
+    return 0;
 }
 
 int extract_data(QString file, BinaryData &data)
@@ -173,6 +175,27 @@ int extract_data(QString file, BinaryData &data)
 
 int compress()
 {
+    decDir = inDir;
+    decDir.cdUp();
+    if (!decDir.exists("cmp"))
+    {
+        if (!decDir.mkdir("cmp"))
+        {
+            cout << "Error: Failed to create \"cmp\" directory.\n";
+            return 1;
+        }
+    }
+    decDir.cd("cmp");
+    if (!decDir.exists(inDir.dirName()))
+    {
+        if (!decDir.mkdir(inDir.dirName()))
+        {
+            cout << "Error: Failed to create \"cmp" << QDir::separator() << inDir.dirName() << "\" directory.\n";
+            return 1;
+        }
+    }
+    decDir.cd(inDir.dirName());
+
     QDirIterator it(inDir.path(), QStringList() << "*.*", QDir::Files, QDirIterator::Subdirectories);
     QStringList spcSubfiles;
     while (it.hasNext())
@@ -194,12 +217,14 @@ int compress()
         if (errCode != 0)
             return errCode;
     }
+
+    return 0;
 }
 
 int compress_data(QString file, BinaryData &data)
 {
     BinaryData outData = spc_cmp(data);
-    QFile outFile(file + ".cmp");
+    QFile outFile(decDir.path() + QDir::separator() + file + ".cmp");
     outFile.open(QFile::WriteOnly);
     outFile.write(outData.Bytes);
     outFile.close();
