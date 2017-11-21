@@ -19,9 +19,10 @@ BinaryData spc_dec(BinaryData &data)
         // We use an 8-bit flag to determine whether something is raw data,
         // or if we need to pull from the buffer, going from most to least significant bit.
         // We reverse the bit order to make it easier to work with.
-        if (flag == 1)
-            flag = 0x100 | bit_reverse(data.get_u8());
 
+        if (flag == 1)
+            // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
+            flag = 0x100 | bit_reverse(data.get_u8());
         if (data.Position >= data_size)
             break;
 
@@ -35,19 +36,108 @@ BinaryData spc_dec(BinaryData &data)
             // Pull from the buffer
             // xxxxxxyy yyyyyyyy
             // Count  -> x + 2
-            // Offset -> y (from the beginning of a 1024-byte sliding window)
+            // Offset -> y (from the beginning of a 1023-byte sliding window)
             ushort b = data.get_u16();
             int count = (b >> 10) + 2;
             int offset = b & 1023;
 
             for (int i = 0; i < count; i++)
             {
-                int reverse_index = result.Bytes.size() + offset - 1024;
+                int reverse_index = result.Bytes.size() + offset - 1023 - 1;
                 result.Bytes.append(result.Bytes[reverse_index]);
             }
         }
 
         flag >>= 1;
+    }
+
+    return result;
+}
+
+// This is the compression scheme used for
+// individual files in an spc archive
+BinaryData spc_cmp(BinaryData &data)
+{
+    BinaryData result;
+    int data_size = data.Bytes.size();
+    uchar byte_num = 0;
+    uchar flag = 0;
+    int flag_pos = 0;
+
+    // Leave the first 8 bytes of the file intact (header)
+    result.Bytes.append(0xFF);  //Flag
+    for (int i = 0; i < 8; i++)
+    {
+        result.Bytes.append(data.get_u8());
+    }
+
+    ushort last_found = 0;
+    while (data.Position < data_size - 1)
+    {
+        // We use an 8-bit flag to determine whether something is raw data,
+        // or if we need to pull from the buffer, going from most to least significant bit.
+        // We reverse the bit order to make it easier to work with.
+
+        // Leave save the position of where we'll write our flag byte
+        if (byte_num == 0)
+        {
+            flag_pos = result.size();
+        }
+
+        uchar b = data.get_u8();
+        ushort found = 0;
+        ushort at = 0;
+        int window_start = data.Position - 1023 - 1;
+        int start = window_start >= 0 ? window_start : 0;
+        int end = data.Position - 1;
+
+        for (int i = end - 1; i >= start; i--)
+        {
+            if ((uchar)data.Bytes[i] == b)
+            {
+                // Count the number of consecutive times we use this byte
+                found++;
+                at = i;
+
+                int old_pos = data.Position;
+                while (data.get_u8() == b && data.Position - old_pos <= 8 - byte_num)
+                    found++;
+
+                data.Position--;
+                break;
+            }
+        }
+
+        if (found > 0)
+        {
+            ushort repeat_data = ((found - 2) << 10) | (1024 - (end - at) - last_found);
+            result.Bytes.append(repeat_data);
+            result.Bytes.append(repeat_data >> 8);
+            byte_num++;
+            if (last_found == 0)
+                last_found = found;
+            found = 0;
+            at = 0;
+        }
+        else
+        {
+            result.Bytes.append(b);
+            flag |= (1 << byte_num);
+            byte_num++;
+        }
+
+        // At the end of each 8-byte block, add the flag and compressed block to the result
+        if (byte_num == 7)
+        {
+            flag = bit_reverse(flag) + 1;
+            result.Bytes.insert(flag_pos, flag);
+            byte_num = 0;
+            flag = 0;
+            last_found = 0;
+        }
+
+        if (data.Position >= data_size)
+            break;
     }
 
     return result;

@@ -8,11 +8,15 @@
 const QString SPC_MAGIC = "CPS.";
 const QString CMP_MAGIC = "$CMP";
 const QString TABLE_MAGIC = "Root";
-QDir inDir;
-QDir decDir;
 static QTextStream cout(stdout);
+static QDir inDir;
+static QDir decDir;
+static bool cmp = false;
 
-int extract(QString file, BinaryData &data);
+int extract();
+int extract_data(QString file, BinaryData &data);
+int compress();
+int compress_data(QString file, BinaryData &data);
 
 int main(int argc, char *argv[])
 {
@@ -24,6 +28,20 @@ int main(int argc, char *argv[])
     }
     inDir = QDir(argv[1]);
 
+    for (int i = 0; i < argc; i++)
+    {
+        if (QString(argv[i]) == "-c" || QString(argv[i]) == "--compress")
+            cmp = true;
+    }
+
+    if (cmp)
+        return compress();
+    else
+        return extract();
+}
+
+int extract()
+{
     decDir = inDir;
     decDir.cdUp();
     if (!decDir.exists("dec"))
@@ -62,13 +80,13 @@ int main(int argc, char *argv[])
         f.close();
         BinaryData data(allBytes);
 
-        int errCode = extract(file, data);
+        int errCode = extract_data(file, data);
         if (errCode != 0)
             return errCode;
     }
 }
 
-int extract(QString file, BinaryData &data)
+int extract_data(QString file, BinaryData &data)
 {
     decDir.mkpath(file);
 
@@ -139,7 +157,7 @@ int extract(QString file, BinaryData &data)
         if (file_name.endsWith(".spc"))
         {
             QString sub_file = file + QDir::separator() + file_name;
-            return extract(sub_file, file_data);
+            return extract_data(sub_file, file_data);
         }
         else
         {
@@ -149,6 +167,42 @@ int extract(QString file, BinaryData &data)
             out.close();
         }
     }
+
+    return 0;
+}
+
+int compress()
+{
+    QDirIterator it(inDir.path(), QStringList() << "*.*", QDir::Files, QDirIterator::Subdirectories);
+    QStringList spcSubfiles;
+    while (it.hasNext())
+        spcSubfiles.append(it.next());
+
+    spcSubfiles.sort();
+    for (int i = 0; i < spcSubfiles.length(); i++)
+    {
+        QString file = inDir.relativeFilePath(spcSubfiles[i]);
+        cout << "Compressing file " << (i + 1) << "/" << spcSubfiles.length() << ": \"" << file << "\"\n";
+        cout.flush();
+        QFile f(spcSubfiles[i]);
+        f.open(QFile::ReadOnly);
+        QByteArray allBytes = f.readAll();
+        f.close();
+        BinaryData data(allBytes);
+
+        int errCode = compress_data(file, data);
+        if (errCode != 0)
+            return errCode;
+    }
+}
+
+int compress_data(QString file, BinaryData &data)
+{
+    BinaryData outData = spc_cmp(data);
+    QFile outFile(file + ".cmp");
+    outFile.open(QFile::WriteOnly);
+    outFile.write(outData.Bytes);
+    outFile.close();
 
     return 0;
 }

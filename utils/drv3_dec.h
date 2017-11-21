@@ -5,6 +5,7 @@
 
 inline uchar bit_reverse(uchar b);
 BinaryData spc_dec(BinaryData &data);
+BinaryData spc_cmp(BinaryData &data);
 BinaryData srd_dec(BinaryData &data);
 BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode);
 
