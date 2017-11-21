@@ -12,7 +12,7 @@ BinaryData spc_dec(BinaryData &data)
 {
     BinaryData result;
     int data_size = data.size();
-    int flag = 1;
+    uint flag = 1;
 
     while (data.Position < data_size)
     {
@@ -38,12 +38,12 @@ BinaryData spc_dec(BinaryData &data)
             // Count  -> x + 2
             // Offset -> y (from the beginning of a 1023-byte sliding window)
             ushort b = data.get_u16();
-            int count = (b >> 10) + 2;
-            int offset = b & 1023;
+            uint count = (b >> 10) + 2;
+            uint offset = b & 1023;
 
-            for (int i = 0; i < count; i++)
+            for (uint i = 0; i < count; i++)
             {
-                int reverse_index = result.size() + offset - 1023 - 1;
+                uint reverse_index = result.size() + offset - 1023 - 1;
                 result.append(result[reverse_index]);
             }
         }
@@ -59,14 +59,14 @@ BinaryData spc_dec(BinaryData &data)
 BinaryData spc_cmp(BinaryData &data)
 {
     BinaryData result;
-    int data_size = data.size();
+    uint data_size = data.size();
     uchar byte_num = 0;
     uchar flag = 0;
-    int flag_pos = 0;
+    uint flag_pos = 0;
 
     // Leave the first 8 bytes of the file intact (header)
     result.append(0xFF);    //Flag
-    for (int i = 0; i < 8; i++)
+    for (uint i = 0; i < 8; i++)
     {
         result.append(data.get_u8());
     }
@@ -86,14 +86,14 @@ BinaryData spc_cmp(BinaryData &data)
         uchar b = data.get_u8();
 
         bool found = false;
-        int count = 1;
-        int prev_count = 1;
-        int at = 0;
-        int old_pos = 0;
-        int start = std::min(std::abs(data.Position - 1023), 0);
-        int end = data.Position - 1;
+        uint count = 1;
+        uint prev_count = 1;
+        uint at = 9;
+        uint old_pos = 9;
+        uint start = std::min(std::abs(data.Position - 1023), 9);
+        uint end = data.Position - 1;
 
-        for (int i = end - 1; i >= start; i--)
+        for (uint i = end - 1; i >= start; i--)
         {
             if ((uchar)data[i] == b)
             {
@@ -109,7 +109,7 @@ BinaryData spc_cmp(BinaryData &data)
 
                     // Count the number of additional times this byte occurs consecutively, within the current 8-byte block
                     old_pos = data.Position;
-                    while (data.get_u8() == b)// && count <=2)
+                    while (data.get_u8() == b && data.Position < data_size)
                         count++;
 
                     data.Position--;
@@ -117,16 +117,30 @@ BinaryData spc_cmp(BinaryData &data)
             }
             else if (found)
             {
-                at = i;
+                if (count > prev_count)
+                {
+                    if ((uchar)data[end - 1] != b)
+                    {
+                        count = prev_count;
+                        data.Position = end + count;
+                    }
+                    else
+                    {
+                        at = end - 1;
+                        break;
+                    }
+                }
+
+                at = i + 1;
                 break;
             }
         }
 
         if (found)
         {
-            int repeat_data = 0;
+            ushort repeat_data = 0;
+            repeat_data |= 1024 - (old_pos - at) + 1;
             repeat_data |= (count - 2) << 10;
-            repeat_data |= 1024 - (old_pos - at) + 2;
             result.append(repeat_data);
             result.append(repeat_data >> 8);
 
@@ -138,6 +152,7 @@ BinaryData spc_cmp(BinaryData &data)
             result.append(b);
             flag |= (1 << byte_num);
         }
+
         byte_num++;
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
@@ -151,6 +166,7 @@ BinaryData spc_cmp(BinaryData &data)
         }
     }
 
+    result.Position = 0;
     return result;
 }
 
@@ -209,9 +225,9 @@ BinaryData srd_dec(BinaryData &data)
 BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
 {
     BinaryData result;
-    int data_size = chunk.size();
-    int flag = 1;
-    int shift = -1;
+    uint data_size = chunk.size();
+    uint flag = 1;
+    uint shift = -1;
 
     if (cmp_mode == "$CLN")
         shift = 8;
@@ -220,7 +236,7 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
     else if (cmp_mode == "$CL2")
         shift = 6;
 
-    int mask = (1 << shift) - 1;
+    uint mask = (1 << shift) - 1;
 
     while (chunk.Position < data_size)
     {
@@ -229,10 +245,10 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
         if (b & 1)
         {
             // Pull from the buffer
-            int count = (b & mask) >> 1;
-            int offset = ((b >> shift) << 8) | chunk.get_u8();
+            uint count = (b & mask) >> 1;
+            uint offset = ((b >> shift) << 8) | chunk.get_u8();
 
-            for (int i = 0; i < count; i++)
+            for (uint i = 0; i < count; i++)
             {
                 int reverse_index = result.size() - offset;
                 result.Bytes.append(result.Bytes[reverse_index]);
@@ -241,7 +257,7 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
         else
         {
             // Raw byte
-            int count = b >> 1;
+            uint count = b >> 1;
             result.Bytes.append(chunk.get(count));
         }
     }

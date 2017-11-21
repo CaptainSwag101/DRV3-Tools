@@ -224,6 +224,16 @@ int compress()
 int compress_data(QString file, BinaryData &data)
 {
     BinaryData outData = spc_cmp(data);
+    BinaryData testData = spc_dec(outData);
+
+    for (int i = 0; i < data.size(); i++)
+    {
+        if (data[i] != testData[i])
+        {
+            cout << "Compression test failed, inconsistent byte at 0x" << QString::number(i, 16) << "\n";
+        }
+    }
+
     QFile outFile(decDir.path() + QDir::separator() + file + ".cmp");
     outFile.open(QFile::WriteOnly);
     outFile.write(outData.Bytes);

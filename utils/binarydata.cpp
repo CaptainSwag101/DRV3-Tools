@@ -98,7 +98,7 @@ QByteArray& BinaryData::insert(int i, uchar c)
     return this->Bytes.insert(i, (char)c);
 }
 
-QByteRef BinaryData::operator[](int index)
+QByteRef BinaryData::operator[](int i)
 {
-    return this->Bytes[index];
+    return this->Bytes[i];
 }
