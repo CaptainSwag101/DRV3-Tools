@@ -23,6 +23,7 @@ BinaryData spc_dec(BinaryData &data)
         if (flag == 1)
             // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
             flag = 0x100 | bit_reverse(data.get_u8());
+
         if (data.Position >= data_size)
             break;
 
@@ -77,20 +78,23 @@ BinaryData spc_cmp(BinaryData &data)
         // or if we need to pull from the buffer, going from most to least significant bit.
         // We reverse the bit order to make it easier to work with.
 
-        // Leave save the position of where we'll write our flag byte
+        // Save the position of where we'll write our flag byte
         if (byte_num == 0)
         {
             flag_pos = result.Position;
         }
 
+        // We compress single bytes if they are repeated at least twice,
+        // and also groups of multiple bytes.
         uchar b = data.get_u8();
 
+        /*
         bool found = false;
         uint count = 1;
         uint prev_count = 1;
         uint at = 9;
         uint old_pos = 9;
-        uint start = std::min(std::abs(data.Position - 1023), 9);
+        uint start = std::min(std::abs(data.Position - 1023), 8);
         uint end = data.Position - 1;
 
         for (uint i = end - 1; i >= start; i--)
@@ -140,7 +144,7 @@ BinaryData spc_cmp(BinaryData &data)
         {
             ushort repeat_data = 0;
             repeat_data |= 1024 - (old_pos - at) + 1;
-            repeat_data |= (count - 2) << 10;
+            repeat_data |= std::max((int)count - 2, 0) << 10;
             result.append(repeat_data);
             result.append(repeat_data >> 8);
 
@@ -152,6 +156,12 @@ BinaryData spc_cmp(BinaryData &data)
             result.append(b);
             flag |= (1 << byte_num);
         }
+        */
+
+        // THIS IS TEMPORARY CODE FOR TESTING!
+        // This basically just leaves the file un-compressed.
+        result.append(b);
+        flag |= (1 << byte_num);
 
         byte_num++;
 

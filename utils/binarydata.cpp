@@ -1,5 +1,27 @@
 #include "binarydata.h"
 
+QByteArray from_u16(ushort n)
+{
+    QByteArray byteArray;
+    for (int i = 0; i != sizeof(n); ++i)
+    {
+        char c = (char)(n >> (i * 8));
+        byteArray.append(c);
+    }
+    return byteArray;
+}
+
+QByteArray from_u32(uint n)
+{
+    QByteArray byteArray;
+    for (int i = 0; i != sizeof(n); ++i)
+    {
+        char c = (char)(n >> (i * 8));
+        byteArray.append(c);
+    }
+    return byteArray;
+}
+
 BinaryData::BinaryData()
 {
     this->Position = 0;
@@ -90,6 +112,12 @@ QByteArray& BinaryData::append(uchar c)
 {
     this->Position++;
     return this->Bytes.append((char)c);
+}
+
+QByteArray& BinaryData::append(const QByteArray &a)
+{
+    this->Position += a.length();
+    return this->Bytes.append(a);
 }
 
 QByteArray& BinaryData::insert(int i, uchar c)

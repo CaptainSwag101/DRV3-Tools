@@ -5,6 +5,9 @@
 #include <QtEndian>
 #include <QString>
 
+QByteArray from_u16(ushort n);
+QByteArray from_u32(uint n);
+
 class BinaryData
 {
 public:
@@ -22,6 +25,7 @@ public:
     uint get_u32be();
     int size();
     QByteArray& append(uchar c);
+    QByteArray& append(const QByteArray &a);
     QByteArray& insert(int i, uchar c);
     QByteRef operator[](int i);
 };
