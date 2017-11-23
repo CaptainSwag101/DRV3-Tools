@@ -55,12 +55,12 @@ BinaryData spc_dec(BinaryData &data)
     return result;
 }
 
-// This is the compression scheme used for
-// individual files in an spc archive
+// This code DOES NOT WORK YET, and possibly never will.
+// For now, just re-pack the SPC data in an uncompressed format.
 BinaryData spc_cmp(BinaryData &data)
 {
     BinaryData result;
-    uint data_size = data.size();
+    int data_size = data.size();
     uchar byte_num = 0;
     uchar flag = 0;
     uint flag_pos = 0;
@@ -88,7 +88,6 @@ BinaryData spc_cmp(BinaryData &data)
         // and also groups of multiple bytes.
         uchar b = data.get_u8();
 
-        /*
         bool found = false;
         uint count = 1;
         uint prev_count = 1;
@@ -156,12 +155,6 @@ BinaryData spc_cmp(BinaryData &data)
             result.append(b);
             flag |= (1 << byte_num);
         }
-        */
-
-        // THIS IS TEMPORARY CODE FOR TESTING!
-        // This basically just leaves the file un-compressed.
-        result.append(b);
-        flag |= (1 << byte_num);
 
         byte_num++;
 
@@ -235,8 +228,7 @@ BinaryData srd_dec(BinaryData &data)
 BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
 {
     BinaryData result;
-    uint data_size = chunk.size();
-    uint flag = 1;
+    int data_size = chunk.size();
     uint shift = -1;
 
     if (cmp_mode == "$CLN")

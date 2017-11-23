@@ -11,12 +11,12 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 # Remove possible other optimization flags
-QMAKE_CXXFLAGS_RELEASE -= -O
-QMAKE_CXXFLAGS_RELEASE -= -O1
-QMAKE_CXXFLAGS_RELEASE -= -O2
+#QMAKE_CXXFLAGS_RELEASE -= -O
+#QMAKE_CXXFLAGS_RELEASE -= -O1
+#QMAKE_CXXFLAGS_RELEASE -= -O2
 
 # Add the desired -O3 if not present
-QMAKE_CXXFLAGS_RELEASE *= -Ofast
+#QMAKE_CXXFLAGS_RELEASE *= -Ofast
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings

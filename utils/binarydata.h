@@ -5,8 +5,17 @@
 #include <QtEndian>
 #include <QString>
 
-QByteArray from_u16(ushort n);
-QByteArray from_u32(uint n);
+template <typename T>
+QByteArray to_bytes(T value)
+{
+    QByteArray byteArray;
+    for (int i = 0; i != sizeof(value); ++i)
+    {
+        char c = (char)(value >> (i * 8));
+        byteArray.append(c);
+    }
+    return byteArray;
+}
 
 class BinaryData
 {
