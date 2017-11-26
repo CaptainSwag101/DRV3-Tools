@@ -204,12 +204,12 @@ int compress()
 
 
     BinaryData outData;
-    outData.append(SPC_MAGIC.toLocal8Bit());
+    outData.append(SPC_MAGIC.toUtf8());
     outData.append(QByteArray(0x04, 0x00));
     outData.append(QByteArray(0x08, 0xFF));  // unk1
     outData.append(QByteArray(0x18, 0x00));
-    outData.append(to_bytes(subfiles.length()));
-    outData.append(to_bytes(0x04)); // unk2
+    outData.append(from_u32(subfiles.length()));
+    outData.append(from_u32(0x04)); // unk2
     outData.append(QByteArray(0x10, 0x00)); // Padding
 
     outData.append(TABLE_MAGIC.toLocal8Bit());
@@ -228,17 +228,19 @@ int compress()
         BinaryData subdata(allBytes);
 
 
-        outData.append(to_bytes(0x01));   // cmp_flag
-        outData.append(to_bytes(0x01));   // unk_flag
+        outData.append(from_u16(0x01));   // cmp_flag
+        outData.append(from_u16(0x01));   // unk_flag
 
         uint dec_size = subdata.size();
+
         //subdata = compress_data(subdata);
+
         uint cmp_size = subdata.size();
 
-        outData.append(to_bytes(cmp_size));   // cmp_size
-        outData.append(to_bytes(dec_size));   // dec_size
+        outData.append(from_u32(cmp_size));   // cmp_size
+        outData.append(from_u32(dec_size));   // dec_size
         uint name_len = file.length();  // name + null terminator byte
-        outData.append(to_bytes(name_len));
+        outData.append(from_u32(name_len));
         outData.append(QByteArray(0x10, 0x00)); // Padding
 
         // Everything's aligned to multiples of 0x10
@@ -246,7 +248,7 @@ int compress()
         uint data_padding = (0x10 - cmp_size % 0x10) % 0x10;
 
         // We don't actually want the null terminator byte, so pretend it's padding
-        outData.append(file.toLocal8Bit());
+        outData.append(file.toUtf8());
         outData.append(QByteArray(name_padding, 0x00));
 
         outData.append(subdata.Bytes);  // data
