@@ -1,5 +1,7 @@
 #include "drv3_dec.h"
 
+static QTextStream cout(stdout);
+
 // From https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64BitsDiv
 inline uchar bit_reverse(uchar b)
 {
@@ -183,7 +185,7 @@ BinaryData srd_dec(BinaryData &data)
     if (magic != "$CMP")
     {
         data.Position = 0;
-        result.Bytes.append(data.get(-1));
+        result.append(data.get(-1));
         return result;
     }
 
@@ -213,13 +215,15 @@ BinaryData srd_dec(BinaryData &data)
             chunk = srd_dec_chunk(chunk, cmp_mode);
         }
 
-        result.Bytes.append(chunk.Bytes);
+        chunk.Position = 0;
+        result.append(chunk.get(-1));
     }
 
     if (dec_size != result.size())
     {
         // Size mismatch, something probably went wrong
-        throw "Size mismatch.";
+        cout << "srd_dec: Size mismatch, size was " << result.size() << " but should be " << dec_size << "\n";
+        throw "srd_dec size mismatch error";
     }
 
     return result;
@@ -253,14 +257,14 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
             for (uint i = 0; i < count; i++)
             {
                 int reverse_index = result.size() - offset;
-                result.Bytes.append(result.Bytes[reverse_index]);
+                result.append(result[reverse_index]);
             }
         }
         else
         {
             // Raw byte
             uint count = b >> 1;
-            result.Bytes.append(chunk.get(count));
+            result.append(chunk.get(count));
         }
     }
 

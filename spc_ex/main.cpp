@@ -4,18 +4,17 @@
 #include "../utils/binarydata.h"
 #include "../utils/drv3_dec.h"
 
-
 const QString SPC_MAGIC = "CPS.";
 const QString TABLE_MAGIC = "Root";
 static QTextStream cout(stdout);
 static QDir inDir;
 static QDir decDir;
-static bool cmp = false;
+static bool pack = false;
 
-int extract();
-int extract_data(QString file, BinaryData &data);
-int compress();
-BinaryData compress_data(BinaryData &data);
+int unpack();
+int unpack_data(QString file, BinaryData &data);
+int repack();
+//BinaryData compress_data(BinaryData &data);
 
 int main(int argc, char *argv[])
 {
@@ -29,17 +28,17 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < argc; i++)
     {
-        if (QString(argv[i]) == "-c" || QString(argv[i]) == "--compress")
-            cmp = true;
+        if (QString(argv[i]) == "-p" || QString(argv[i]) == "--pack")
+            pack = true;
     }
 
-    if (cmp)
-        return compress();
+    if (pack)
+        return repack();
     else
-        return extract();
+        return unpack();
 }
 
-int extract()
+int unpack()
 {
     decDir = inDir;
     decDir.cdUp();
@@ -79,7 +78,7 @@ int extract()
         f.close();
         BinaryData data(allBytes);
 
-        int errCode = extract_data(file, data);
+        int errCode = unpack_data(file, data);
         if (errCode != 0)
             return errCode;
     }
@@ -87,7 +86,7 @@ int extract()
     return 0;
 }
 
-int extract_data(QString file, BinaryData &data)
+int unpack_data(QString file, BinaryData &data)
 {
     decDir.mkpath(file);
 
@@ -107,9 +106,10 @@ int extract_data(QString file, BinaryData &data)
         return 1;
     }
 
-    data.Position += 0x24; // unk1
+    QByteArray unk1 = data.get(0x24);
     uint file_count = data.get_u32();
-    data.Position += 0x14; // unk2, 0x10 bytes padding?
+    uint unk2 = data.get_u32();
+    data.Position += 0x10;   // padding?
 
     QString table_magic = data.get_str(4);
     data.Position += 0x0C;
@@ -120,14 +120,23 @@ int extract_data(QString file, BinaryData &data)
         return 1;
     }
 
+
+    // Create a text file containing index data and other info for the extracted files,
+    // so we can re-pack them in the correct order (not sure if it matters though)
+    QFile infoFile(decDir.path() + QDir::separator() + file + ".info");
+    if (infoFile.exists())
+        infoFile.remove();
+    infoFile.open(QFile::WriteOnly);
+    infoFile.write(QString("file_count=" + QString::number(file_count) + "\n").toUtf8());
+
     for (uint i = 0; i < file_count; i++)
     {
         ushort cmp_flag = data.get_u16();
         ushort unk_flag = data.get_u16();
         uint cmp_size = data.get_u32();
         uint dec_size = data.get_u32();
-        uint name_len = data.get_u32() + 1;    // Null terminator excluded from count
-        data.Position += 0x10; // Padding?
+        uint name_len = data.get_u32() + 1; // Null terminator excluded from count
+        data.Position += 0x10;  // Padding?
 
         // Everything's aligned to multiples of 0x10
         uint name_padding = (0x10 - name_len % 0x10) % 0x10;
@@ -149,19 +158,26 @@ int extract_data(QString file, BinaryData &data)
             file_data = spc_dec(file_data);
 
             if (file_data.size() != dec_size)
-                cout << "Size mismatch: size was " << file_data.size() << " but should be " << dec_size << "\n";
+            {
+                cout << "spc_dec: Size mismatch, size was " << file_data.size() << " but should be " << dec_size << "\n";
+                cout.flush();
+            }
             break;
 
         case 0x03:  // Load from external file
-            QString ext_file = file + "_" + file_name;
-            //file_data = srd_dec(ext_file);
+            QString ext_file_name = file + "_" + file_name;
+            QFile ext_file(ext_file_name);
+            ext_file.open(QFile::ReadOnly);
+            BinaryData ext_data(ext_file.readAll());
+            ext_file.close();
+            file_data = srd_dec(ext_data);
             break;
         }
 
         if (file_name.endsWith(".spc"))
         {
             QString sub_file = file + QDir::separator() + file_name;
-            return extract_data(sub_file, file_data);
+            return unpack_data(sub_file, file_data);
         }
         else
         {
@@ -170,12 +186,25 @@ int extract_data(QString file, BinaryData &data)
             out.write(file_data.Bytes);
             out.close();
         }
+
+
+        // Write file info
+        infoFile.write(QString("\n").toUtf8());
+        infoFile.write(QString("cmp_flag=" + QString::number(cmp_flag) + "\n").toUtf8());
+        infoFile.write(QString("unk_flag=" + QString::number(unk_flag) + "\n").toUtf8());
+        infoFile.write(QString("cmp_size=" + QString::number(cmp_size) + "\n").toUtf8());
+        infoFile.write(QString("dec_size=" + QString::number(dec_size) + "\n").toUtf8());
+        infoFile.write(QString("name_len=" + QString::number(name_len) + "\n").toUtf8());
+        infoFile.write(QString("file_name=" + file_name + "\n").toUtf8());
+        //infoFile.flush();
     }
+    infoFile.flush();
+    infoFile.close();
 
     return 0;
 }
 
-int compress()
+int repack()
 {
     decDir = inDir;
     decDir.cdUp();

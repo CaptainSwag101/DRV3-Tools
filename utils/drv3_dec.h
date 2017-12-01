@@ -2,6 +2,7 @@
 #define DRV3_DEC_H
 
 #include <cmath>
+#include <QTextStream>
 #include "binarydata.h"
 
 inline uchar bit_reverse(uchar b);
