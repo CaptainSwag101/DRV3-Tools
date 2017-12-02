@@ -202,9 +202,7 @@ int unpack_data(QString file, BinaryData &data)
         infoFile.write(QString("file_name=" + file_name + "\n").toUtf8());
         QString data_sha1(QCryptographicHash::hash(file_data.Bytes, QCryptographicHash::Sha1).toHex());
         infoFile.write(QString("data_sha1=" + data_sha1 + "\n").toUtf8());
-        //infoFile.flush();
     }
-    //infoFile.flush();
     infoFile.close();
 
     return 0;
@@ -214,13 +212,6 @@ int repack()
 {
     decDir = inDir;
     decDir.cdUp();
-
-    /*
-    if (!outFile.endsWith(".spc", Qt::CaseInsensitive))
-    {
-        outFile += ".spc";
-    }
-    */
 
     if (!decDir.exists("cmp"))
     {
@@ -236,7 +227,7 @@ int repack()
     while (it.hasNext())
     {
         QDir spcDir = QDir(it.next());
-        QString outFile = decDir.relativeFilePath(spcDir.path());
+        QString outFile = inDir.relativeFilePath(spcDir.path());
         QFile infoFile(spcDir.path() + ".info");
         infoFile.open(QFile::ReadOnly | QIODevice::Text);
         QStringList infoStrings = QString(infoFile.readAll()).replace('\r', "").split('\n', QString::SkipEmptyParts);
@@ -251,15 +242,15 @@ int repack()
         outData.append(QByteArray(0x18, 0x00));
         outData.append(file_count);
         outData.append(from_u32(0x04)); // unk2
-        outData.append(QByteArray(0x10, 0x00)); // Padding
+        outData.append(QByteArray(0x10, 0x00)); // padding
 
         outData.append(TABLE_MAGIC.toLocal8Bit());
         outData.append(QByteArray(0x0C, 0x00)); // padding
 
-        for (int i = 1; i + 6 < infoStrings.size(); i += 6)
+        for (int i = 1; i + 7 <= infoStrings.size(); i += 7)
         {
             QString file_name = infoStrings[i + 5].split('=')[1];
-            cout << "Packing file " << (i / 6 + 1) << "/" << file_count << " without compression: \"" << file_name << "\"\n";
+            cout << "Packing file " << (i / 7 + 1) << "/" << file_count << " without compression: \"" << file_name << "\"\n";
             cout.flush();
 
             QFile f(spcDir.path() + QDir::separator() + file_name);
@@ -273,8 +264,8 @@ int repack()
             BinaryData subdata(allBytes);
 
 
-            outData.append(from_u16(0x01));                 // cmp_flag
-            outData.append(infoStrings[i + 1].split('=')[1].toUShort());  // unk_flag
+            outData.append(from_u16(0x01));                                 // cmp_flag
+            outData.append(infoStrings[i + 1].split('=')[1].toUShort());    // unk_flag
 
             uint dec_size = subdata.size();
 
@@ -315,7 +306,10 @@ int repack()
             */
         }
 
-        QFile out(decDir.path() + QDir::separator() + outFile);
+        QString outPath = QDir::toNativeSeparators(decDir.path() + QDir::separator() + outFile);
+        QDir().mkpath(outPath.left(outPath.lastIndexOf(QDir::separator())));
+
+        QFile out(outPath);
         out.open(QFile::WriteOnly);
         out.write(outData.Bytes);
         out.close();
