@@ -7,7 +7,7 @@
 
 const QString SPC_MAGIC = "CPS.";
 const QString TABLE_MAGIC = "Root";
-QTextStream cout(stdout);
+static QTextStream cout(stdout);
 QDir inDir;
 QDir decDir;
 bool pack = false;

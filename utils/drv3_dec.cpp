@@ -1,6 +1,7 @@
 #include "drv3_dec.h"
 
 static QTextStream cout(stdout);
+const QString STX_MAGIC = "STXT";
 
 // From https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64BitsDiv
 inline uchar bit_reverse(uchar b)
@@ -270,3 +271,73 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
 
     return result;
 }
+
+QStringList get_stx_strings(BinaryData &data)
+{
+    QStringList strings;
+
+    data.Position = 0;
+    QString magic = data.get_str(4);
+    if (magic != STX_MAGIC)
+    {
+        //cout << "Invalid STX file.\n";
+        return strings;
+    }
+
+    QString lang = data.get_str(4); // "JPLL" in the JP and US versions
+    uint unk1 = data.get_u32();  // Table count?
+    uint table_off  = data.get_u32();
+    uint unk2 = data.get_u32();
+    uint count = data.get_u32();
+
+
+    for (int i = 0; i < count; i++)
+    {
+        data.Position = table_off + (8 * i);
+        uint str_id = data.get_u32();
+        uint str_off = data.get_u32();
+
+        data.Position = str_off;
+
+        QString str = data.get_str(0, 2);
+        strings.append(str);
+    }
+
+    return strings;
+}
+
+/*
+QStringList put_stx_strings(QStringList strings)
+{
+    QStringList strings;
+
+    data.Position = 0;
+    QString magic = data.get_str(4);
+    if (magic != STX_MAGIC)
+    {
+        //cout << "Invalid STX file.\n";
+        return strings;
+    }
+
+    QString lang = data.get_str(4); // "JPLL" in the JP and US versions
+    uint unk1 = data.get_u32();  // Table count?
+    uint table_off  = data.get_u32();
+    uint unk2 = data.get_u32();
+    uint count = data.get_u32();
+
+
+    for (int i = 0; i < count; i++)
+    {
+        data.Position = table_off + (8 * i);
+        uint str_id = data.get_u32();
+        uint str_off = data.get_u32();
+
+        data.Position = str_off;
+
+        QString str = data.get_str(0, 2);
+        strings.append(str);
+    }
+
+    return strings;
+}
+*/

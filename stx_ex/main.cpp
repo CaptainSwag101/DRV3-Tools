@@ -3,15 +3,14 @@
 #include <QTextCodec>
 #include <QTextStream>
 #include "../utils/binarydata.h"
+#include "../utils/drv3_dec.h"
 
-const QString STX_MAGIC = "STXT";
 static QTextStream cout(stdout);
-static QDir inDir;
-static QDir exDir;
-static bool pack = false;
+QDir inDir;
+QDir exDir;
+bool pack = false;
 
 int unpack();
-int unpack_data(QString file, BinaryData &data);
 int repack();
 BinaryData pack_data(BinaryData &data);
 
@@ -77,60 +76,35 @@ int unpack()
         f.close();
         BinaryData data(allBytes);
 
-        unpack_data(file, data);
+        exDir.mkpath(file.left(QDir::toNativeSeparators(file).lastIndexOf(QDir::separator())));
+
+        QString outFile = file;
+        outFile.replace(".stx", ".txt");
+
+        QStringList strings = get_stx_strings(data);
+
+        QFile textFile(exDir.path() + QDir::separator() + outFile);
+        textFile.open(QFile::WriteOnly);
+        for (int i = 0; i < strings.size(); i++)
+        {
+            textFile.write(QString("##### " + QString::number(i).rightJustified(4, '0') + "\n").toUtf8());
+            textFile.write(QString(strings[i] + "\n\n").toUtf8());
+        }
+        textFile.close();
+
     }
-
-    return 0;
-}
-
-int unpack_data(QString file, BinaryData &data)
-{
-    exDir.mkpath(file.left(QDir::toNativeSeparators(file).lastIndexOf(QDir::separator())));
-
-    QString outFile = file;
-    outFile.replace(".stx", ".txt");
-
-    data.Position = 0;
-    QString magic = data.get_str(4);
-    if (magic != STX_MAGIC)
-    {
-        cout << "Invalid STX file.\n";
-        return 1;
-    }
-
-    QString lang = data.get_str(4); // "JPLL" in the JP and US versions
-    uint unk1 = data.get_u32();  // Table count?
-    uint table_off  = data.get_u32();
-    uint unk2 = data.get_u32();
-    uint count = data.get_u32();
-
-    QFile textFile(exDir.path() + QDir::separator() + outFile);
-    textFile.open(QFile::WriteOnly);
-
-    for (int i = 0; i < count; i++)
-    {
-        data.Position = table_off + (8 * i);
-        uint str_id = data.get_u32();
-        uint str_off = data.get_u32();
-
-        data.Position = str_off;
-
-        QString str = data.get_str(0, 2);
-        //strings[str_id] = str;
-
-        textFile.write(QString("##### " + QString::number(str_id).rightJustified(4, '0') + "\n").toUtf8());
-        textFile.write(QString(str + "\n\n").toUtf8());
-    }
-
-    textFile.flush();
-    textFile.close();
 
     return 0;
 }
 
 int repack()
 {
+    // IMPORTANT: This feature is currently not re-packing the STX files properly,
+    // so although they may load just fine in the game, they probably won't
+    // behave correctly. Please use the STX editor instead!
 
+    exDir = inDir;
+    exDir.cdUp();
     if (!exDir.exists("cmp"))
     {
         if (!exDir.mkdir("cmp"))
@@ -139,7 +113,6 @@ int repack()
             return 1;
         }
     }
-    exDir.cd("cmp");
 
     exDir.cd("cmp");
     if (!exDir.exists(inDir.dirName()))
@@ -166,13 +139,18 @@ int repack()
         cout.flush();
         QFile txt(txtFiles[f]);
         txt.open(QFile::ReadOnly | QIODevice::Text);
+
+        // The original files (usually) use Unix-style line endings.
+        // A couple files sometimes have the occasional Windows-style line ending,
+        // but since these are almost certainly not intentional, we sanitize them anyway.
         QStringList allText = QString(txt.readAll()).replace("\r\n", "\n").replace("\r", "\n").split("\n", QString::SkipEmptyParts);
+
         txt.close();
 
         QMap<int, QString> strings;
         QString str;
         int index = 0;
-        int highest_index = 0;
+        int table_len = 0;
         for (QString strPart : allText)
         {
             if (strPart.startsWith("#"))
@@ -184,69 +162,78 @@ int repack()
                 }
 
                 index = strPart.replace("##### ", "").toInt();
-                if (index > highest_index)
-                    highest_index = index;
-
+                table_len++;
                 continue;
             }
 
             if (!str.isEmpty())
+            {
                 str += "\n";
+            }
             str += strPart;
         }
         strings[index] = str;
         str.clear();
 
-        // table must contain an even number of entries
-        if (highest_index % 2 != 0)
-            highest_index += (highest_index % 2);
+        // Table must contain an even number of entries?
+        //if (table_len % 2 != 0)
+        //    table_len += (table_len % 2);
 
         BinaryData stxData;
         stxData.append(QString("STXTJPLL").toUtf8());   // header
         stxData.append(from_u32(0x01));                 // table_count?
         stxData.append(from_u32(0x20));                 // table_off
         stxData.append(from_u32(0x08));                 // unk2
-        stxData.append(from_u32(highest_index));        // count
+        stxData.append(from_u32(table_len));            // count
         stxData.append(QByteArray(0x20 - stxData.Position, (char)0x00));   // padding
 
-        int table_len = 8 * highest_index;      // 8 bytes per table entry
-
-        for (int i = 0; i < highest_index; i++)
+        int *offsets = new int[table_len];
+        int highest_index = 0;
+        for (int i = 0; i < table_len; i++)
         {
-            stxData.append(from_u32(i));        // str_index
-
-            int prev_len_sum = 0;
+            int str_off = 0;
             for (int j = 0; j < i; j++)
             {
-                if (strings[j] == strings[i])
+                if (strings[i] == strings[j])
                 {
-                    prev_len_sum -= 2 * (i - j);
-                    break;
+                    str_off = offsets[j];
                 }
-
-                prev_len_sum += 2 * (strings[j].size() + 1);    // 2 bytes per character
             }
 
-            int str_off = 0x20 + table_len + prev_len_sum;
-            stxData.append(from_u32(str_off));
+            // If there are no previous occurences of this string or it's the first one
+            if (i == 0)
+            {
+                str_off = 0x20 + (8 * table_len);   // 8 bytes per table entry
+            }
+            else if (str_off == 0)
+            {
+                str_off = offsets[highest_index] + ((strings[highest_index].size() + 1) * 2);
+                highest_index = i;
+            }
+
+            offsets[i] = str_off;
+
+            stxData.append(from_u32(i));        // str_index
+            stxData.append(from_u32(str_off));  // str_off
         }
 
         QStringList written;
-        for (QString s : strings.values())
+        for (int i = 0; i < table_len; i++)
         {
-            if (written.contains(s))
-                break;
+            if (written.contains(strings[i]))
+                continue;
 
             QTextCodec *codec = QTextCodec::codecForName("UTF-16");
             QTextEncoder *encoder = codec->makeEncoder(QTextCodec::IgnoreHeader);
-            QByteArray bytes = encoder->fromUnicode(strings[index]);
+            QByteArray bytes = encoder->fromUnicode(strings[i]);
 
             stxData.append(bytes);
-            stxData.append(from_u16(0x00)); // null terminator
-            written.append(s);
+            stxData.append(from_u16(0x00)); // Null terminator
+            written.append(strings[i]);
         }
+        delete[] offsets;
 
-        QString outPath = QDir::toNativeSeparators(inDir.path() + QDir::separator() + exDir.path() + QDir::separator() + file);
+        QString outPath = QDir::toNativeSeparators(exDir.path() + QDir::separator() + file);
         outPath.replace(".txt", ".stx");
         QDir().mkpath(outPath.left(outPath.lastIndexOf(QDir::separator())));
         QFile outFile(outPath);
