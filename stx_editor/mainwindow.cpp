@@ -50,14 +50,37 @@ void MainWindow::OpenStxFile()
 void MainWindow::SaveStxFile()
 {
     unsavedChanges = false;
-    openStx.setAcceptMode(QFileDialog::AcceptSave);
-    openStx.setFileMode(QFileDialog::AnyFile);
-    currentFilename = openStx.getOpenFileName(this, "Save STX file");
-    //currentStx = repack_stx_strings(strings);
+
+    QMap<int, QString> stringMap;
+    int index = 0;
+    int table_len = 0;
+    for (QString str : strings)
+    {
+        stringMap[index] = str;
+
+        index++;
+        table_len++;
+    }
+
+    currentStx = repack_stx_strings(table_len, stringMap);
     QFile f(currentFilename);
     f.open(QFile::WriteOnly);
     f.write(currentStx.Bytes);
     f.close();
+}
+
+void MainWindow::SaveStxFileAs()
+{
+    openStx.setAcceptMode(QFileDialog::AcceptSave);
+    openStx.setFileMode(QFileDialog::AnyFile);
+    QString oldFilename = currentFilename;
+    currentFilename = openStx.getOpenFileName(this, "Save STX file");
+    if (openStx.result() == QFileDialog::Rejected)
+    {
+        currentFilename = oldFilename;
+        return;
+    }
+    SaveStxFile();
 }
 
 void MainWindow::ReloadStrings()
@@ -99,4 +122,9 @@ void MainWindow::on_actionOpen_triggered()
 void MainWindow::on_actionSave_triggered()
 {
     SaveStxFile();
+}
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    SaveStxFileAs();
 }

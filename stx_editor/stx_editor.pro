@@ -24,8 +24,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
-        main.cpp \
+        stx_editor.cpp \
         mainwindow.cpp
+
 
 HEADERS += \
         mainwindow.h

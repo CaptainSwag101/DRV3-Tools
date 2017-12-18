@@ -26,11 +26,13 @@ public:
 private slots:
     void on_actionOpen_triggered();
     void on_actionSave_triggered();
+    void on_actionSave_As_triggered();
 
 private:
     bool CheckUnsaved();
     void OpenStxFile();
     void SaveStxFile();
+    void SaveStxFileAs();
     void ReloadStrings();
 
     Ui::MainWindow *ui;

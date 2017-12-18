@@ -306,6 +306,65 @@ QStringList get_stx_strings(BinaryData &data)
     return strings;
 }
 
+BinaryData repack_stx_strings(int table_len, QMap<int, QString> strings)
+{
+    BinaryData result;
+    result.append(QString("STXTJPLL").toUtf8());    // header
+    result.append(from_u32(0x01));                  // table_count?
+    result.append(from_u32(0x20));                  // table_off
+    result.append(from_u32(0x08));                   // unk2
+    result.append(from_u32(table_len));             // count
+    result.append(QByteArray(0x20 - result.Position, (char)0x00));  // padding
+
+    int *offsets = new int[table_len];
+    int highest_index = 0;
+    for (int i = 0; i < table_len; i++)
+    {
+        int str_off = 0;
+        for (int j = 0; j < i; j++)
+        {
+            if (strings[i] == strings[j])
+            {
+                str_off = offsets[j];
+            }
+        }
+
+        // If there are no previous occurences of this string or it's the first one
+        if (i == 0)
+        {
+            str_off = 0x20 + (8 * table_len);   // 8 bytes per table entry
+        }
+        else if (str_off == 0)
+        {
+            str_off = offsets[highest_index] + ((strings[highest_index].size() + 1) * 2);
+            highest_index = i;
+        }
+
+        offsets[i] = str_off;
+
+        result.append(from_u32(i));         // str_index
+        result.append(from_u32(str_off));   // str_off
+    }
+
+    QStringList written;
+    for (int i = 0; i < table_len; i++)
+    {
+        if (written.contains(strings[i]))
+            continue;
+
+        QTextCodec *codec = QTextCodec::codecForName("UTF-16");
+        QTextEncoder *encoder = codec->makeEncoder(QTextCodec::IgnoreHeader);
+        QByteArray bytes = encoder->fromUnicode(strings[i]);
+
+        result.append(bytes);
+        result.append(from_u16(0x00));  // Null terminator
+        written.append(strings[i]);
+    }
+    delete[] offsets;
+
+    return result;
+}
+
 /*
 QStringList put_stx_strings(QStringList strings)
 {
