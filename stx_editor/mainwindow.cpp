@@ -128,3 +128,10 @@ void MainWindow::on_actionSave_As_triggered()
 {
     SaveStxFileAs();
 }
+
+void MainWindow::on_actionExit_triggered()
+{
+    this->close();
+    QApplication::closeAllWindows();
+    QApplication::exit();
+}

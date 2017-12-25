@@ -27,7 +27,6 @@ SOURCES += \
         stx_editor.cpp \
         mainwindow.cpp
 
-
 HEADERS += \
         mainwindow.h
 
