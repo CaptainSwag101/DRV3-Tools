@@ -335,7 +335,7 @@ BinaryData compress_data(BinaryData &data)
     {
         if (data[i] != testData[i])
         {
-            cout << "Compression test failed, inconsistent byte at 0x" << QString::number(i, 16) << "\n";
+            cout << "Compression test failed, inconsistent byte at 0x" << QString::number(i, 16).toUpper() << "\n";
         }
     }
 

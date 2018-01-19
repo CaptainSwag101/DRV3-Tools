@@ -92,6 +92,8 @@ void MainWindow::on_actionOpen_triggered()
         return;
     }
 
+    currentSpc.subfiles.clear();
+
     for (uint i = 0; i < file_count; i++)
     {
         SpcSubfile subfile;
@@ -268,8 +270,6 @@ void MainWindow::on_actionInjectFile_triggered()
                 currentSpc.subfiles[i].cmp_flag = 0x01;
             }
             currentSpc.subfiles[i].cmp_size = currentSpc.subfiles[i].data.size();
-            //currentSpc.subfiles[i].unk_flag = 0x01;
-            //currentSpc.subfiles[i].name_len = currentSpc.subfiles[i].filename.length();
 
             unsavedChanges = true;
             reloadSubfileList();
