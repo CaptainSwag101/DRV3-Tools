@@ -57,8 +57,6 @@ BinaryData spc_dec(BinaryData &data)
     return result;
 }
 
-// This code DOES NOT WORK YET, and possibly never will.
-// For now, just re-pack the SPC data in an uncompressed format.
 BinaryData spc_cmp(BinaryData &data)
 {
     const int data_size = data.size();
@@ -97,6 +95,8 @@ BinaryData spc_cmp(BinaryData &data)
         // is already present in the previous 1023 bytes.
         for (int i = 0; i <= MAX_GROUP_LENGTH; i++)
         {
+            if (data.Position >= data_size) break;
+
             QByteArray temp = seq;
 
             uchar b = data.get_u8();

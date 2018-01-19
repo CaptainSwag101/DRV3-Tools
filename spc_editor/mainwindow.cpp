@@ -4,18 +4,6 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    fileDlg.setNameFilter("SPC files (*.spc)");
-
-    QFile test("C:/Users/James/Desktop/c01_000_001.stx");
-    test.open(QFile::ReadOnly);
-    BinaryData d(test.readAll());
-    test.close();
-    d = spc_cmp(d);
-    QFile test2("C:/Users/James/Desktop/c01_000_001_cmp.stx");
-    test2.open(QFile::WriteOnly);
-    test2.write(d.Bytes);
-    test2.close();
 }
 
 MainWindow::~MainWindow()
@@ -64,7 +52,7 @@ void MainWindow::on_actionOpen_triggered()
 
     //fileDlg.setAcceptMode(QFileDialog::AcceptOpen);
     fileDlg.setFileMode(QFileDialog::ExistingFile);
-    QString newFilename = fileDlg.getOpenFileName(this, "Open SPC file");
+    QString newFilename = fileDlg.getOpenFileName(this, "Open SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
     if (newFilename.isEmpty())
     {
         return;
@@ -204,7 +192,7 @@ void MainWindow::on_actionSaveAs_triggered()
 {
     //fileDlg.setAcceptMode(QFileDialog::AcceptSave);
     fileDlg.setFileMode(QFileDialog::AnyFile);
-    QString newFilename = fileDlg.getSaveFileName(this, "Save SPC file");
+    QString newFilename = fileDlg.getSaveFileName(this, "Save SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
     if (newFilename.isEmpty())
     {
         return;
@@ -267,7 +255,7 @@ void MainWindow::on_actionInjectFile_triggered()
             currentSpc.subfiles[i].dec_size = currentSpc.subfiles[i].data.size();
 
             reply = QMessageBox::question(this, "Compress Input File",
-                                          "Does this file need to be re-compressed?\nIf unsure, choose \"No\".",
+                                          "Does this file need to be re-compressed?\nIf unsure, choose \"Yes\".",
                                           QMessageBox::Yes|QMessageBox::No);
 
             if (reply == QMessageBox::Yes)

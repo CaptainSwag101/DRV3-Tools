@@ -13,7 +13,7 @@ bool pack = false;
 int unpack();
 int unpack_data(QString file, BinaryData &data);
 int repack();
-//BinaryData compress_data(BinaryData &data);
+BinaryData compress_data(BinaryData &data);
 
 int main(int argc, char *argv[])
 {
@@ -270,12 +270,13 @@ int repack()
             BinaryData subdata(allBytes);
 
 
-            outData.append(from_u16(0x01));                                         // cmp_flag
+            outData.append(from_u16(0x02));      // cmp_flag
             outData.append(from_u16(infoStrings[i + 1].split('=')[1].toUShort()));  // unk_flag
 
             uint dec_size = subdata.size();
 
-            //subdata = compress_data(subdata);
+            //subdata = spc_cmp(subdata);
+            subdata = compress_data(subdata);
 
             uint cmp_size = subdata.size();
 
@@ -327,7 +328,8 @@ int repack()
 BinaryData compress_data(BinaryData &data)
 {
     BinaryData outData = spc_cmp(data);
-    BinaryData testData = spc_dec(outData);
+    BinaryData testData(outData.Bytes);
+    testData = spc_dec(testData);
 
     for (int i = 0; i < data.size(); i++)
     {
