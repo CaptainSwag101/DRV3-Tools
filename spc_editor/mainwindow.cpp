@@ -6,6 +6,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->setupUi(this);
 
     fileDlg.setNameFilter("SPC files (*.spc)");
+
+    QFile test("C:/Users/James/Desktop/c01_000_001.stx");
+    test.open(QFile::ReadOnly);
+    BinaryData d(test.readAll());
+    test.close();
+    d = spc_cmp(d);
+    QFile test2("C:/Users/James/Desktop/c01_000_001_cmp.stx");
+    test2.open(QFile::WriteOnly);
+    test2.write(d.Bytes);
+    test2.close();
 }
 
 MainWindow::~MainWindow()

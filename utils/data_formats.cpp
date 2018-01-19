@@ -38,13 +38,13 @@ BinaryData spc_dec(BinaryData &data)
         {
             // Pull from the buffer
             // xxxxxxyy yyyyyyyy
-            // Count  -> x + 2
+            // Count  -> x + 1 (max length of 64 bytes)
             // Offset -> y (from the beginning of a 1023-byte sliding window)
             ushort b = data.get_u16();
-            uint count = (b >> 10) + 2;
+            uint count = (b >> 10) + 1;
             uint offset = b & 1023;
 
-            for (uint i = 0; i < count; i++)
+            for (uint i = 0; i <= count; i++)
             {
                 uint reverse_index = result.size() + offset - 1024;
                 result.append(result[reverse_index]);
@@ -61,112 +61,84 @@ BinaryData spc_dec(BinaryData &data)
 // For now, just re-pack the SPC data in an uncompressed format.
 BinaryData spc_cmp(BinaryData &data)
 {
+    const int data_size = data.size();
     BinaryData result;
-    int data_size = data.size();
-    uchar byte_num = 0;
     uchar flag = 0;
-    uint flag_pos = 0;
+    uchar cur_flag_bit = 0;
+    int flag_pos = 0;
 
     // Leave the first 8 bytes of the file intact (header)
-    result.append(0xFF);    //Flag
-    for (uint i = 0; i < 8; i++)
+    result.append(0xFF);    // Flag
+    for (int x = 0; x < 8; x++)
     {
         result.append(data.get_u8());
     }
 
+    // In case the non-header data is shorter than 64 bytes (unlikely)
+    const int MAX_GROUP_LENGTH = std::min(data_size - data.Position, 64);
+
+    // We use an 8-bit flag to determine whether something is raw data,
+    // or if we need to pull from the buffer, going from most to least significant bit.
+    // We reverse the bit order to make it easier to work with.
     while (data.Position < data_size)
     {
-        // We use an 8-bit flag to determine whether something is raw data,
-        // or if we need to pull from the buffer, going from most to least significant bit.
-        // We reverse the bit order to make it easier to work with.
+        QByteArray seq;
+        int lastIndex = -1;
+        int window_start = std::max(data.Position - 1023, 8);
+        int window_end = data.Position;
 
         // Save the position of where we'll write our flag byte
-        if (byte_num == 0)
+        if (cur_flag_bit == 0)
         {
             flag_pos = result.Position;
         }
 
-        // We compress single bytes if they are repeated at least twice,
-        // and also groups of multiple bytes.
-        uchar b = data.get_u8();
-
-        bool found = false;
-        uint count = 1;
-        uint prev_count = 1;
-        uint at = 9;
-        uint old_pos = 9;
-        uint start = std::min(std::abs(data.Position - 1023), 8);
-        uint end = data.Position - 1;
-
-        for (uint i = end - 1; i >= start; i--)
+        // Read each byte and add it to a sequence, then check if that sequence
+        // is already present in the previous 1023 bytes.
+        for (int i = 0; i <= MAX_GROUP_LENGTH; i++)
         {
-            if ((uchar)data[i] == b)
+            QByteArray temp = seq;
+
+            uchar b = data.get_u8();
+            temp.append(b);
+
+            int index = data.lastIndexOf(temp, window_start, window_end);
+            if (index == -1 && seq.size() > 0)
             {
-                if (found)
-                {
-                    // Find the location of the first byte in the last occurence of its repetition
-                    // (i.e. find the first zero byte in the last group of zeroes)
-                    prev_count++;
-                }
-                else
-                {
-                    found = true;
-
-                    // Count the number of additional times this byte occurs consecutively, within the current 8-byte block
-                    old_pos = data.Position;
-                    while (data.get_u8() == b && data.Position < data_size)
-                        count++;
-
-                    data.Position--;
-                }
-            }
-            else if (found)
-            {
-                if (count > prev_count)
-                {
-                    if ((uchar)data[end - 1] != b)
-                    {
-                        count = prev_count;
-                        data.Position = end + count;
-                    }
-                    else
-                    {
-                        at = end - 1;
-                        break;
-                    }
-                }
-
-                at = i + 1;
+                // If we've found a new sequence
+                data.Position--;
                 break;
             }
+
+            lastIndex = index;
+            seq = temp;
         }
 
-        if (found)
+        if (lastIndex >= 0 && seq.size() >= 2)
         {
+            // Sequence has been used before
             ushort repeat_data = 0;
-            repeat_data |= 1024 - (old_pos - at) + 1;
-            repeat_data |= std::max((int)count - 2, 0) << 10;
-            result.append(repeat_data);
-            result.append(repeat_data >> 8);
-
-            found = false;
-            at = 0;
+            repeat_data |= 1024 - (window_end - lastIndex);
+            repeat_data |= std::max(seq.size() - 2, 0) << 10;
+            result.append(from_u16(repeat_data));
         }
         else
         {
-            result.append(b);
-            flag |= (1 << byte_num);
+            // Sequence has not been used before
+            flag |= (1 << cur_flag_bit);
+            result.append(seq);
         }
+        //seq.clear();
 
-        byte_num++;
+        //cur_flag_bit++;
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
-        if (byte_num == 8)
+        if (++cur_flag_bit > 7)
         {
             flag = bit_reverse(flag);
             result.insert(flag_pos, flag);
 
-            byte_num = 0;
+            cur_flag_bit = 0;
             flag = 0;
         }
     }
