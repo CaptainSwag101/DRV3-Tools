@@ -4,10 +4,7 @@
 #include <QMainWindow>
 #include <QFile>
 #include <QFileDialog>
-#include <QFontMetrics>
 #include <QMessageBox>
-#include <QtWidgets>
-#include <QTextStream>
 #include "../utils/binarydata.h"
 #include "../utils/data_formats.h"
 
@@ -28,18 +25,17 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
-    void on_textBox_textChanged();
+    void on_actionExtractAll_triggered();
+    void on_actionExtractSelected_triggered();
+    void on_actionInjectFile_triggered();
 
 private:
     bool confirmUnsaved();
-    void reloadStrings();
+    void reloadSubfileList();
 
     Ui::MainWindow *ui;
-    QFileDialog openStx;
-    QString currentFilename;
-    BinaryData currentStx;
-    QFrame *textBoxFrame;
-    //QList<QPlainTextEdit *> textBoxes;
+    QFileDialog fileDlg;
+    SpcFile currentSpc;
     bool unsavedChanges = false;
 };
 

@@ -5,10 +5,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
+    textBoxFrame = new QFrame(ui->scrollArea);
+    ui->scrollArea->setSizeAdjustPolicy(QScrollArea::AdjustToContents);
+    ui->scrollArea->setLayout(new QVBoxLayout());
+    ui->scrollArea->layout()->addWidget(textBoxFrame);
+    textBoxFrame->setLayout(new QVBoxLayout());
+
     //openStx.setViewMode(QFileDialog::Detail);
     openStx.setNameFilter("STX files (*.stx)");
 
-    OpenStxFile();
+    //OpenStxFile();
 }
 
 MainWindow::~MainWindow()
@@ -16,48 +22,82 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::CheckUnsaved()
+bool MainWindow::confirmUnsaved()
 {
-    if (unsavedChanges)
+    if (!unsavedChanges) return true;
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Unsaved Changes",
+                                  "Would you like to save your changes?",
+                                  QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
+
+    if (reply == QMessageBox::Yes)
     {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this, "Unsaved Changes",
-                                      "There are unsaved changes to the strings, which will be lost if you continue. Are you sure?",
-                                      QMessageBox::Yes|QMessageBox::No);
-
-        return (reply == QMessageBox::Yes);
+        on_actionSave_triggered();
+        return true;
     }
-
-    return true;
+    else if (reply == QMessageBox::No)
+    {
+        return true;
+    }
+    return false;
 }
 
-void MainWindow::OpenStxFile()
+void MainWindow::reloadStrings()
 {
-    if (CheckUnsaved())
+    QStringList strings = get_stx_strings(currentStx);
+
+    // Repopulate the text edit boxes
+    for (QPlainTextEdit *old : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))
     {
-        openStx.setAcceptMode(QFileDialog::AcceptOpen);
-        openStx.setFileMode(QFileDialog::ExistingFile);
-        currentFilename = openStx.getOpenFileName(this, "Open STX file");
-        QFile f(currentFilename);
-        f.open(QFile::ReadOnly);
-        currentStx = BinaryData(f.readAll());
-        f.close();
-
-        ReloadStrings();
+        disconnect(old, &QPlainTextEdit::textChanged, this, &MainWindow::on_textBox_textChanged);
+        textBoxFrame->layout()->removeWidget(old);
+        delete old;
     }
-}
 
-void MainWindow::SaveStxFile()
-{
+    for (QString str : strings)
+    {
+        QPlainTextEdit *tb = new QPlainTextEdit(str);
+        tb->setFixedHeight(tb->fontMetrics().height() * 3);
+        connect(tb, &QPlainTextEdit::textChanged, this, &MainWindow::on_textBox_textChanged);
+
+        textBoxFrame->layout()->addWidget(tb);
+    }
+
+    //textBoxFrame->layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    ui->scrollArea->setWidget(textBoxFrame);
+    ui->scrollArea->setWidgetResizable(true);
+    ui->scrollArea->adjustSize();
+
     unsavedChanges = false;
+}
 
+void MainWindow::on_actionOpen_triggered()
+{
+    if (!confirmUnsaved()) return;
+
+    openStx.setAcceptMode(QFileDialog::AcceptOpen);
+    openStx.setFileMode(QFileDialog::ExistingFile);
+    QString newFilename = openStx.getOpenFileName(this, "Open STX file", QString(), "STX files (*.stx)");
+    if (newFilename.isEmpty()) return;
+    currentFilename = newFilename;
+
+    QFile f(currentFilename);
+    f.open(QFile::ReadOnly);
+    currentStx = BinaryData(f.readAll());
+    f.close();
+
+    reloadStrings();
+}
+
+void MainWindow::on_actionSave_triggered()
+{
     QMap<int, QString> stringMap;
     int index = 0;
     int table_len = 0;
-    for (QString str : strings)
+    for (QPlainTextEdit *tb : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))
     {
-        stringMap[index] = str;
-
+        stringMap[index] = tb->document()->toRawText();
         index++;
         table_len++;
     }
@@ -67,71 +107,30 @@ void MainWindow::SaveStxFile()
     f.open(QFile::WriteOnly);
     f.write(currentStx.Bytes);
     f.close();
+    unsavedChanges = false;
 }
 
-void MainWindow::SaveStxFileAs()
+void MainWindow::on_actionSaveAs_triggered()
 {
     openStx.setAcceptMode(QFileDialog::AcceptSave);
     openStx.setFileMode(QFileDialog::AnyFile);
-    QString oldFilename = currentFilename;
-    currentFilename = openStx.getOpenFileName(this, "Save STX file");
-    if (openStx.result() == QFileDialog::Rejected)
-    {
-        currentFilename = oldFilename;
-        return;
-    }
-    SaveStxFile();
-}
+    QString newFilename = openStx.getSaveFileName(this, "Save STX file", QString(), "STX files (*.stx)");
+    if (newFilename.isEmpty()) return;
+    currentFilename = newFilename;
 
-void MainWindow::ReloadStrings()
-{
-    strings = get_stx_strings(currentStx);
-
-    // Repopulate the text edit boxes
-    for (auto widget : ui->scrollArea->widget()->layout()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly))
-    {
-        delete widget;
-    }
-
-    QFrame *frame = new QFrame(ui->scrollArea);
-    QVBoxLayout *layout = new QVBoxLayout();
-    frame->setLayout(layout);
-    ui->scrollArea->setWidgetResizable(true);
-
-    for (QString str : strings)
-    {
-        QPlainTextEdit *edit = new QPlainTextEdit(str);
-        //QRect geo = edit->geometry();
-        //int h = edit->fontMetrics().height();
-        //geo.setHeight((h * 2) + 4);
-        //edit->setGeometry(geo);
-        frame->layout()->addWidget(edit);
-    }
-
-    //frame->layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
-    ui->scrollArea->setSizeAdjustPolicy(QScrollArea::AdjustToContents);
-    ui->scrollArea->setWidget(frame);
-    ui->scrollArea->adjustSize();
-}
-
-void MainWindow::on_actionOpen_triggered()
-{
-    OpenStxFile();
-}
-
-void MainWindow::on_actionSave_triggered()
-{
-    SaveStxFile();
-}
-
-void MainWindow::on_actionSave_As_triggered()
-{
-    SaveStxFileAs();
+    on_actionSave_triggered();
 }
 
 void MainWindow::on_actionExit_triggered()
 {
+    if (!confirmUnsaved()) return;
+
     this->close();
     QApplication::closeAllWindows();
     QApplication::exit();
+}
+
+void MainWindow::on_textBox_textChanged()
+{
+    unsavedChanges = true;
 }

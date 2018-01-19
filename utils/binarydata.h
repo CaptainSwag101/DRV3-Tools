@@ -8,9 +8,8 @@
 QByteArray from_u16(ushort n);
 QByteArray from_u32(uint n);
 
-class BinaryData
+struct BinaryData
 {
-public:
     QByteArray Bytes;
     int Position;
 

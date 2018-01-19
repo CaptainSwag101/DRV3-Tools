@@ -1,7 +1,6 @@
-#include "drv3_dec.h"
+#include "data_formats.h"
 
 static QTextStream cout(stdout);
-const QString STX_MAGIC = "STXT";
 
 // From https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64BitsDiv
 inline uchar bit_reverse(uchar b)
@@ -47,7 +46,7 @@ BinaryData spc_dec(BinaryData &data)
 
             for (uint i = 0; i < count; i++)
             {
-                uint reverse_index = result.size() + offset - 1023 - 1;
+                uint reverse_index = result.size() + offset - 1024;
                 result.append(result[reverse_index]);
             }
         }

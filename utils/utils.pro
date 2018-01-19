@@ -30,12 +30,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        drv3_dec.cpp \
-    binarydata.cpp
+    binarydata.cpp \
+    data_formats.cpp
 
 HEADERS += \
-        drv3_dec.h \
-    binarydata.h
+    binarydata.h \
+    data_formats.h
 unix {
     target.path = /usr/lib
     INSTALLS += target

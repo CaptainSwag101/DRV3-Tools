@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2017-12-03T09:44:28
+# Project created by QtCreator 2018-01-17T10:11:41
 #
 #-------------------------------------------------
 
@@ -8,7 +8,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = stx_editor
+TARGET = spc_editor
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
