@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
     if (inDir == QDir(""))
     {
-        cout << "No input path specified.\n";
+        cout << "Error: No input path specified.\n";
         return 1;
     }
 
@@ -62,24 +62,24 @@ int unpack()
     decDir.cd(inDir.dirName());
 
     QDirIterator it(inDir.path(), QStringList() << "*.spc", QDir::Files, QDirIterator::Subdirectories);
-    QStringList spcFiles;
+    QStringList spcNames;
     while (it.hasNext())
-        spcFiles.append(it.next());
-
-    spcFiles.sort();
-    for (int i = 0; i < spcFiles.length(); i++)
     {
-        QString file = inDir.relativeFilePath(spcFiles[i]);
-        cout << "Extracting file " << (i + 1) << "/" << spcFiles.length() << ": \"" << file << "\"\n";
+        spcNames.append(it.next());
+    }
+
+    spcNames.sort();
+    for (int i = 0; i < spcNames.length(); i++)
+    {
+        cout << "Extracting file " << (i + 1) << "/" << spcNames.length() << ": \"" << inDir.relativeFilePath(spcNames[i]) << "\"\n";
         cout.flush();
-        QFile f(spcFiles[i]);
+        QFile f(spcNames[i]);
         f.open(QFile::ReadOnly);
         QByteArray allBytes = f.readAll();
         f.close();
         BinaryData data(allBytes);
 
-
-        int errCode = unpack_data(file, data);
+        int errCode = unpack_data(inDir.relativeFilePath(spcNames[i]), data);
         if (errCode != 0)
             return errCode;
     }
@@ -279,20 +279,19 @@ int repack()
             subdata = compress_data(subdata);
 
             uint cmp_size = subdata.size();
-
             outData.append(from_u32(cmp_size));         // cmp_size
             outData.append(from_u32(dec_size));         // dec_size
-            uint name_len = file_name.length();         // name + null terminator byte
-            outData.append(from_u32(name_len));         // name_len
+            uint name_len = file_name.length();         // name_len
+            outData.append(from_u32(name_len));
             outData.append(QByteArray(0x10, 0x00));     // padding
 
             // Everything's aligned to multiples of 0x10
-            uint name_padding = (0x10 - name_len % 0x10) % 0x10;
+            uint name_padding = (0x10 - (name_len + 1) % 0x10) % 0x10;
             uint data_padding = (0x10 - cmp_size % 0x10) % 0x10;
 
             // We don't actually want the null terminator byte, so pretend it's padding
-            outData.append(file_name.toUtf8());
-            outData.append(QByteArray(name_padding, 0x00));
+            outData.append(file_name.toUtf8());         // file_name
+            outData.append(QByteArray(name_padding + 1, 0x00));
 
             outData.append(subdata.Bytes);              // data
             outData.append(QByteArray(data_padding, 0x00));

@@ -171,12 +171,12 @@ void MainWindow::on_actionSave_triggered()
         outData.append(QByteArray(0x10, 0x00));             // padding
 
         // Everything's aligned to multiples of 0x10
-        uint name_padding = (0x10 - subfile.name_len % 0x10) % 0x10;
+        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
         uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
 
         outData.append(subfile.filename.toUtf8());
         // Add the null terminator byte to the padding
-        outData.append(QByteArray(name_padding, 0x00));
+        outData.append(QByteArray(name_padding + 1, 0x00));
 
         outData.append(subfile.data.Bytes);                 // data
         outData.append(QByteArray(data_padding, 0x00));     // data_padding
