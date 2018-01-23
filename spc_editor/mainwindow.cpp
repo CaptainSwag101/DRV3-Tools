@@ -46,13 +46,43 @@ void MainWindow::reloadSubfileList()
     ui->listWidget->repaint();
 }
 
+void MainWindow::extractFile(QString outDir, SpcSubfile subfile)
+{
+    switch (subfile.cmp_flag)
+    {
+    case 0x01:  // Uncompressed, don't do anything
+        break;
+
+    case 0x02:  // Compressed
+        subfile.data = spc_dec(subfile.data);
+
+        if (subfile.data.size() != subfile.dec_size)
+        {
+            qDebug() << "Error: Size mismatch, size was " << subfile.data.size() << " but should be " << subfile.dec_size;
+        }
+        break;
+
+    case 0x03:  // Load from external file
+        QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
+        QFile ext_file(ext_file_name);
+        ext_file.open(QFile::ReadOnly);
+        BinaryData ext_data(ext_file.readAll());
+        ext_file.close();
+        subfile.data = srd_dec(ext_data);
+        break;
+    }
+
+    QFile out(outDir + QDir::separator() + subfile.filename);
+    out.open(QFile::WriteOnly);
+    out.write(subfile.data.Bytes);
+    out.close();
+}
+
 void MainWindow::on_actionOpen_triggered()
 {
     if (!confirmUnsaved()) return;
 
-    //fileDlg.setAcceptMode(QFileDialog::AcceptOpen);
-    fileDlg.setFileMode(QFileDialog::ExistingFile);
-    QString newFilename = fileDlg.getOpenFileName(this, "Open SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
+    QString newFilename = QFileDialog::getOpenFileName(this, "Open SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
     if (newFilename.isEmpty())
     {
         return;
@@ -115,21 +145,19 @@ void MainWindow::on_actionOpen_triggered()
         subfile.data = BinaryData(fileData.get(subfile.cmp_size));
         fileData.Position += data_padding;
 
+        /*
         switch (subfile.cmp_flag)
         {
         case 0x01:  // Uncompressed, don't do anything
             break;
 
         case 0x02:  // Compressed
-            // Only decompress when exporting
-            /*
             subfile.data = spc_dec(subfile.data);
 
             if (subfile.data.size() != subfile.dec_size)
             {
                 QMessageBox::warning(this, "Error", "spc_dec: Size mismatch, size was " + QString(subfile.data.size()) + " but should be " + QString(subfile.dec_size));
             }
-            */
             break;
 
         case 0x03:  // Load from external file
@@ -141,11 +169,13 @@ void MainWindow::on_actionOpen_triggered()
             subfile.data = srd_dec(ext_data);
             break;
         }
+        */
 
         currentSpc.subfiles.append(subfile);
     }
-
     f.close();
+
+    this->setWindowTitle("SPC Editor: " + currentSpc.filename);
     reloadSubfileList();
 }
 
@@ -192,9 +222,7 @@ void MainWindow::on_actionSave_triggered()
 
 void MainWindow::on_actionSaveAs_triggered()
 {
-    //fileDlg.setAcceptMode(QFileDialog::AcceptSave);
-    fileDlg.setFileMode(QFileDialog::AnyFile);
-    QString newFilename = fileDlg.getSaveFileName(this, "Save SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
+    QString newFilename = QFileDialog::getSaveFileName(this, "Save SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
     if (newFilename.isEmpty())
     {
         return;
@@ -215,12 +243,100 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionExtractAll_triggered()
 {
+    QString outDir = QFileDialog::getExistingDirectory();
+    if (outDir.isEmpty()) return;
 
+    QProgressDialog progressDlg;
+    progressDlg.setWindowFlag(Qt::WindowCloseButtonHint, false);
+    progressDlg.setCancelButton(0);
+    progressDlg.setMaximum(currentSpc.subfiles.count() - 1);
+    progressDlg.show();
+
+    bool overwriteAll = false;
+    bool skipAll = false;
+    for (int i = 0; i < currentSpc.subfiles.count(); i++)
+    {
+        SpcSubfile subfile = currentSpc.subfiles[i];
+
+        progressDlg.setLabelText("Extracting file " + QString::number(i + 1) + "/" + QString::number(currentSpc.subfiles.count()) + ": " + subfile.filename);
+        progressDlg.setValue(i);
+
+        if (QFile(outDir + QDir::separator() + subfile.filename).exists())
+        {
+            QMessageBox::StandardButton reply;
+            if (!overwriteAll && !skipAll)
+            {
+                reply = QMessageBox::question(&progressDlg, "Confirm overwrite",
+                                              subfile.filename + " already exists in this location. Would you like to overwrite it?",
+                                              QMessageBox::Yes|QMessageBox::YesToAll|QMessageBox::No|QMessageBox::NoToAll|QMessageBox::Cancel);
+
+                if (reply == QMessageBox::Cancel) break;
+
+                overwriteAll = (reply == QMessageBox::YesToAll);
+                skipAll = (reply == QMessageBox::NoToAll);
+            }
+
+            if (skipAll || reply == QMessageBox::No)
+            {
+                continue;
+            }
+        }
+
+        // We also reach this code if we choose "Yes" or "YesToAll" on the overwrite confirmation dialog
+        extractFile(outDir, subfile);
+    }
+    progressDlg.close();
 }
 
 void MainWindow::on_actionExtractSelected_triggered()
 {
+    QFileDialog folderDlg;
+    QString outDir = folderDlg.getExistingDirectory();
+    if (outDir.isEmpty()) return;
 
+    QModelIndexList selectedIndexes = ui->listWidget->selectionModel()->selectedIndexes();
+
+    QProgressDialog progressDlg;
+    progressDlg.setWindowFlag(Qt::WindowCloseButtonHint, false);
+    progressDlg.setCancelButton(0);
+    progressDlg.setMaximum(selectedIndexes.count());
+    progressDlg.show();
+
+    bool overwriteAll = false;
+    bool skipAll = false;
+    for (int i = 0; i < selectedIndexes.count(); i++)
+    {
+        int index = ui->listWidget->selectionModel()->selectedIndexes()[i].row();
+        SpcSubfile subfile = currentSpc.subfiles[index];
+
+        progressDlg.setLabelText("Extracting file " + QString::number(i + 1) + "/" + QString::number(selectedIndexes.count()) + ": " + subfile.filename);
+        progressDlg.setValue(i);
+
+        if (QFile(outDir + QDir::separator() + subfile.filename).exists())
+        {
+            QMessageBox::StandardButton reply;
+            if (!overwriteAll && !skipAll)
+            {
+                reply = QMessageBox::question(&progressDlg, "Confirm overwrite",
+                                              subfile.filename + " already exists in this location. Would you like to overwrite it?",
+                                              QMessageBox::Yes|QMessageBox::YesToAll|QMessageBox::No|QMessageBox::NoToAll|QMessageBox::Cancel);
+
+                if (reply == QMessageBox::Cancel) break;
+
+                overwriteAll = (reply == QMessageBox::YesToAll);
+                skipAll = (reply == QMessageBox::NoToAll);
+            }
+
+            if (skipAll || reply == QMessageBox::No)
+            {
+                continue;
+            }
+        }
+
+        // We also reach this code if we choose "Yes" or "YesToAll" on the overwrite confirmation dialog
+        extractFile(outDir, subfile);
+    }
+    progressDlg.close();
 }
 
 void MainWindow::on_actionInjectFile_triggered()

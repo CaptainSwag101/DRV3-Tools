@@ -2,9 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QDebug>
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include "../utils/binarydata.h"
 #include "../utils/data_formats.h"
 
@@ -32,9 +34,9 @@ private slots:
 private:
     bool confirmUnsaved();
     void reloadSubfileList();
+    void extractFile(QString outDir, SpcSubfile subfile);
 
     Ui::MainWindow *ui;
-    QFileDialog fileDlg;
     SpcFile currentSpc;
     bool unsavedChanges = false;
 };

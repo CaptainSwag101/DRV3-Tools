@@ -46,7 +46,7 @@ int unpack()
     {
         if (!decDir.mkdir("dec"))
         {
-            cout << "Error: Failed to create \"dec\" directory.\n";
+            cout << "Error: Failed to create \"" << decDir.path() << QDir::separator() << "dec\" directory.\n";
             return 1;
         }
     }
@@ -55,7 +55,7 @@ int unpack()
     {
         if (!decDir.mkdir(inDir.dirName()))
         {
-            cout << "Error: Failed to create \"dec" << QDir::separator() << inDir.dirName() << "\" directory.\n";
+            cout << "Error: Failed to create \"" << decDir.path() << QDir::separator() << "dec" << QDir::separator() << inDir.dirName() << "\" directory.\n";
             return 1;
         }
     }
@@ -71,7 +71,7 @@ int unpack()
     spcNames.sort();
     for (int i = 0; i < spcNames.length(); i++)
     {
-        cout << "Extracting file " << (i + 1) << "/" << spcNames.length() << ": \"" << inDir.relativeFilePath(spcNames[i]) << "\"\n";
+        cout << "Extracting file " << (i + 1) << "/" << spcNames.length() << ": " << inDir.relativeFilePath(spcNames[i]) << "\n";
         cout.flush();
         QFile f(spcNames[i]);
         f.open(QFile::ReadOnly);
@@ -103,7 +103,7 @@ int unpack_data(QString file, BinaryData &data)
 
     if (magic != SPC_MAGIC)
     {
-        cout << "Invalid SPC file.\n";
+        cout << "Error: Invalid SPC file.\n";
         return 1;
     }
 
@@ -126,7 +126,7 @@ int unpack_data(QString file, BinaryData &data)
 
     if (table_magic != SPC_TABLE_MAGIC)
     {
-        cout << "Invalid SPC file.\n";
+        cout << "Error: Invalid SPC file.\n";
         return 1;
     }
 
@@ -162,7 +162,7 @@ int unpack_data(QString file, BinaryData &data)
 
             if (file_data.size() != dec_size)
             {
-                cout << "spc_dec: Size mismatch, size was " << file_data.size() << " but should be " << dec_size << "\n";
+                cout << "Error: Size mismatch, size was " << file_data.size() << " but should be " << dec_size << "\n";
                 cout.flush();
             }
             break;
@@ -191,6 +191,7 @@ int unpack_data(QString file, BinaryData &data)
             out.close();
         }
         */
+
         QFile out(decDir.path() + QDir::separator() + file + QDir::separator() + file_name);
         out.open(QFile::WriteOnly);
         out.write(file_data.Bytes);
@@ -222,12 +223,21 @@ int repack()
     {
         if (!decDir.mkdir("cmp"))
         {
-            cout << "Error: Failed to create \"" << decDir.path() << "/cmp\" directory.\n";
+            cout << "Error: Failed to create \"" << decDir.path() << QDir::separator() << "cmp\" directory.\n";
             cout.flush();
             return 1;
         }
     }
     decDir.cd("cmp");
+    if (!decDir.exists(inDir.dirName()))
+    {
+        if (!decDir.mkdir(inDir.dirName()))
+        {
+            cout << "Error: Failed to create \"" << decDir.path() << QDir::separator() << "cmp" << QDir::separator() << inDir.dirName() << "\" directory.\n";
+            return 1;
+        }
+    }
+    decDir.cd(inDir.dirName());
 
     QDirIterator it(inDir.path(), QStringList() << "*.spc", QDir::Dirs, QDirIterator::Subdirectories);
     while (it.hasNext())
@@ -253,10 +263,12 @@ int repack()
         outData.append(SPC_TABLE_MAGIC.toUtf8());
         outData.append(QByteArray(0x0C, 0x00)); // padding
 
+        cout << "Compressing " << file_count << " files into " << spcDir.dirName() << "\n";
+        cout.flush();
         for (int i = 1; i + 7 <= infoStrings.size(); i += 7)
         {
             QString file_name = infoStrings[i + 5].split('=')[1];
-            cout << "Packing file " << (i / 7 + 1) << "/" << file_count << " without compression: \"" << file_name << "\"\n";
+            cout << "    " << file_name << "\n";
             cout.flush();
 
             QFile f(spcDir.path() + QDir::separator() + file_name);
@@ -333,7 +345,7 @@ BinaryData compress_data(BinaryData &data)
     {
         if (data[i] != testData[i])
         {
-            cout << "Compression test failed, inconsistent byte at 0x" << QString::number(i, 16).toUpper() << "\n";
+            cout << "Error: Compression test failed, inconsistent byte at 0x" << QString::number(i, 16).toUpper() << "\n";
         }
     }
 
