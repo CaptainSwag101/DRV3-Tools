@@ -269,7 +269,6 @@ int repack()
 
             BinaryData subdata(allBytes);
 
-
             outData.append(from_u16(0x02));      // cmp_flag
             outData.append(from_u16(infoStrings[i + 1].split('=')[1].toUShort()));  // unk_flag
 

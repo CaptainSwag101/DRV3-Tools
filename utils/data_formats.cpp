@@ -41,12 +41,12 @@ BinaryData spc_dec(BinaryData &data)
             // Count  -> x + 1 (max length of 64 bytes)
             // Offset -> y (from the beginning of a 1023-byte sliding window)
             ushort b = data.get_u16();
-            uint count = (b >> 10) + 1;
-            uint offset = b & 1023;
+            int count = (b >> 10) + 1;
+            int offset = b & 1023;
 
             for (uint i = 0; i <= count; i++)
             {
-                uint reverse_index = result.size() + offset - 1024;
+                int reverse_index = result.size() + offset - 1024;
                 result.append(result[reverse_index]);
             }
         }
@@ -65,13 +65,6 @@ BinaryData spc_cmp(BinaryData &data)
     uchar cur_flag_bit = 0;
     int flag_pos = 0;
 
-    // Leave the first 8 bytes of the file intact (header)
-    result.append(0xFF);    // Flag
-    for (int x = 0; x < 8; x++)
-    {
-        result.append(data.get_u8());
-    }
-
     // In case the non-header data is shorter than 64 bytes (unlikely)
     const int MAX_GROUP_LENGTH = std::min(data_size - data.Position, 64);
 
@@ -82,7 +75,7 @@ BinaryData spc_cmp(BinaryData &data)
     {
         QByteArray seq;
         int lastIndex = -1;
-        int window_start = std::max(data.Position - 1023, 8);
+        int window_start = std::max(data.Position - 1023, 0);
         int window_end = data.Position;
 
         // Save the position of where we'll write our flag byte
@@ -141,6 +134,14 @@ BinaryData spc_cmp(BinaryData &data)
             cur_flag_bit = 0;
             flag = 0;
         }
+    }
+    if (cur_flag_bit > 0)
+    {
+        flag = bit_reverse(flag);
+        result.insert(flag_pos, flag);
+
+        cur_flag_bit = 0;
+        flag = 0;
     }
 
     result.Position = 0;
