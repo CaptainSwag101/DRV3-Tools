@@ -17,7 +17,7 @@ struct BinaryData
     BinaryData(QByteArray data);
     const QByteArray get(int len);
     const QString get_str(int len = 0, int bytes_per_char = 1);
-    const uchar get_u8();
+    const char get_u8();
     const ushort get_u16();
     const ushort get_u16be();
     const uint get_u32();

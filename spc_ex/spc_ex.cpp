@@ -218,7 +218,6 @@ int repack()
 {
     decDir = inDir;
     decDir.cdUp();
-
     if (!decDir.exists("cmp"))
     {
         if (!decDir.mkdir("cmp"))
@@ -254,10 +253,10 @@ int repack()
         BinaryData outData;
         outData.append(SPC_MAGIC.toUtf8());
         outData.append(QByteArray(0x04, 0x00));
-        outData.append(QByteArray(0x08, 0xFF));  // unk1
+        outData.append(QByteArray(0x08, 0xFF)); // unk1
         outData.append(QByteArray(0x18, 0x00));
         outData.append(from_u32(file_count));
-        outData.append(from_u32(0x04)); // unk2
+        outData.append(from_u32(0x04));         // unk2
         outData.append(QByteArray(0x10, 0x00)); // padding
 
         outData.append(SPC_TABLE_MAGIC.toUtf8());
@@ -281,7 +280,7 @@ int repack()
 
             BinaryData subdata(allBytes);
 
-            outData.append(from_u16(0x02));      // cmp_flag
+            outData.append(from_u16(0x02));         // cmp_flag
             outData.append(from_u16(infoStrings[i + 1].split('=')[1].toUShort()));  // unk_flag
 
             uint dec_size = subdata.size();
@@ -290,21 +289,21 @@ int repack()
             subdata = compress_data(subdata);
 
             uint cmp_size = subdata.size();
-            outData.append(from_u32(cmp_size));         // cmp_size
-            outData.append(from_u32(dec_size));         // dec_size
-            uint name_len = file_name.length();         // name_len
+            outData.append(from_u32(cmp_size));     // cmp_size
+            outData.append(from_u32(dec_size));     // dec_size
+            uint name_len = file_name.length();     // name_len
             outData.append(from_u32(name_len));
-            outData.append(QByteArray(0x10, 0x00));     // padding
+            outData.append(QByteArray(0x10, 0x00)); // padding
 
             // Everything's aligned to multiples of 0x10
             uint name_padding = (0x10 - (name_len + 1) % 0x10) % 0x10;
             uint data_padding = (0x10 - cmp_size % 0x10) % 0x10;
 
             // We don't actually want the null terminator byte, so pretend it's padding
-            outData.append(file_name.toUtf8());         // file_name
+            outData.append(file_name.toUtf8());     // file_name
             outData.append(QByteArray(name_padding + 1, 0x00));
 
-            outData.append(subdata.Bytes);              // data
+            outData.append(subdata.Bytes);          // data
             outData.append(QByteArray(data_padding, 0x00));
 
             /*

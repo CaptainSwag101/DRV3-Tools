@@ -68,22 +68,22 @@ const QString BinaryData::get_str(int len, int bytes_per_char)
     return result;
 }
 
-const uchar BinaryData::get_u8()
+const char BinaryData::get_u8()
 {
-    return (uchar)(this->Bytes[this->Position++]);
+    return this->Bytes.at(this->Position++);
 }
 
 const ushort BinaryData::get_u16()
 {
     QByteArray ba = this->Bytes.mid(this->Position, 2);
-    ushort result = ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
+    const ushort result = ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
     this->Position += 2;
     return result;
 }
 const ushort BinaryData::get_u16be()
 {
     QByteArray ba = this->Bytes.mid(this->Position, 2);
-    ushort result = ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
+    const ushort result = ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
     this->Position += 2;
     return result;
 }
@@ -91,14 +91,14 @@ const ushort BinaryData::get_u16be()
 const uint BinaryData::get_u32()
 {
     QByteArray ba = this->Bytes.mid(this->Position, 4);
-    uint result = ((ba[3] & 0xFF) << 24) + ((ba[2] & 0xFF) << 16) + ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
+    const uint result = ((ba[3] & 0xFF) << 24) + ((ba[2] & 0xFF) << 16) + ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
     this->Position += 4;
     return result;
 }
 const uint BinaryData::get_u32be()
 {
     QByteArray ba = this->Bytes.mid(this->Position, 4);
-    uint result = ((ba[0] & 0xFF) << 24) + ((ba[1] & 0xFF) << 16) + ((ba[2] & 0xFF) << 8) + (ba[3] & 0xFF);
+    const uint result = ((ba[0] & 0xFF) << 24) + ((ba[1] & 0xFF) << 16) + ((ba[2] & 0xFF) << 8) + (ba[3] & 0xFF);
     this->Position += 4;
     return result;
 }
