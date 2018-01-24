@@ -83,7 +83,7 @@ const ushort BinaryData::get_u16()
 const ushort BinaryData::get_u16be()
 {
     QByteArray ba = this->Bytes.mid(this->Position, 2);
-    const ushort result = ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
+    const ushort result = ((ba[0] & 0xFF) << 8) + (ba[1] & 0xFF);
     this->Position += 2;
     return result;
 }
