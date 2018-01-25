@@ -14,6 +14,7 @@ struct BinaryData
     int Position;
 
     BinaryData();
+    BinaryData(int reserve_size);
     BinaryData(QByteArray data);
     const QByteArray get(int len);
     const QString get_str(int len = 0, int bytes_per_char = 1);

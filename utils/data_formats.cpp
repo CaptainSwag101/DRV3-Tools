@@ -13,7 +13,8 @@ inline uchar bit_reverse(uchar b)
 BinaryData spc_dec(BinaryData &data)
 {
     const int data_size = data.size();
-    BinaryData result;
+    // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
+    BinaryData result(data_size * 2);
     uint flag = 1;
 
     while (data.Position < data_size)
@@ -46,7 +47,7 @@ BinaryData spc_dec(BinaryData &data)
 
             for (int i = 0; i < count; i++)
             {
-                const int reverse_index = result.size() + offset - 1024;
+                const int reverse_index = result.size() - 1024 + offset;
                 result.append(result.at(reverse_index));
             }
         }
@@ -60,12 +61,13 @@ BinaryData spc_dec(BinaryData &data)
 BinaryData spc_cmp(BinaryData &data)
 {
     const int data_size = data.size();
-    BinaryData result;
+    // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
+    BinaryData result(data_size);
+    QByteArray block;
     uchar flag = 0;
     uchar cur_flag_bit = 0;
-    int flag_pos = 0;
-
-    const int MAX_GROUP_LENGTH = std::min(data_size - data.Position, 64);
+    // Max possible size per compressed block: 16 bytes
+    block.reserve(16);
 
     // We use an 8-bit flag to determine whether something is raw data,
     // or if we need to pull from the buffer, going from most to least significant bit.
@@ -77,22 +79,12 @@ BinaryData spc_cmp(BinaryData &data)
         QByteArray seq;
         int lastIndex = -1;
 
-        // Save the position of where we'll write our flag byte
-        if (cur_flag_bit == 0)
-        {
-            flag_pos = result.Position;
-        }
-
         // Read each byte and add it to a sequence, then check if that sequence
         // is already present in the previous 1023 bytes.
-        for (int i = 0; i <= MAX_GROUP_LENGTH; i++)
+        for (int i = 0; i <= 64 && data.Position < data_size; i++)
         {
-            if (data.Position >= data_size) break;
-
             QByteArray temp = seq;
-
-            const char b = data.get_u8();
-            temp.append(b);
+            temp.append(data.get_u8());
 
             const int index = data.lastIndexOf(temp, window_start, window_end);
             if (index == -1 && seq.size() > 0)
@@ -106,26 +98,29 @@ BinaryData spc_cmp(BinaryData &data)
             seq = temp;
         }
 
-        if (lastIndex >= 0 && seq.size() >= 2)
+        if (lastIndex >= 0 && seq.size() > 1)
         {
             // Sequence has been used before
             ushort repeat_data = 0;
             repeat_data |= 1024 - (window_end - lastIndex);
-            repeat_data |= std::max(seq.size() - 2, 0) << 10;
-            result.append(from_u16(repeat_data));
+            repeat_data |= (seq.size() - 2) << 10;
+            block.append(from_u16(repeat_data));
         }
         else
         {
             // Sequence has not been used before
             flag |= (1 << cur_flag_bit);
-            result.append(seq);
+            block.append(seq);
         }
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
         if (++cur_flag_bit > 7)
         {
             flag = bit_reverse(flag);
-            result.insert(flag_pos, flag);
+            result.append(flag);
+            result.append(block);
+            block.clear();
+            block.reserve(16);   // Max possible size per compressed block: 16 bytes
 
             cur_flag_bit = 0;
             flag = 0;
@@ -134,7 +129,9 @@ BinaryData spc_cmp(BinaryData &data)
     if (cur_flag_bit > 0)
     {
         flag = bit_reverse(flag);
-        result.insert(flag_pos, flag);
+        result.append(flag);
+        result.append(block);
+        block.clear();
 
         cur_flag_bit = 0;
         flag = 0;
@@ -146,15 +143,14 @@ BinaryData spc_cmp(BinaryData &data)
 
 BinaryData srd_dec(BinaryData &data)
 {
-    BinaryData result;
-
+    // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
+    BinaryData result(data.size() * 2);
     data.Position = 0;
     QString magic = data.get_str(4);
 
     if (magic != "$CMP")
     {
-        data.Position = 0;
-        result.append(data.get(-1));
+        result.append(data.Bytes);
         return result;
     }
 
@@ -164,6 +160,8 @@ BinaryData srd_dec(BinaryData &data)
     const uint cmp_size2 = data.get_u32be();
     data.Position += 4;
     const uint unk = data.get_u32be();
+
+    result.Bytes.reserve(dec_size);
 
     while (true)
     {
@@ -176,26 +174,26 @@ BinaryData srd_dec(BinaryData &data)
         const uint chunk_cmp_size = data.get_u32be();
         data.Position += 4;
 
-        BinaryData chunk(data.get(chunk_cmp_size - 0x10));
+        BinaryData chunk(data.get(chunk_cmp_size - 0x10));    // Read the rest of the chunk data
 
-        // $CR0 = Uncompressed
+        // If not "$CR0", chunk is compressed
         if (cmp_mode != "$CR0")
         {
+            chunk.Bytes.reserve(chunk_dec_size);
             chunk = srd_dec_chunk(chunk, cmp_mode);
+
+            if (chunk.size() != chunk_dec_size)
+            {
+                // Size mismatch, something probably went wrong
+                cout << "Error while decompressing: SRD chunk size mismatch, size was " << chunk.size() << " but should be " << chunk_dec_size << "\n";
+                //throw "SRD chunk size mismatch error";
+            }
         }
 
-        if (chunk_dec_size != result.size())
-        {
-            // Size mismatch, something probably went wrong
-            cout << "srd_dec: Chunk size mismatch, size was " << result.size() << " but should be " << chunk_dec_size << "\n";
-            throw "srd_dec chunk size mismatch error";
-        }
-
-        chunk.Position = 0;
-        result.append(chunk.get(-1));
+        result.append(chunk.Bytes);
     }
 
-    if (dec_size != result.size())
+    if (result.size() != dec_size)
     {
         // Size mismatch, something probably went wrong
         cout << "srd_dec: Size mismatch, size was " << result.size() << " but should be " << dec_size << "\n";

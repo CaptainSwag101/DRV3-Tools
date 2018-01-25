@@ -250,7 +250,8 @@ int repack()
 
         int file_count = infoStrings[0].split('=')[1].toInt();
 
-        BinaryData outData;
+        // Since 150MB isn't really a huge amount of memory, preallocate that much for decompressing to speed things up
+        BinaryData outData(150000000);
         outData.append(SPC_MAGIC.toUtf8());
         outData.append(QByteArray(0x04, 0x00));
         outData.append(QByteArray(0x08, 0xFF)); // unk1

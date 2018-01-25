@@ -3,6 +3,7 @@
 const QByteArray from_u16(ushort n)
 {
     QByteArray byteArray;
+    byteArray.reserve(2);
     for (int i = 0; i != sizeof(n); ++i)
     {
         char c = (char)(n >> (i * 8));
@@ -14,6 +15,7 @@ const QByteArray from_u16(ushort n)
 const QByteArray from_u32(uint n)
 {
     QByteArray byteArray;
+    byteArray.reserve(4);
     for (int i = 0; i != sizeof(n); ++i)
     {
         char c = (char)(n >> (i * 8));
@@ -24,6 +26,12 @@ const QByteArray from_u32(uint n)
 
 BinaryData::BinaryData()
 {
+    this->Position = 0;
+}
+
+BinaryData::BinaryData(int reserve_size)
+{
+    this->Bytes.reserve(reserve_size);
     this->Position = 0;
 }
 
@@ -44,6 +52,7 @@ const QByteArray BinaryData::get(int len)
 const QString BinaryData::get_str(int len, int bytes_per_char)
 {
     QString result;
+    result.reserve(len);    // Reserve memory for "len" amount of UTF-16 characters, just in case
 
     int i = 0;
     while (len <= 0 || i < len * bytes_per_char)
