@@ -37,6 +37,7 @@ const QByteArray BinaryData::get(int len)
 {
     QByteArray result = this->Bytes.mid(this->Position, len);
     this->Position += len;
+
     return result;
 }
 
@@ -75,30 +76,26 @@ const char BinaryData::get_u8()
 
 const ushort BinaryData::get_u16()
 {
-    QByteArray ba = this->Bytes.mid(this->Position, 2);
-    const ushort result = ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
+    const ushort result = ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
     this->Position += 2;
     return result;
 }
 const ushort BinaryData::get_u16be()
 {
-    QByteArray ba = this->Bytes.mid(this->Position, 2);
-    const ushort result = ((ba[0] & 0xFF) << 8) + (ba[1] & 0xFF);
+    const ushort result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 8) + (this->Bytes.at(this->Position + 1) & 0xFF);
     this->Position += 2;
     return result;
 }
 
 const uint BinaryData::get_u32()
 {
-    QByteArray ba = this->Bytes.mid(this->Position, 4);
-    const uint result = ((ba[3] & 0xFF) << 24) + ((ba[2] & 0xFF) << 16) + ((ba[1] & 0xFF) << 8) + (ba[0] & 0xFF);
+    const uint result = ((this->Bytes.at(this->Position + 3) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
     this->Position += 4;
     return result;
 }
 const uint BinaryData::get_u32be()
 {
-    QByteArray ba = this->Bytes.mid(this->Position, 4);
-    const uint result = ((ba[0] & 0xFF) << 24) + ((ba[1] & 0xFF) << 16) + ((ba[2] & 0xFF) << 8) + (ba[3] & 0xFF);
+    const uint result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 8) + (this->Bytes.at(this->Position + 3) & 0xFF);
     this->Position += 4;
     return result;
 }
@@ -108,33 +105,33 @@ const int BinaryData::size()
     return this->Bytes.size();
 }
 
-QByteArray& BinaryData::append(uchar c)
+QByteArray& BinaryData::append(char c)
 {
     this->Position++;
-    return this->Bytes.append((char)c);
+    return this->Bytes.append(c);
 }
 
-QByteArray& BinaryData::append(const QByteArray &ba)
+QByteArray& BinaryData::append(const QByteArray &a)
 {
-    this->Position += ba.length();
-    return this->Bytes.append(ba);
+    this->Position += a.size();
+    return this->Bytes.append(a);
 }
 
-QByteArray& BinaryData::insert(int i, uchar c)
+QByteArray& BinaryData::insert(int i, char c)
 {
     this->Position++;
-    return this->Bytes.insert(i, (char)c);
+    return this->Bytes.insert(i, c);
 }
 
-int BinaryData::lastIndexOf(const QByteArray &ba, int start, int end) const
+int BinaryData::lastIndexOf(const QByteArray &a, int start, int end) const
 {
-    if (ba.size() == 0)
+    if (a.size() == 0)
         return -1;
 
     if (end <= start)
         return -1;
 
-    int index = this->Bytes.lastIndexOf(ba, end - 1);
+    int index = this->Bytes.lastIndexOf(a, end - 1);
 
     if (index < 0 || index < start)
         return -1;
@@ -142,7 +139,7 @@ int BinaryData::lastIndexOf(const QByteArray &ba, int start, int end) const
     return index;
 }
 
-QByteRef BinaryData::operator[](int i)
+char BinaryData::at(int i) const
 {
-    return this->Bytes[i];
+    return this->Bytes.at(i);
 }

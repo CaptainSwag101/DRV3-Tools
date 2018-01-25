@@ -23,11 +23,11 @@ struct BinaryData
     const uint get_u32();
     const uint get_u32be();
     const int size();
-    QByteArray& append(uchar c);
+    QByteArray& append(char c);
     QByteArray& append(const QByteArray &a);
-    QByteArray& insert(int i, uchar c);
-    int lastIndexOf(const QByteArray &ba, int start = -1, int end = 0) const;
-    QByteRef operator[](int i);
+    QByteArray& insert(int i, char c);
+    int lastIndexOf(const QByteArray &a, int start = -1, int end = 0) const;
+    char at(int i) const;
 };
 
 #endif // BINARYDATA_H

@@ -267,7 +267,7 @@ int repack()
         for (int i = 1; i + 7 <= infoStrings.size(); i += 7)
         {
             QString file_name = infoStrings[i + 5].split('=')[1];
-            cout << "    " << file_name << "\n";
+            cout << "\t" << file_name << "\n";
             cout.flush();
 
             QFile f(spcDir.path() + QDir::separator() + file_name);
@@ -321,6 +321,7 @@ int repack()
             }
             */
         }
+        cout << "\n";
 
         QString outPath = QDir::toNativeSeparators(decDir.path() + QDir::separator() + outFile);
         QDir().mkpath(outPath.left(outPath.lastIndexOf(QDir::separator())));
@@ -340,12 +341,9 @@ BinaryData compress_data(BinaryData &data)
     BinaryData testData(outData.Bytes);
     testData = spc_dec(testData);
 
-    for (int i = 0; i < data.size(); i++)
+    if (data.Bytes != testData.Bytes)
     {
-        if (data[i] != testData[i])
-        {
-            cout << "Error: Compression test failed, inconsistent byte at 0x" << QString::number(i, 16).toUpper() << "\n";
-        }
+        cout << "\tError: Compression test failed, compression was not deterministic!\n";
     }
 
     return outData;
