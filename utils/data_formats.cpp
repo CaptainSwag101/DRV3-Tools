@@ -67,7 +67,6 @@ BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
     block.reserve(16);  // Max possible size per compressed block: 16 bytes
     uchar flag = 0;
     uchar cur_flag_bit = 0;
-    max_word_size = std::min(max_word_size, (uchar)63);
 
     // We use an 8-bit flag to determine whether something is raw data,
     // or if we need to pull from the buffer, going from most to least significant bit.
@@ -81,7 +80,7 @@ BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
 
         // Read each byte and add it to a sequence, then check if that sequence
         // is already present in the previous 1023 bytes.
-        for (int i = 0; i < (max_word_size + 2) && data.Position < data_size; i++)
+        for (int i = 0; i < max_word_size && data.Position < data_size; i++)
         {
             QByteArray temp = seq;
             temp.append(data.get_u8());

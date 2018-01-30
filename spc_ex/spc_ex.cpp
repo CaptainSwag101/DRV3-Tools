@@ -9,6 +9,7 @@ static QTextStream cout(stdout);
 QDir inDir;
 QDir decDir;
 bool pack = false;
+uchar max_word_size = 65;
 
 int unpack();
 int unpack_data(QString file, BinaryData &data);
@@ -20,8 +21,17 @@ int main(int argc, char *argv[])
     // Parse args
     for (int i = 1; i < argc; i++)
     {
-        if (QString(argv[i]) == "-p" || QString(argv[i]) == "--pack")
+        QString arg(argv[i]);
+
+        if (arg.startsWith("-p"))
+        {
             pack = true;
+            if (arg.length() > 2)
+            {
+                // 1 <= max_word_size <= 64 (zero-index)
+                max_word_size = std::max(std::min(arg.mid(2).toInt(), 65), 2);
+            }
+        }
         else
             inDir = QDir(argv[i]);
     }
@@ -47,6 +57,7 @@ int unpack()
         if (!decDir.mkdir("dec"))
         {
             cout << "Error: Failed to create \"" << decDir.path() << QDir::separator() << "dec\" directory.\n";
+            cout.flush();
             return 1;
         }
     }
@@ -56,6 +67,7 @@ int unpack()
         if (!decDir.mkdir(inDir.dirName()))
         {
             cout << "Error: Failed to create \"" << decDir.path() << QDir::separator() << "dec" << QDir::separator() << inDir.dirName() << "\" directory.\n";
+            cout.flush();
             return 1;
         }
     }
@@ -338,7 +350,7 @@ int repack()
 
 BinaryData compress_data(BinaryData &data)
 {
-    BinaryData outData = spc_cmp(data);
+    BinaryData outData = spc_cmp(data, max_word_size);
     BinaryData testData(outData.Bytes);
     testData = spc_dec(testData);
 
