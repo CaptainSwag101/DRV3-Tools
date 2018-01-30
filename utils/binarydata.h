@@ -5,8 +5,8 @@
 #include <QtEndian>
 #include <QString>
 
-const QByteArray from_u16(ushort n);
-const QByteArray from_u32(uint n);
+QByteArray from_u16(ushort n);
+QByteArray from_u32(uint n);
 
 struct BinaryData
 {
@@ -16,14 +16,14 @@ struct BinaryData
     BinaryData();
     BinaryData(int reserve_size);
     BinaryData(QByteArray data);
-    const QByteArray get(int len);
-    const QString get_str(int len = 0, int bytes_per_char = 1);
-    const char get_u8();
-    const ushort get_u16();
-    const ushort get_u16be();
-    const uint get_u32();
-    const uint get_u32be();
-    const int size();
+    QByteArray get(int len);
+    QString get_str(int len = 0, int bytes_per_char = 1);
+    char get_u8();
+    ushort get_u16();
+    ushort get_u16be();
+    uint get_u32();
+    uint get_u32be();
+    int size();
     QByteArray& append(char c);
     QByteArray& append(const QByteArray &a);
     QByteArray& insert(int i, char c);

@@ -17,16 +17,16 @@ struct SpcSubfile
     BinaryData data;
     ushort cmp_flag;
     ushort unk_flag;
-    uint cmp_size;
-    uint dec_size;
-    uint name_len;
+    int cmp_size;
+    int dec_size;
+    int name_len;
 };
 
 struct SpcFile
 {
     QString filename;
     QByteArray unk1;
-    uint unk2;
+    int unk2;
     QList<SpcSubfile> subfiles;
 };
 
@@ -37,7 +37,7 @@ struct StxFile
 
 inline uchar bit_reverse(uchar b);
 BinaryData spc_dec(BinaryData &data);
-BinaryData spc_cmp(BinaryData &data);
+BinaryData spc_cmp(BinaryData &data, uchar max = 63);
 BinaryData srd_dec(BinaryData &data);
 BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode);
 QStringList get_stx_strings(BinaryData &data);

@@ -1,6 +1,6 @@
 #include "binarydata.h"
 
-const QByteArray from_u16(ushort n)
+QByteArray from_u16(ushort n)
 {
     QByteArray byteArray;
     byteArray.reserve(2);
@@ -12,7 +12,7 @@ const QByteArray from_u16(ushort n)
     return byteArray;
 }
 
-const QByteArray from_u32(uint n)
+QByteArray from_u32(uint n)
 {
     QByteArray byteArray;
     byteArray.reserve(4);
@@ -41,7 +41,7 @@ BinaryData::BinaryData(QByteArray bytes)
     this->Position = 0;
 }
 
-const QByteArray BinaryData::get(int len)
+QByteArray BinaryData::get(int len)
 {
     QByteArray result = this->Bytes.mid(this->Position, len);
     this->Position += len;
@@ -49,7 +49,7 @@ const QByteArray BinaryData::get(int len)
     return result;
 }
 
-const QString BinaryData::get_str(int len, int bytes_per_char)
+QString BinaryData::get_str(int len, int bytes_per_char)
 {
     QString result;
     result.reserve(len);    // Reserve memory for "len" amount of UTF-16 characters, just in case
@@ -78,38 +78,38 @@ const QString BinaryData::get_str(int len, int bytes_per_char)
     return result;
 }
 
-const char BinaryData::get_u8()
+char BinaryData::get_u8()
 {
     return this->Bytes.at(this->Position++);
 }
 
-const ushort BinaryData::get_u16()
+ushort BinaryData::get_u16()
 {
-    const ushort result = ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
+    ushort result = ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
     this->Position += 2;
     return result;
 }
-const ushort BinaryData::get_u16be()
+ushort BinaryData::get_u16be()
 {
-    const ushort result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 8) + (this->Bytes.at(this->Position + 1) & 0xFF);
+    ushort result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 8) + (this->Bytes.at(this->Position + 1) & 0xFF);
     this->Position += 2;
     return result;
 }
 
-const uint BinaryData::get_u32()
+uint BinaryData::get_u32()
 {
-    const uint result = ((this->Bytes.at(this->Position + 3) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
+    uint result = ((this->Bytes.at(this->Position + 3) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
     this->Position += 4;
     return result;
 }
-const uint BinaryData::get_u32be()
+uint BinaryData::get_u32be()
 {
-    const uint result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 8) + (this->Bytes.at(this->Position + 3) & 0xFF);
+    uint result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 8) + (this->Bytes.at(this->Position + 3) & 0xFF);
     this->Position += 4;
     return result;
 }
 
-const int BinaryData::size()
+int BinaryData::size()
 {
     return this->Bytes.size();
 }

@@ -58,16 +58,16 @@ BinaryData spc_dec(BinaryData &data)
     return result;
 }
 
-BinaryData spc_cmp(BinaryData &data)
+BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
 {
     const int data_size = data.size();
     // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
     BinaryData result(data_size);
     QByteArray block;
+    block.reserve(16);  // Max possible size per compressed block: 16 bytes
     uchar flag = 0;
     uchar cur_flag_bit = 0;
-    // Max possible size per compressed block: 16 bytes
-    block.reserve(16);
+    max_word_size = std::min(max_word_size, (uchar)63);
 
     // We use an 8-bit flag to determine whether something is raw data,
     // or if we need to pull from the buffer, going from most to least significant bit.
@@ -81,7 +81,7 @@ BinaryData spc_cmp(BinaryData &data)
 
         // Read each byte and add it to a sequence, then check if that sequence
         // is already present in the previous 1023 bytes.
-        for (int i = 0; i <= 64 && data.Position < data_size; i++)
+        for (int i = 0; i < (max_word_size + 2) && data.Position < data_size; i++)
         {
             QByteArray temp = seq;
             temp.append(data.get_u8());
@@ -154,12 +154,12 @@ BinaryData srd_dec(BinaryData &data)
         return result;
     }
 
-    const uint cmp_size = data.get_u32be();
+    const int cmp_size = data.get_u32be();
     data.Position += 8;
-    const uint dec_size = data.get_u32be();
-    const uint cmp_size2 = data.get_u32be();
+    const int dec_size = data.get_u32be();
+    const int cmp_size2 = data.get_u32be();
     data.Position += 4;
-    const uint unk = data.get_u32be();
+    const int unk = data.get_u32be();
 
     result.Bytes.reserve(dec_size);
 
@@ -170,8 +170,8 @@ BinaryData srd_dec(BinaryData &data)
         if (!cmp_mode.startsWith("$CL") && cmp_mode != "$CR0")
             break;
 
-        const uint chunk_dec_size = data.get_u32be();
-        const uint chunk_cmp_size = data.get_u32be();
+        const int chunk_dec_size = data.get_u32be();
+        const int chunk_cmp_size = data.get_u32be();
         data.Position += 4;
 
         BinaryData chunk(data.get(chunk_cmp_size - 0x10));    // Read the rest of the chunk data
