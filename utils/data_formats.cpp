@@ -13,7 +13,7 @@ inline uchar bit_reverse(uchar b)
 BinaryData spc_dec(BinaryData &data)
 {
     const int data_size = data.size();
-    // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
+    // Preallocate plenty of memory beforehand, it should never end up being more than ~100MB per file anyway.
     BinaryData result(data_size * 2);
     uint flag = 1;
 
@@ -61,7 +61,7 @@ BinaryData spc_dec(BinaryData &data)
 BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
 {
     const int data_size = data.size();
-    // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
+    // Preallocate plenty of memory beforehand, it should never end up being more than ~100MB per file anyway.
     BinaryData result(data_size);
     QByteArray block;
     block.reserve(16);  // Max possible size per compressed block: 16 bytes
@@ -85,7 +85,7 @@ BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
             QByteArray temp = seq;
             temp.append(data.get_u8());
 
-            const int index = data.lastIndexOf(temp, window_start, window_end);
+            const int index = data.lastIndexOf(temp, window_start, window_end - 1);
             if (index == -1 && seq.size() > 0)
             {
                 // If we've found a new sequence
@@ -271,7 +271,7 @@ QStringList get_stx_strings(BinaryData &data)
 
         data.Position = str_off;
 
-        QString str = data.get_str(0, 2);
+        QString str = data.get_str(0, true);
         strings.append(str);
     }
 

@@ -23,15 +23,8 @@ int main(int argc, char *argv[])
     {
         QString arg(argv[i]);
 
-        if (arg.startsWith("-p"))
-        {
+        if (arg == "-p" || arg == "--pack")
             pack = true;
-            if (arg.length() > 2)
-            {
-                // 1 <= max_word_size <= 64 (zero-index)
-                max_word_size = std::max(std::min(arg.mid(2).toInt(), 65), 2);
-            }
-        }
         else
             inDir = QDir(argv[i]);
     }

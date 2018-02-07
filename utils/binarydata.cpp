@@ -3,11 +3,9 @@
 QByteArray from_u16(ushort n)
 {
     QByteArray byteArray;
-    byteArray.reserve(2);
-    for (int i = 0; i != sizeof(n); ++i)
+    for (int i = 0; i != 2; ++i)
     {
-        char c = (char)(n >> (i * 8));
-        byteArray.append(c);
+        byteArray.append((char)(n >> (i * 8)));
     }
     return byteArray;
 }
@@ -15,11 +13,9 @@ QByteArray from_u16(ushort n)
 QByteArray from_u32(uint n)
 {
     QByteArray byteArray;
-    byteArray.reserve(4);
-    for (int i = 0; i != sizeof(n); ++i)
+    for (int i = 0; i != 4; ++i)
     {
-        char c = (char)(n >> (i * 8));
-        byteArray.append(c);
+        byteArray.append((char)(n >> (i * 8)));
     }
     return byteArray;
 }
@@ -49,27 +45,23 @@ QByteArray BinaryData::get(int len)
     return result;
 }
 
-QString BinaryData::get_str(int len, int bytes_per_char)
+QString BinaryData::get_str(int len, bool utf16)
 {
     QString result;
     result.reserve(len);    // Reserve memory for "len" amount of UTF-16 characters, just in case
 
     int i = 0;
-    while (len <= 0 || i < len * bytes_per_char)
+    while (len < 0 || i < len)
     {
         QChar c;
-        if (bytes_per_char == 1)
-        {
-            c = QChar(get_u8());
-            i++;
-        }
-        else if (bytes_per_char == 2)
-        {
+        if (utf16)
             c = QChar(get_u16());
-            i += 2;
-        }
+        else
+            c = QChar(get_u8());
 
-        if (len <= 0 && c == QChar(0))
+        i++;
+
+        if (len < 0 && c == QChar(0))
             break;
 
         result.append(c);
@@ -120,7 +112,7 @@ QByteArray& BinaryData::append(char c)
     return this->Bytes.append(c);
 }
 
-QByteArray& BinaryData::append(const QByteArray &a)
+QByteArray& BinaryData::append(QByteArray a)
 {
     this->Position += a.size();
     return this->Bytes.append(a);
@@ -132,20 +124,20 @@ QByteArray& BinaryData::insert(int i, char c)
     return this->Bytes.insert(i, c);
 }
 
-int BinaryData::lastIndexOf(const QByteArray &a, int start, int end) const
+int BinaryData::lastIndexOf(QByteArray a, int start, int end) const
 {
     if (a.size() == 0)
         return -1;
 
-    if (end <= start)
+    if (end < start)
         return -1;
 
-    int index = this->Bytes.lastIndexOf(a, end - 1);
+    int index = this->Bytes.lastIndexOf(a, end);
 
     if (index < 0 || index < start)
         return -1;
 
-    return index;
+    return index + start;
 }
 
 char BinaryData::at(int i) const

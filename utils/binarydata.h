@@ -17,7 +17,7 @@ struct BinaryData
     BinaryData(int reserve_size);
     BinaryData(QByteArray data);
     QByteArray get(int len);
-    QString get_str(int len = 0, int bytes_per_char = 1);
+    QString get_str(int len = 0, bool utf16 = false);
     char get_u8();
     ushort get_u16();
     ushort get_u16be();
@@ -25,9 +25,9 @@ struct BinaryData
     uint get_u32be();
     int size();
     QByteArray& append(char c);
-    QByteArray& append(const QByteArray &a);
+    QByteArray& append(QByteArray a);
     QByteArray& insert(int i, char c);
-    int lastIndexOf(const QByteArray &a, int start = -1, int end = 0) const;
+    int lastIndexOf(QByteArray a, int start = 0, int end = 0) const;
     char at(int i) const;
 };
 
