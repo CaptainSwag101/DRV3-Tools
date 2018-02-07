@@ -80,21 +80,47 @@ BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
 
         // Read each byte and add it to a sequence, then check if that sequence
         // is already present in the previous 1023 bytes.
-        for (int i = 0; i < max_word_size && data.Position < data_size; i++)
+
+        // If data size is larger than 100 KB, split it up for performance reasons
+        if (data_size > 100000)
         {
-            QByteArray temp = seq;
-            temp.append(data.get_u8());
+            BinaryData window = BinaryData(data.Bytes.mid(window_start, window_end - window_start + 65));
 
-            const int index = data.lastIndexOf(temp, window_start, window_end - 1);
-            if (index == -1 && seq.size() > 0)
+            for (int i = 0; i < max_word_size && data.Position < data_size; i++)
             {
-                // If we've found a new sequence
-                data.Position--;
-                break;
-            }
+                QByteArray temp = seq;
+                temp.append(data.get_u8());
 
-            lastIndex = index;
-            seq = temp;
+                const int index = window.lastIndexOf(temp, 0, window_end - window_start - 1);
+                if (index == -1 && seq.size() > 0)
+                {
+                    // If we've found a new sequence
+                    data.Position--;
+                    break;
+                }
+
+                lastIndex = index + window_start;
+                seq = temp;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < max_word_size && data.Position < data_size; i++)
+            {
+                QByteArray temp = seq;
+                temp.append(data.get_u8());
+
+                const int index = data.lastIndexOf(temp, window_start, window_end - 1);
+                if (index == -1 && seq.size() > 0)
+                {
+                    // If we've found a new sequence
+                    data.Position--;
+                    break;
+                }
+
+                lastIndex = index;
+                seq = temp;
+            }
         }
 
         if (lastIndex >= 0 && seq.size() > 1)
