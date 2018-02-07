@@ -10,7 +10,7 @@ inline uchar bit_reverse(uchar b)
 
 // This is the compression scheme used for
 // individual files in an spc archive
-BinaryData spc_dec(BinaryData &data)
+BinaryData spc_dec(BinaryData data)
 {
     const int data_size = data.size();
     // Preallocate plenty of memory beforehand, it should never end up being more than ~100MB per file anyway.
@@ -58,88 +58,28 @@ BinaryData spc_dec(BinaryData &data)
     return result;
 }
 
-BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
+BinaryData spc_cmp(BinaryData data)
 {
-    const int data_size = data.size();
-    // Preallocate plenty of memory beforehand, it should never end up being more than ~100MB per file anyway.
-    BinaryData result(data_size);
+    const int data_len = data.size();
+    uint flag = 1;
+    uint cur_flag_bit = 0;
+    QByteArray result;
     QByteArray block;
-    block.reserve(16);  // Max possible size per compressed block: 16 bytes
-    uchar flag = 0;
-    uchar cur_flag_bit = 0;
+    result.reserve(data_len);
+    block.reserve(16);
 
-    // We use an 8-bit flag to determine whether something is raw data,
-    // or if we need to pull from the buffer, going from most to least significant bit.
-    // We reverse the bit order to make it easier to work with.
-    while (data.Position < data_size)
+    // This repeats one extra time to allow the final flag & block to be written
+    while (data.Position <= data_len)
     {
-        const int window_start = std::max(data.Position - 1023, 0);
         const int window_end = data.Position;
+        const int window_len = std::min(data.Position, 1023);
+        const int readahead_len = 65;
+        const QByteArray window = data.Bytes.mid(window_end - window_len, window_len);
         QByteArray seq;
-        int lastIndex = -1;
-
-        // Read each byte and add it to a sequence, then check if that sequence
-        // is already present in the previous 1023 bytes.
-
-        // If data size is larger than 100 KB, split it up for performance reasons
-        if (data_size > 100000)
-        {
-            BinaryData window = BinaryData(data.Bytes.mid(window_start, window_end - window_start + 65));
-
-            for (int i = 0; i < max_word_size && data.Position < data_size; i++)
-            {
-                QByteArray temp = seq;
-                temp.append(data.get_u8());
-
-                const int index = window.lastIndexOf(temp, 0, window_end - window_start - 1);
-                if (index == -1 && seq.size() > 0)
-                {
-                    // If we've found a new sequence
-                    data.Position--;
-                    break;
-                }
-
-                lastIndex = index + window_start;
-                seq = temp;
-            }
-        }
-        else
-        {
-            for (int i = 0; i < max_word_size && data.Position < data_size; i++)
-            {
-                QByteArray temp = seq;
-                temp.append(data.get_u8());
-
-                const int index = data.lastIndexOf(temp, window_start, window_end - 1);
-                if (index == -1 && seq.size() > 0)
-                {
-                    // If we've found a new sequence
-                    data.Position--;
-                    break;
-                }
-
-                lastIndex = index;
-                seq = temp;
-            }
-        }
-
-        if (lastIndex >= 0 && seq.size() > 1)
-        {
-            // Sequence has been used before
-            ushort repeat_data = 0;
-            repeat_data |= 1024 - (window_end - lastIndex);
-            repeat_data |= (seq.size() - 2) << 10;
-            block.append(from_u16(repeat_data));
-        }
-        else
-        {
-            // Sequence has not been used before
-            flag |= (1 << cur_flag_bit);
-            block.append(seq);
-        }
+        seq.reserve(readahead_len);
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
-        if (++cur_flag_bit > 7)
+        if (cur_flag_bit > 7)
         {
             flag = bit_reverse(flag);
             result.append(flag);
@@ -147,22 +87,124 @@ BinaryData spc_cmp(BinaryData &data, uchar max_word_size)
             block.clear();
             block.reserve(16);   // Max possible size per compressed block: 16 bytes
 
-            cur_flag_bit = 0;
             flag = 0;
+            cur_flag_bit = 0;
         }
-    }
-    if (cur_flag_bit > 0)
-    {
-        flag = bit_reverse(flag);
-        result.append(flag);
-        result.append(block);
-        block.clear();
 
-        cur_flag_bit = 0;
-        flag = 0;
+        if (data.Position >= data_len)
+            break;
+
+        // First, read from the readahead area into the sequence one byte at a time.
+        // Then, see if the sequence already exists in the previous 1023 bytes.
+        // If it does, note its position. Once we encounter a sequence that
+        // is not duplicated, take the last found duplicate and compress it.
+        // If we haven't found any duplicate sequences, add the first byte as raw data.
+        // If we did find a duplicate sequence, and it is adjacent to the readahead area,
+        // see how many bytes of that sequence can be repeated until we encounter
+        // a non-duplicate byte or reach the end of the readahead area.
+
+
+        int last_index = -1;
+        int longest_dupe_len = 1;
+        int seq_len = 1;
+
+        // Read 1 byte to start with, so looping is easier.
+        seq.append(data.get_u8());
+
+        while (seq.length() < readahead_len && data.Position < data_len)
+        {
+            // Break if the dupe-checking window is out of bounds
+            //if (window_end <= 0)
+            //    break;
+
+            int index = window.lastIndexOf(seq);
+
+            // If the current sequence is not a duplicate,
+            // break and return the previous sequence.
+            if (index == -1)
+            {
+                if (seq_len > 1)
+                {
+                    seq.chop(1);
+                    seq_len--;
+                    data.Position--;
+                }
+                break;
+            }
+
+            // If existing dupe is adjacent to the readahead area,
+            // see if it can be repeated INTO the readahead area.
+            if (index + seq_len == window_end)
+            {
+                QByteArray seq2 = seq;
+
+                while (seq2.length() < readahead_len)
+                {
+                    // TODO: Fix this
+                    if (data.Position >= data_len)
+                        break;
+
+                    const char c = data.get_u8();
+                    const int dupe_index = seq2.length() % seq_len;
+
+                    // Check if the next byte exists in the previous
+                    // repeated segment of our sequence.
+                    if (c != seq[dupe_index])
+                    {
+                        data.Position--;
+                        break;
+                    }
+
+                    seq2.append(c);
+                }
+
+                // If we can duplicate all 65 bytes of the readahead buffer,
+                // break out immediately (we've found the max compression).
+                if (seq2.length() == readahead_len)
+                {
+                    last_index = index;
+                    longest_dupe_len = seq2.length();
+                    break;
+                }
+
+                // Go back to the last byte we read before the readahead test,
+                // so normal dupe checking can continue.
+                data.Position -= (seq2.length() - seq_len);
+                seq_len = seq2.length();
+            }
+
+            // Check if the current sequence is longer than the last
+            // duplicate sequence we found, if any.
+            if (seq_len > longest_dupe_len)
+            {
+                last_index = index;
+                longest_dupe_len = seq_len;
+            }
+
+            seq.append(data.get_u8());
+            seq_len = seq.length();
+        }
+
+
+        if (last_index == -1 || longest_dupe_len <= 1)  // We found a new raw byte
+        {
+            flag |= (1 << cur_flag_bit);
+            block.append(seq);
+        }
+        else                                            // We found a duplicate sequence
+        {
+            ushort repeat_data = 0;
+            repeat_data |= 1024 - (window_end - last_index);
+            repeat_data |= (longest_dupe_len - 2) << 10;
+            block.append(from_u16(repeat_data));
+
+            // Seek back to the end of the duplicated sequence,
+            // in case it repeated into the readahead area.
+            data.Position = window_end + longest_dupe_len;
+        }
+        cur_flag_bit++;
     }
 
-    result.Position = 0;
     return result;
 }
 

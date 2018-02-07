@@ -7,8 +7,6 @@
 
 static QTextStream cout(stdout);
 
-uchar max_word_size = 65;
-
 int unpack(QString in_dir);
 int unpack_data(BinaryData &data, QString out_dir);
 int repack(QString in_dir);
@@ -72,7 +70,7 @@ int unpack(QString in_dir)
         QString out_dir = dec_dir + '/' + rel_dir;
         if (!QDir(dec_dir).mkpath(rel_dir))
         {
-            cout << "Error: Failed to create \"" << dec_dir << "-dec" << QDir::separator() << rel_dir << "\" directory.\n";
+            cout << "Error: Failed to create \"" << QDir::toNativeSeparators(out_dir) << "\" directory.\n";
             cout.flush();
             continue;
         }
@@ -335,7 +333,7 @@ int repack(QString in_dir)
 
 BinaryData compress_data(BinaryData &data)
 {
-    BinaryData outData = spc_cmp(data, max_word_size);
+    BinaryData outData = spc_cmp(data);
     BinaryData testData(outData.Bytes);
     testData = spc_dec(testData);
 
