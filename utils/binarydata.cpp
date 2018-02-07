@@ -137,7 +137,7 @@ int BinaryData::lastIndexOf(QByteArray a, int start, int end) const
     if (index < 0 || index < start)
         return -1;
 
-    return index + start;
+    return index;
 }
 
 char BinaryData::at(int i) const

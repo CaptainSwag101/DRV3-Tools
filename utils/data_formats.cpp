@@ -271,7 +271,7 @@ QStringList get_stx_strings(BinaryData &data)
 
         data.Position = str_off;
 
-        QString str = data.get_str(0, true);
+        QString str = data.get_str(-1, true);
         strings.append(str);
     }
 

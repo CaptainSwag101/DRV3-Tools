@@ -17,7 +17,7 @@ struct BinaryData
     BinaryData(int reserve_size);
     BinaryData(QByteArray data);
     QByteArray get(int len);
-    QString get_str(int len = 0, bool utf16 = false);
+    QString get_str(int len = -1, bool utf16 = false);
     char get_u8();
     ushort get_u16();
     ushort get_u16be();
