@@ -155,7 +155,7 @@ BinaryData spc_cmp(BinaryData data)
                     seq2.append(c);
                 }
 
-                // If we can duplicate all 65 bytes of the readahead buffer,
+                // If we can duplicate all bytes of the readahead buffer,
                 // break out immediately (we've found the max compression).
                 if (seq2.length() == readahead_len)
                 {
@@ -194,7 +194,7 @@ BinaryData spc_cmp(BinaryData data)
         else                                            // We found a duplicate sequence
         {
             ushort repeat_data = 0;
-            repeat_data |= 1024 - (window_end - last_index - (window_end - window_len));
+            repeat_data |= 1024 - (window_len - last_index);
             repeat_data |= (longest_dupe_len - 2) << 10;
             block.append(from_u16(repeat_data));
 
