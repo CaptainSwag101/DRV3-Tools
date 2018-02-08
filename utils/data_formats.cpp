@@ -61,7 +61,7 @@ BinaryData spc_dec(BinaryData data)
 BinaryData spc_cmp(BinaryData data)
 {
     const int data_len = data.size();
-    uint flag = 1;
+    uint flag = 0;
     uint cur_flag_bit = 0;
     QByteArray result;
     QByteArray block;
@@ -73,13 +73,13 @@ BinaryData spc_cmp(BinaryData data)
     {
         const int window_end = data.Position;
         const int window_len = std::min(data.Position, 1023);
-        const int readahead_len = 65;
+        const int readahead_len = std::min(data_len - window_end + 1, 65);
         const QByteArray window = data.Bytes.mid(window_end - window_len, window_len);
         QByteArray seq;
         seq.reserve(readahead_len);
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
-        if (cur_flag_bit > 7)
+        if (cur_flag_bit > 7 || data.Position >= data_len)
         {
             flag = bit_reverse(flag);
             result.append(flag);
@@ -93,6 +93,7 @@ BinaryData spc_cmp(BinaryData data)
 
         if (data.Position >= data_len)
             break;
+
 
         // First, read from the readahead area into the sequence one byte at a time.
         // Then, see if the sequence already exists in the previous 1023 bytes.
@@ -111,13 +112,13 @@ BinaryData spc_cmp(BinaryData data)
         // Read 1 byte to start with, so looping is easier.
         seq.append(data.get_u8());
 
-        while (seq.length() < readahead_len && data.Position < data_len)
+        while (seq.length() < readahead_len)
         {
             // Break if the dupe-checking window is out of bounds
             //if (window_end <= 0)
             //    break;
 
-            int index = window.lastIndexOf(seq);
+            const int index = window.lastIndexOf(seq);
 
             // If the current sequence is not a duplicate,
             // break and return the previous sequence.
@@ -138,12 +139,8 @@ BinaryData spc_cmp(BinaryData data)
             {
                 QByteArray seq2 = seq;
 
-                while (seq2.length() < readahead_len)
+                while (seq2.length() < readahead_len && data.Position < data_len)
                 {
-                    // TODO: Fix this
-                    if (data.Position >= data_len)
-                        break;
-
                     const char c = data.get_u8();
                     const int dupe_index = seq2.length() % seq_len;
 
@@ -181,6 +178,9 @@ BinaryData spc_cmp(BinaryData data)
                 longest_dupe_len = seq_len;
             }
 
+            if (data.Position >= data_len)
+                break;
+
             seq.append(data.get_u8());
             seq_len = seq.length();
         }
@@ -194,7 +194,7 @@ BinaryData spc_cmp(BinaryData data)
         else                                            // We found a duplicate sequence
         {
             ushort repeat_data = 0;
-            repeat_data |= 1024 - (window_end - last_index);
+            repeat_data |= 1024 - (window_end - last_index - (window_end - window_len));
             repeat_data |= (longest_dupe_len - 2) << 10;
             block.append(from_u16(repeat_data));
 

@@ -208,8 +208,8 @@ int unpack_data(BinaryData &data, QString out_dir)
         info_file.write(QString("dec_size=" + QString::number(dec_size) + "\n").toUtf8());
         info_file.write(QString("name_len=" + QString::number(name_len) + "\n").toUtf8());
         info_file.write(QString("file_name=" + file_name + "\n").toUtf8());
-        QString data_sha1(QCryptographicHash::hash(file_data.Bytes, QCryptographicHash::Sha1).toHex());
-        info_file.write(QString("data_sha1=" + data_sha1 + "\n").toUtf8());
+        //QString data_sha1(QCryptographicHash::hash(file_data.Bytes, QCryptographicHash::Sha1).toHex());
+        //info_file.write(QString("data_sha1=" + data_sha1 + "\n").toUtf8());
     }
     info_file.close();
 
@@ -244,22 +244,22 @@ int repack(QString in_dir)
 
         int file_count = info_strings[0].split('=')[1].toInt();
 
-        // Since 150MB isn't really a huge amount of memory, preallocate that much for decompressing to speed things up
-        BinaryData out_data(150000000);
+        // Since 50MB isn't really a huge amount of memory, preallocate that much for decompressing to speed things up
+        BinaryData out_data(50000000);
         out_data.append(SPC_MAGIC.toUtf8());
         out_data.append(QByteArray(0x04, 0x00));
-        out_data.append(QByteArray(0x08, 0xFF)); // unk1
+        out_data.append(QByteArray(0x08, 0xFF));    // unk1
         out_data.append(QByteArray(0x18, 0x00));
         out_data.append(from_u32(file_count));
-        out_data.append(from_u32(0x04));         // unk2
-        out_data.append(QByteArray(0x10, 0x00)); // padding
+        out_data.append(from_u32(0x04));            // unk2
+        out_data.append(QByteArray(0x10, 0x00));    // padding
 
         out_data.append(SPC_TABLE_MAGIC.toUtf8());
-        out_data.append(QByteArray(0x0C, 0x00)); // padding
+        out_data.append(QByteArray(0x0C, 0x00));    // padding
 
         cout << "Compressing " << file_count << " files into " << QDir(spc_dir).dirName() << "\n";
         cout.flush();
-        for (int i = 1; i + 7 <= info_strings.size(); i += 7)
+        for (int i = 1; i + 6 <= info_strings.size(); i += 6)
         {
             QString file_name = info_strings[i + 5].split('=')[1];
             cout << "\t" << file_name << "\n";
@@ -270,35 +270,31 @@ int repack(QString in_dir)
             QByteArray allBytes = f.readAll();
             f.close();
 
-            // TODO: Check if the file checksum matches the one in the info,
-            // and re-use the existing data in the old SPC file.
-
-            BinaryData subdata(allBytes);
-
-            out_data.append(from_u16(0x02));         // cmp_flag
+            out_data.append(from_u16(0x02));        // cmp_flag
             out_data.append(from_u16(info_strings[i + 1].split('=')[1].toUShort()));  // unk_flag
 
+            BinaryData subdata(allBytes);
             uint dec_size = subdata.size();
 
             //subdata = spc_cmp(subdata);
             subdata = compress_data(subdata);
 
             uint cmp_size = subdata.size();
-            out_data.append(from_u32(cmp_size));     // cmp_size
-            out_data.append(from_u32(dec_size));     // dec_size
+            out_data.append(from_u32(cmp_size));    // cmp_size
+            out_data.append(from_u32(dec_size));    // dec_size
             uint name_len = file_name.length();     // name_len
             out_data.append(from_u32(name_len));
-            out_data.append(QByteArray(0x10, 0x00)); // padding
+            out_data.append(QByteArray(0x10, 0x00));// padding
 
             // Everything's aligned to multiples of 0x10
             uint name_padding = (0x10 - (name_len + 1) % 0x10) % 0x10;
             uint data_padding = (0x10 - cmp_size % 0x10) % 0x10;
 
             // We don't actually want the null terminator byte, so pretend it's padding
-            out_data.append(file_name.toUtf8());     // file_name
+            out_data.append(file_name.toUtf8());    // file_name
             out_data.append(QByteArray(name_padding + 1, 0x00));
 
-            out_data.append(subdata.Bytes);          // data
+            out_data.append(subdata.Bytes);         // data
             out_data.append(QByteArray(data_padding, 0x00));
 
             /*
