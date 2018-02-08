@@ -123,11 +123,15 @@ void MainWindow::on_actionSaveAs_triggered()
 
 void MainWindow::on_actionExit_triggered()
 {
-    if (!confirmUnsaved()) return;
-
     this->close();
-    QApplication::closeAllWindows();
-    QApplication::exit();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (!confirmUnsaved())
+        event->ignore();
+    else
+        event->accept();
 }
 
 void MainWindow::on_textBox_textChanged()

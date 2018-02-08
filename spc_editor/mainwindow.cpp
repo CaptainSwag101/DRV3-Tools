@@ -145,7 +145,7 @@ void MainWindow::on_actionOpen_triggered()
         subfile.data = BinaryData(fileData.get(subfile.cmp_size));
         fileData.Position += data_padding;
 
-        /*
+
         switch (subfile.cmp_flag)
         {
         case 0x01:  // Uncompressed, don't do anything
@@ -159,17 +159,18 @@ void MainWindow::on_actionOpen_triggered()
                 QMessageBox::warning(this, "Error", "spc_dec: Size mismatch, size was " + QString(subfile.data.size()) + " but should be " + QString(subfile.dec_size));
             }
             break;
-
+    
         case 0x03:  // Load from external file
+            /*
             QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
             QFile ext_file(ext_file_name);
             ext_file.open(QFile::ReadOnly);
             BinaryData ext_data(ext_file.readAll());
             ext_file.close();
             subfile.data = srd_dec(ext_data);
+            */
             break;
         }
-        */
 
         currentSpc.subfiles.append(subfile);
     }
@@ -181,7 +182,7 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    BinaryData outData;
+    QByteArray outData;
 
     outData.append(SPC_MAGIC.toUtf8());                     // SPC_MAGIC
     outData.append(currentSpc.unk1);                        // unk1
@@ -215,7 +216,7 @@ void MainWindow::on_actionSave_triggered()
     QString outName = currentSpc.filename;
     QFile f(outName);
     f.open(QFile::WriteOnly);
-    f.write(outData.Bytes);
+    f.write(outData);
     f.close();
     unsavedChanges = false;
 }
@@ -224,9 +225,7 @@ void MainWindow::on_actionSaveAs_triggered()
 {
     QString newFilename = QFileDialog::getSaveFileName(this, "Save SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
     if (newFilename.isEmpty())
-    {
         return;
-    }
 
     currentSpc.filename = newFilename;
     on_actionSave_triggered();
@@ -234,11 +233,15 @@ void MainWindow::on_actionSaveAs_triggered()
 
 void MainWindow::on_actionExit_triggered()
 {
-    if (!confirmUnsaved()) return;
-
     this->close();
-    QApplication::closeAllWindows();
-    QApplication::exit();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (!confirmUnsaved())
+        event->ignore();
+    else
+        event->accept();
 }
 
 void MainWindow::on_actionExtractAll_triggered()

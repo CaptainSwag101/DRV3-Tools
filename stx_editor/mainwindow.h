@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QCloseEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFontMetrics>
@@ -28,6 +29,7 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
+    void closeEvent(QCloseEvent *event);
     void on_textBox_textChanged();
 
 private:

@@ -157,7 +157,7 @@ int unpack_data(BinaryData &data, QString out_dir)
             break;
 
         case 0x02:  // Compressed
-            file_data = spc_dec(file_data);
+            file_data = spc_dec(file_data, dec_size);
 
             if (file_data.size() != dec_size)
             {

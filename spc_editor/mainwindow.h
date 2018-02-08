@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QCloseEvent>
 #include <QDebug>
 #include <QFile>
 #include <QFileDialog>
@@ -27,6 +28,7 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
+    void closeEvent(QCloseEvent *event);
     void on_actionExtractAll_triggered();
     void on_actionExtractSelected_triggered();
     void on_actionInjectFile_triggered();

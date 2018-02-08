@@ -10,14 +10,18 @@ inline uchar bit_reverse(uchar b)
 
 // This is the compression scheme used for
 // individual files in an spc archive
-BinaryData spc_dec(BinaryData data)
+BinaryData spc_dec(BinaryData data, int dec_size)
 {
-    const int data_size = data.size();
-    // Preallocate plenty of memory beforehand, it should never end up being more than ~100MB per file anyway.
-    BinaryData result(data_size * 2);
+    const int cmp_size = data.size();
+
+    if (dec_size <= 0)
+        dec_size = cmp_size * 2;
+
+    BinaryData result(dec_size);
     uint flag = 1;
 
-    while (data.Position < data_size)
+
+    while (data.Position < cmp_size)
     {
         // We use an 8-bit flag to determine whether something is raw data,
         // or if we need to pull from the buffer, going from most to least significant bit.
@@ -27,7 +31,7 @@ BinaryData spc_dec(BinaryData data)
             // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
             flag = 0x100 | bit_reverse(data.get_u8());
 
-        if (data.Position >= data_size)
+        if (data.Position >= cmp_size)
             break;
 
         if (flag & 1)
@@ -208,12 +212,11 @@ BinaryData spc_cmp(BinaryData data)
     return result;
 }
 
-BinaryData srd_dec(BinaryData &data)
+BinaryData srd_dec(BinaryData data)
 {
-    // Preallocate plenty of memory beforehand, it should never end up being more than ~20MB per file anyway.
     BinaryData result(data.size() * 2);
-    data.Position = 0;
     QString magic = data.get_str(4);
+    data.Position = 0;
 
     if (magic != "$CMP")
     {
@@ -270,9 +273,9 @@ BinaryData srd_dec(BinaryData &data)
     return result;
 }
 
-BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
+BinaryData srd_dec_chunk(BinaryData chunk, QString cmp_mode)
 {
-    const int data_size = chunk.size();
+    const int chunk_size = chunk.size();
     BinaryData result;
     uint shift = -1;
 
@@ -285,7 +288,7 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
 
     const int mask = (1 << shift) - 1;
 
-    while (chunk.Position < data_size)
+    while (chunk.Position < chunk_size)
     {
         const char b = chunk.get_u8();
 
@@ -312,7 +315,7 @@ BinaryData srd_dec_chunk(BinaryData &chunk, QString cmp_mode)
     return result;
 }
 
-QStringList get_stx_strings(BinaryData &data)
+QStringList get_stx_strings(BinaryData data)
 {
     QStringList strings;
 
