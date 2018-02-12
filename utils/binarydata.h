@@ -1,7 +1,7 @@
 #ifndef BINARYDATA_H
 #define BINARYDATA_H
 
-#include <QByteArray>
+#include <QDataStream>
 #include <QtEndian>
 #include <QString>
 

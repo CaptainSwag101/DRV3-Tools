@@ -145,33 +145,6 @@ void MainWindow::on_actionOpen_triggered()
         subfile.data = BinaryData(fileData.get(subfile.cmp_size));
         fileData.Position += data_padding;
 
-
-        switch (subfile.cmp_flag)
-        {
-        case 0x01:  // Uncompressed, don't do anything
-            break;
-
-        case 0x02:  // Compressed
-            subfile.data = spc_dec(subfile.data);
-
-            if (subfile.data.size() != subfile.dec_size)
-            {
-                QMessageBox::warning(this, "Error", "spc_dec: Size mismatch, size was " + QString(subfile.data.size()) + " but should be " + QString(subfile.dec_size));
-            }
-            break;
-    
-        case 0x03:  // Load from external file
-            /*
-            QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
-            QFile ext_file(ext_file_name);
-            ext_file.open(QFile::ReadOnly);
-            BinaryData ext_data(ext_file.readAll());
-            ext_file.close();
-            subfile.data = srd_dec(ext_data);
-            */
-            break;
-        }
-
         currentSpc.subfiles.append(subfile);
     }
     f.close();
@@ -234,14 +207,6 @@ void MainWindow::on_actionSaveAs_triggered()
 void MainWindow::on_actionExit_triggered()
 {
     this->close();
-}
-
-void MainWindow::closeEvent(QCloseEvent *event)
-{
-    if (!confirmUnsaved())
-        event->ignore();
-    else
-        event->accept();
 }
 
 void MainWindow::on_actionExtractAll_triggered()
@@ -352,14 +317,21 @@ void MainWindow::on_actionInjectFile_triggered()
         return;
     }
 
+    QFile file(injectName);
+    file.open(QFile::ReadOnly);
+    QByteArray fileData = file.readAll();
+    file.close();
+
+    injectFile(QFileInfo(file).fileName(), fileData);
+}
+
+void MainWindow::injectFile(QString name, QByteArray fileData)
+{
     SpcSubfile injectFile;
 
-    QFile f(injectName);
-    f.open(QFile::ReadOnly);
-    injectFile.filename = QFileInfo(f).fileName();
-    injectFile.data = BinaryData(f.readAll());
+    injectFile.filename = name;
+    injectFile.data = BinaryData(fileData);
     injectFile.data.Position = 0;
-    f.close();
 
     for (int i = 0; i < currentSpc.subfiles.size(); i++)
     {
@@ -420,4 +392,35 @@ void MainWindow::on_actionInjectFile_triggered()
     currentSpc.subfiles.append(injectFile);
     unsavedChanges = true;
     reloadSubfileList();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (!confirmUnsaved())
+        event->ignore();
+    else
+        event->accept();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData *mimeData = event->mimeData();
+
+    if (mimeData->hasUrls())
+    {
+        QList<QUrl> urlList = mimeData->urls();
+
+        for (auto it = urlList.begin(); it != urlList.end(); it++)
+        {
+            QFile f(((QUrl)*it).toLocalFile());
+            f.open(QFile::ReadOnly);
+            QString name = QFileInfo(f).fileName();
+            QByteArray fileData = f.readAll();
+            f.close();
+
+            injectFile(name, fileData);
+        }
+
+        event->acceptProposedAction();
+    }
 }

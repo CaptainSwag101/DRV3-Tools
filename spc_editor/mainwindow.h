@@ -4,9 +4,11 @@
 #include <QMainWindow>
 #include <QCloseEvent>
 #include <QDebug>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QProgressDialog>
 #include "../utils/binarydata.h"
 #include "../utils/data_formats.h"
@@ -28,15 +30,17 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
-    void closeEvent(QCloseEvent *event);
     void on_actionExtractAll_triggered();
     void on_actionExtractSelected_triggered();
     void on_actionInjectFile_triggered();
+    void closeEvent(QCloseEvent *event);
+    void dropEvent(QDropEvent *event);
 
 private:
     bool confirmUnsaved();
     void reloadSubfileList();
     void extractFile(QString outDir, SpcSubfile subfile);
+    void injectFile(QString name, QByteArray fileData);
 
     Ui::MainWindow *ui;
     SpcFile currentSpc;
