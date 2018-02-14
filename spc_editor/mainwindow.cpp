@@ -66,7 +66,7 @@ void MainWindow::extractFile(QString outDir, SpcSubfile subfile)
         QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
         QFile ext_file(ext_file_name);
         ext_file.open(QFile::ReadOnly);
-        BinaryData ext_data(ext_file.readAll());
+        QByteArray ext_data = ext_file.readAll();
         ext_file.close();
         subfile.data = srd_dec(ext_data);
         break;

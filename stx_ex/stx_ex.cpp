@@ -70,9 +70,8 @@ int unpack()
         cout.flush();
         QFile f(stxFiles[i]);
         f.open(QFile::ReadOnly);
-        QByteArray allBytes = f.readAll();
+        QByteArray data = f.readAll();
         f.close();
-        BinaryData data(allBytes);
 
         outDir.mkpath(file.left(QDir::toNativeSeparators(file).lastIndexOf(QDir::separator())));
 
@@ -167,14 +166,14 @@ int repack()
         }
         strings[index] = str;
         str.clear();
-        BinaryData stxData = repack_stx_strings(table_len, strings);
+        QByteArray stxData = repack_stx_strings(table_len, strings);
 
         QString outPath = QDir::toNativeSeparators(outDir.path() + QDir::separator() + file);
         outPath.replace(".txt", ".stx");
         QDir().mkpath(outPath.left(outPath.lastIndexOf(QDir::separator())));
         QFile outFile(outPath);
         outFile.open(QFile::WriteOnly);
-        outFile.write(stxData.Bytes);
+        outFile.write(stxData);
         outFile.close();
     }
 

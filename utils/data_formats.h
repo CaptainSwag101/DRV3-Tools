@@ -14,7 +14,7 @@ const QString STX_MAGIC = "STXT";
 struct SpcSubfile
 {
     QString filename;
-    BinaryData data;
+    QByteArray data;
     ushort cmp_flag;
     ushort unk_flag;
     int cmp_size;
@@ -36,11 +36,11 @@ struct StxFile
 };
 
 inline uchar bit_reverse(uchar b);
-BinaryData spc_dec(BinaryData data, int dec_size = -1);
-BinaryData spc_cmp(BinaryData data);
-BinaryData srd_dec(BinaryData data);
-BinaryData srd_dec_chunk(BinaryData chunk, QString cmp_mode);
-QStringList get_stx_strings(BinaryData data);
-BinaryData repack_stx_strings(int table_len, QMap<int, QString> strings);
+QByteArray spc_dec(const QByteArray &data, int dec_size = -1);
+QByteArray spc_cmp(const QByteArray &data);
+QByteArray srd_dec(const QByteArray &data);
+QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
+QStringList get_stx_strings(const QByteArray &data);
+QByteArray repack_stx_strings(int table_len, QMap<int, QString> strings);
 
 #endif // DRV3_DEC_H

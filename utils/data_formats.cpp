@@ -10,18 +10,20 @@ inline uchar bit_reverse(uchar b)
 
 // This is the compression scheme used for
 // individual files in an spc archive
-BinaryData spc_dec(BinaryData data, int dec_size)
+QByteArray spc_dec(const QByteArray &data, int dec_size)
 {
-    const int cmp_size = data.size();
+    const int cmp_size = data.length();
+    int pos = 0;
 
     if (dec_size <= 0)
         dec_size = cmp_size * 2;
 
-    BinaryData result(dec_size);
+    QByteArray result;
+    result.reserve(dec_size);
+
     uint flag = 1;
 
-
-    while (data.Position < cmp_size)
+    while (pos < cmp_size)
     {
         // We use an 8-bit flag to determine whether something is raw data,
         // or if we need to pull from the buffer, going from most to least significant bit.
@@ -29,15 +31,15 @@ BinaryData spc_dec(BinaryData data, int dec_size)
 
         if (flag == 1)
             // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
-            flag = 0x100 | bit_reverse(data.get_u8());
+            flag = 0x100 | bit_reverse(bytes_to_num<uchar>(data, pos));
 
-        if (data.Position >= cmp_size)
+        if (pos >= cmp_size)
             break;
 
         if (flag & 1)
         {
             // Raw byte
-            result.append(data.get_u8());
+            result.append(bytes_to_num<uchar>(data, pos));
         }
         else
         {
@@ -45,7 +47,7 @@ BinaryData spc_dec(BinaryData data, int dec_size)
             // xxxxxxyy yyyyyyyy
             // Count  -> x + 2 (max length of 65 bytes)
             // Offset -> y (from the beginning of a 1023-byte sliding window)
-            const ushort b = data.get_u16();
+            const ushort b = bytes_to_num<ushort>(data, pos);
             const int count = (b >> 10) + 2;
             const int offset = b & 1023;
 
@@ -62,28 +64,32 @@ BinaryData spc_dec(BinaryData data, int dec_size)
     return result;
 }
 
-BinaryData spc_cmp(BinaryData data)
+QByteArray spc_cmp(const QByteArray &data)
 {
-    const int data_len = data.size();
-    uint flag = 0;
-    uint cur_flag_bit = 0;
+    const int data_len = data.length();
+    int pos = 0;
+
     QByteArray result;
-    QByteArray block;
     result.reserve(data_len);
+    QByteArray block;
     block.reserve(16);
 
-    // This repeats one extra time to allow the final flag & block to be written
-    while (data.Position <= data_len)
+    uint flag = 0;
+    uint cur_flag_bit = 0;
+
+    // This repeats one extra time to allow the final flag and compressed block to be written
+    while (pos <= data_len)
     {
-        const int window_end = data.Position;
-        const int window_len = std::min(data.Position, 1023);
+        const int window_end = pos;
+        const int window_len = std::min(pos, 1023);
         const int readahead_len = std::min(data_len - window_end + 1, 65);
-        const QByteArray window = data.Bytes.mid(window_end - window_len, window_len);
+        // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
+        const QByteArray window = data.mid(window_end - window_len, window_len);
         QByteArray seq;
         seq.reserve(readahead_len);
 
         // At the end of each 8-byte block, add the flag and compressed block to the result
-        if (cur_flag_bit > 7 || data.Position >= data_len)
+        if (cur_flag_bit > 7 || pos >= data_len)
         {
             flag = bit_reverse(flag);
             result.append(flag);
@@ -95,7 +101,7 @@ BinaryData spc_cmp(BinaryData data)
             cur_flag_bit = 0;
         }
 
-        if (data.Position >= data_len)
+        if (pos >= data_len)
             break;
 
 
@@ -114,7 +120,7 @@ BinaryData spc_cmp(BinaryData data)
         int seq_len = 1;
 
         // Read 1 byte to start with, so looping is easier.
-        seq.append(data.get_u8());
+        seq.append(bytes_to_num<uchar>(data, pos));
 
         while (seq.length() < readahead_len)
         {
@@ -132,7 +138,7 @@ BinaryData spc_cmp(BinaryData data)
                 {
                     seq.chop(1);
                     seq_len--;
-                    data.Position--;
+                    pos--;
                 }
                 break;
             }
@@ -143,16 +149,16 @@ BinaryData spc_cmp(BinaryData data)
             {
                 QByteArray seq2 = seq;
 
-                while (seq2.length() < readahead_len && data.Position < data_len)
+                while (seq2.length() < readahead_len && pos < data_len)
                 {
-                    const char c = data.get_u8();
+                    const char c = bytes_to_num<uchar>(data, pos);
                     const int dupe_index = seq2.length() % seq_len;
 
                     // Check if the next byte exists in the previous
                     // repeated segment of our sequence.
                     if (c != seq[dupe_index])
                     {
-                        data.Position--;
+                        pos--;
                         break;
                     }
 
@@ -170,7 +176,7 @@ BinaryData spc_cmp(BinaryData data)
 
                 // Go back to the last byte we read before the readahead test,
                 // so normal dupe checking can continue.
-                data.Position -= (seq2.length() - seq_len);
+                pos -= (seq2.length() - seq_len);
                 seq_len = seq2.length();
             }
 
@@ -182,10 +188,10 @@ BinaryData spc_cmp(BinaryData data)
                 longest_dupe_len = seq_len;
             }
 
-            if (data.Position >= data_len)
+            if (pos >= data_len)
                 break;
 
-            seq.append(data.get_u8());
+            seq.append(bytes_to_num<uchar>(data, pos));
             seq_len = seq.length();
         }
 
@@ -200,11 +206,11 @@ BinaryData spc_cmp(BinaryData data)
             ushort repeat_data = 0;
             repeat_data |= 1024 - (window_len - last_index);
             repeat_data |= (longest_dupe_len - 2) << 10;
-            block.append(from_u16(repeat_data));
+            block.append(num_to_bytes(repeat_data));
 
             // Seek back to the end of the duplicated sequence,
             // in case it repeated into the readahead area.
-            data.Position = window_end + longest_dupe_len;
+            pos = window_end + longest_dupe_len;
         }
         cur_flag_bit++;
     }
@@ -212,44 +218,43 @@ BinaryData spc_cmp(BinaryData data)
     return result;
 }
 
-BinaryData srd_dec(BinaryData data)
+QByteArray srd_dec(const QByteArray &data)
 {
-    BinaryData result(data.size() * 2);
-    QString magic = data.get_str(4);
-    data.Position = 0;
+    int pos = 0;
+    QByteArray result;
 
-    if (magic != "$CMP")
+    if (bytes_to_str(data, pos, 4) != "$CMP")
     {
-        result.append(data.Bytes);
+        result.append(data);
         return result;
     }
+    pos = 0;
 
-    const int cmp_size = data.get_u32be();
-    data.Position += 8;
-    const int dec_size = data.get_u32be();
-    const int cmp_size2 = data.get_u32be();
-    data.Position += 4;
-    const int unk = data.get_u32be();
+    const int cmp_size = bytes_to_num<uint>(data, pos, true);
+    pos += 8;
+    const int dec_size = bytes_to_num<uint>(data, pos, true);
+    const int cmp_size2 = bytes_to_num<uint>(data, pos, true);
+    pos += 4;
+    const int unk = bytes_to_num<uint>(data, pos, true);
 
-    result.Bytes.reserve(dec_size);
+    result.reserve(dec_size);
 
     while (true)
     {
-        QString cmp_mode = data.get_str(4);
+        QString cmp_mode = bytes_to_str(data, pos, 4);
 
         if (!cmp_mode.startsWith("$CL") && cmp_mode != "$CR0")
             break;
 
-        const int chunk_dec_size = data.get_u32be();
-        const int chunk_cmp_size = data.get_u32be();
-        data.Position += 4;
+        const int chunk_dec_size = bytes_to_num<uint>(data, pos, true);
+        const int chunk_cmp_size = bytes_to_num<uint>(data, pos, true);
+        pos += 4;
 
-        BinaryData chunk(data.get(chunk_cmp_size - 0x10));    // Read the rest of the chunk data
+        QByteArray chunk = get_bytes(data, pos, chunk_cmp_size - 0x10); // Read the rest of the chunk data
 
         // If not "$CR0", chunk is compressed
         if (cmp_mode != "$CR0")
         {
-            chunk.Bytes.reserve(chunk_dec_size);
             chunk = srd_dec_chunk(chunk, cmp_mode);
 
             if (chunk.size() != chunk_dec_size)
@@ -260,7 +265,7 @@ BinaryData srd_dec(BinaryData data)
             }
         }
 
-        result.append(chunk.Bytes);
+        result.append(chunk);
     }
 
     if (result.size() != dec_size)
@@ -273,10 +278,11 @@ BinaryData srd_dec(BinaryData data)
     return result;
 }
 
-BinaryData srd_dec_chunk(BinaryData chunk, QString cmp_mode)
+QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode)
 {
     const int chunk_size = chunk.size();
-    BinaryData result;
+    int pos = 0;
+    QByteArray result;
     uint shift = -1;
 
     if (cmp_mode == "$CLN")
@@ -288,15 +294,15 @@ BinaryData srd_dec_chunk(BinaryData chunk, QString cmp_mode)
 
     const int mask = (1 << shift) - 1;
 
-    while (chunk.Position < chunk_size)
+    while (pos < chunk_size)
     {
-        const char b = chunk.get_u8();
+        const char b = bytes_to_num<uchar>(chunk, pos);
 
         if (b & 1)
         {
             // Pull from the buffer
             const int count = (b & mask) >> 1;
-            const int offset = ((b >> shift) << 8) | chunk.get_u8();
+            const int offset = ((b >> shift) << 8) | bytes_to_num<uchar>(chunk, pos);
 
             for (int i = 0; i < count; i++)
             {
@@ -308,61 +314,63 @@ BinaryData srd_dec_chunk(BinaryData chunk, QString cmp_mode)
         {
             // Raw byte
             const int count = b >> 1;
-            result.append(chunk.get(count));
+            result.append(get_bytes(chunk, pos, count));
         }
     }
 
     return result;
 }
 
-QStringList get_stx_strings(BinaryData data)
+QStringList get_stx_strings(const QByteArray &data)
 {
+    int pos = 0;
     QStringList strings;
 
-    data.Position = 0;
-    QString magic = data.get_str(4);
+    QString magic = bytes_to_str(data, pos, 4);
+    pos = 0;
     if (magic != STX_MAGIC)
     {
         //cout << "Invalid STX file.\n";
         return strings;
     }
 
-    QString lang = data.get_str(4); // "JPLL" in the JP and US versions
-    const int unk1 = data.get_u32();  // Table count?
-    const int table_off  = data.get_u32();
-    const int unk2 = data.get_u32();
-    const int count = data.get_u32();
+    QString lang = bytes_to_str(data, pos, 4);      // "JPLL" in the JP and US versions
+    const int unk1 = bytes_to_num<uint>(data, pos); // Table count?
+    const int table_off  = bytes_to_num<uint>(data, pos);
+    const int unk2 = bytes_to_num<uint>(data, pos);
+    const int table_len = bytes_to_num<uint>(data, pos);
 
-
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < table_len; i++)
     {
-        data.Position = table_off + (8 * i);
-        const int str_id = data.get_u32();
-        const int str_off = data.get_u32();
+        pos = table_off + (8 * i);
+        const int str_id = bytes_to_num<uint>(data, pos);
+        const int str_off = bytes_to_num<uint>(data, pos);
 
-        data.Position = str_off;
+        pos = str_off;
 
-        QString str = data.get_str(-1, true);
+        QString str = bytes_to_str(data, pos, -1, true);
         strings.append(str);
     }
 
     return strings;
 }
 
-BinaryData repack_stx_strings(int table_len, QMap<int, QString> strings)
+QByteArray repack_stx_strings(int table_len, QMap<int, QString> strings)
 {
-    BinaryData result;
+    QByteArray result;
+    uint table_off = 0x20;
     result.append(QString("STXTJPLL").toUtf8());    // header
-    result.append(from_u32(0x01));                  // table_count?
-    result.append(from_u32(0x20));                  // table_off
-    result.append(from_u32(0x08));                  // unk2
-    result.append(from_u32(table_len));             // count
-    result.append(QByteArray(0x20 - result.Position, (char)0x00));  // padding
+    result.append(num_to_bytes((uint)0x01));        // table_count?
+    result.append(num_to_bytes(table_off));         // table_off
+    result.append(num_to_bytes((uint)0x08));        // unk2
+    result.append(num_to_bytes(table_len));         // table_len
 
     int *offsets = new int[table_len];
     int highest_index = 0;
     for (int i = 0; i < table_len; i++)
     {
+        result.append((table_off + (i * 8)) - (result.size() - 1), (char)0x00); // padding
+
         int str_off = 0;
         for (int j = 0; j < i; j++)
         {
@@ -385,8 +393,8 @@ BinaryData repack_stx_strings(int table_len, QMap<int, QString> strings)
 
         offsets[i] = str_off;
 
-        result.append(from_u32(i));         // str_index
-        result.append(from_u32(str_off));   // str_off
+        result.append(num_to_bytes(i));         // str_index
+        result.append(num_to_bytes(str_off));   // str_off
     }
 
     QStringList written;
@@ -400,7 +408,7 @@ BinaryData repack_stx_strings(int table_len, QMap<int, QString> strings)
         QByteArray bytes = encoder->fromUnicode(strings[i]);
 
         result.append(bytes);
-        result.append(from_u16(0x00));  // Null terminator
+        result.append(num_to_bytes((ushort)0x00));  // Null terminator
         written.append(strings[i]);
     }
     delete[] offsets;
@@ -411,32 +419,32 @@ BinaryData repack_stx_strings(int table_len, QMap<int, QString> strings)
 /*
 QStringList put_stx_strings(QStringList strings)
 {
+    int pos = 0;
     QStringList strings;
 
-    data.Position = 0;
-    QString magic = data.get_str(4);
+    QString magic = bytes_to_str(data, pos, 4);
+    pos = 0;
     if (magic != STX_MAGIC)
     {
         //cout << "Invalid STX file.\n";
         return strings;
     }
 
-    QString lang = data.get_str(4); // "JPLL" in the JP and US versions
-    uint unk1 = data.get_u32();  // Table count?
-    uint table_off  = data.get_u32();
-    uint unk2 = data.get_u32();
-    uint count = data.get_u32();
+    QString lang = bytes_to_str(data, pos, 4);  // "JPLL" in the JP and US versions
+    uint unk1 = bytes_to_num<uint>(data, pos);  // Table count?
+    uint table_off  = bytes_to_num<uint>(data, pos);
+    uint unk2 = bytes_to_num<uint>(data, pos);
+    uint table_len = bytes_to_num<uint>(data, pos);
 
-
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < table_len; i++)
     {
-        data.Position = table_off + (8 * i);
-        uint str_id = data.get_u32();
-        uint str_off = data.get_u32();
+        pos = table_off + (8 * i);
+        uint str_id = bytes_to_num<uint>(data, pos);
+        uint str_off = bytes_to_num<uint>(data, pos);
 
-        data.Position = str_off;
+        pos = str_off;
 
-        QString str = data.get_str(0, 2);
+        QString str = bytes_to_str(data, pos, -1, true);
         strings.append(str);
     }
 
