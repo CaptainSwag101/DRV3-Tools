@@ -12,7 +12,7 @@ void unpack_data(const QByteArray &data, const QString out_dir);
 void repack(const QString in_dir);
 void repack_data(const QString spc_dir, const QString cmp_dir, const QString out_file);
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     QString in_dir;
     bool pack = false;
@@ -32,13 +32,15 @@ void main(int argc, char *argv[])
     {
         cout << "Error: No input path specified.\n";
         cout.flush();
-        return;
+        return 1;
     }
 
     if (pack)
         repack(in_dir);
     else
         unpack(in_dir);
+
+    return 0;
 }
 
 void unpack(const QString in_dir)

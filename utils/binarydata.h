@@ -5,8 +5,64 @@
 #include <QString>
 #include <QtEndian>
 
-template <class T> QByteArray num_to_bytes(T num, bool big_endian = false);
-template <class T> T bytes_to_num<T>(const QByteArray &data, int &pos, bool big_endian = false);
+template <typename T> QByteArray num_to_bytes(T num)
+{
+    const int num_size = sizeof(T);
+
+    QByteArray result;
+    result.reserve(num_size);
+
+    for (int i = 0; i != num_size; i++)
+    {
+        result.append((char)(num >> (i * 8)));
+    }
+
+    return result;
+}
+
+template <typename T> QByteArray num_to_bytes_be(T num)
+{
+    const int num_size = sizeof(T);
+
+    QByteArray result;
+    result.reserve(num_size);
+
+    for (int i = 0; i != num_size; i++)
+    {
+        result.prepend((char)(num >> (i * 8)));
+    }
+
+    return result;
+}
+
+template <typename T> T bytes_to_num(const QByteArray &data, int &pos)
+{
+    const int num_size = sizeof(T);
+    T result = 0;
+
+    for (int i = 0; i != num_size; i++)
+    {
+        result |= (data[pos + i] & 0xFF) << (i * 8);
+    }
+
+    pos += num_size;
+    return result;
+}
+
+template <typename T> T bytes_to_num_be(const QByteArray &data, int &pos)
+{
+    const int num_size = sizeof(T);
+    T result = 0;
+
+    for (int i = 0; i != num_size; i++)
+    {
+        result |= (data[pos + i] & 0xFF) << ((num_size - i - 1) * 8);
+    }
+
+    pos += num_size;
+    return result;
+}
+
 QString bytes_to_str(const QByteArray &data, int &pos, int len = -1, bool utf16 = false);
 QByteArray get_bytes(const QByteArray &data, int &pos, int len = -1);
 

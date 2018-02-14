@@ -206,7 +206,7 @@ QByteArray spc_cmp(const QByteArray &data)
             ushort repeat_data = 0;
             repeat_data |= 1024 - (window_len - last_index);
             repeat_data |= (longest_dupe_len - 2) << 10;
-            block.append(num_to_bytes(repeat_data));
+            block.append(num_to_bytes<ushort>(repeat_data));
 
             // Seek back to the end of the duplicated sequence,
             // in case it repeated into the readahead area.
@@ -230,12 +230,12 @@ QByteArray srd_dec(const QByteArray &data)
     }
     pos = 0;
 
-    const int cmp_size = bytes_to_num<uint>(data, pos, true);
+    const int cmp_size = bytes_to_num_be<uint>(data, pos);
     pos += 8;
-    const int dec_size = bytes_to_num<uint>(data, pos, true);
-    const int cmp_size2 = bytes_to_num<uint>(data, pos, true);
+    const int dec_size = bytes_to_num_be<uint>(data, pos);
+    const int cmp_size2 = bytes_to_num_be<uint>(data, pos);
     pos += 4;
-    const int unk = bytes_to_num<uint>(data, pos, true);
+    const int unk = bytes_to_num_be<uint>(data, pos);
 
     result.reserve(dec_size);
 
@@ -246,8 +246,8 @@ QByteArray srd_dec(const QByteArray &data)
         if (!cmp_mode.startsWith("$CL") && cmp_mode != "$CR0")
             break;
 
-        const int chunk_dec_size = bytes_to_num<uint>(data, pos, true);
-        const int chunk_cmp_size = bytes_to_num<uint>(data, pos, true);
+        const int chunk_dec_size = bytes_to_num_be<uint>(data, pos);
+        const int chunk_cmp_size = bytes_to_num_be<uint>(data, pos);
         pos += 4;
 
         QByteArray chunk = get_bytes(data, pos, chunk_cmp_size - 0x10); // Read the rest of the chunk data

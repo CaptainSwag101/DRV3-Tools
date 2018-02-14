@@ -74,7 +74,7 @@ void MainWindow::extractFile(QString outDir, SpcSubfile subfile)
 
     QFile out(outDir + QDir::separator() + subfile.filename);
     out.open(QFile::WriteOnly);
-    out.write(subfile.data.Bytes);
+    out.write(subfile.data);
     out.close();
 }
 
@@ -91,15 +91,15 @@ void MainWindow::on_actionOpen_triggered()
     QFile f(currentSpc.filename);
     f.open(QFile::ReadOnly);
 
-    BinaryData fileData(f.readAll());
-    fileData.Position = 0;
-    QString magic = fileData.get_str(4);
+    int pos = 0;
+    QByteArray file_data = f.readAll();
+    QString magic = bytes_to_str(file_data, pos, 4);
     if (magic == "$CMP")
     {
         return;
-        fileData = srd_dec(fileData);
-        fileData.Position = 0;
-        magic = fileData.get_str(4);
+        file_data = srd_dec(file_data);
+        pos = 0;
+        magic = bytes_to_str(file_data, pos, 4);
     }
 
     if (magic != SPC_MAGIC)
@@ -108,13 +108,13 @@ void MainWindow::on_actionOpen_triggered()
         return;
     }
 
-    currentSpc.unk1 = fileData.get(0x24);
-    uint file_count = fileData.get_u32();
-    currentSpc.unk2 = fileData.get_u32();
-    fileData.Position += 0x10;   // padding
+    currentSpc.unk1 = get_bytes(file_data, pos, 0x24);
+    uint file_count = bytes_to_num<uint>(file_data, pos);
+    currentSpc.unk2 = bytes_to_num<uint>(file_data, pos);
+    pos += 0x10;   // padding
 
-    QString table_magic = fileData.get_str(4);
-    fileData.Position += 0x0C;
+    QString table_magic = bytes_to_str(file_data, pos, 4);
+    pos += 0x0C;
 
     if (table_magic != SPC_TABLE_MAGIC)
     {
@@ -127,23 +127,23 @@ void MainWindow::on_actionOpen_triggered()
     for (uint i = 0; i < file_count; i++)
     {
         SpcSubfile subfile;
-        subfile.cmp_flag = fileData.get_u16();
-        subfile.unk_flag = fileData.get_u16();
-        subfile.cmp_size = fileData.get_u32();
-        subfile.dec_size = fileData.get_u32();
-        subfile.name_len = fileData.get_u32(); // Null terminator excluded from count
-        fileData.Position += 0x10;  // padding
+        subfile.cmp_flag = bytes_to_num<ushort>(file_data, pos);
+        subfile.unk_flag = bytes_to_num<ushort>(file_data, pos);
+        subfile.cmp_size = bytes_to_num<uint>(file_data, pos);
+        subfile.dec_size = bytes_to_num<uint>(file_data, pos);
+        subfile.name_len = bytes_to_num<uint>(file_data, pos); // Null terminator excluded from count
+        pos += 0x10;  // padding
 
         // Everything's aligned to multiples of 0x10
         // We don't actually want the null terminator byte, so pretend it's padding
         uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
         uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
 
-        subfile.filename = fileData.get_str(subfile.name_len);
-        fileData.Position += name_padding + 1;
+        subfile.filename = bytes_to_str(file_data, pos, subfile.name_len);
+        pos += name_padding + 1;
 
-        subfile.data = BinaryData(fileData.get(subfile.cmp_size));
-        fileData.Position += data_padding;
+        subfile.data = get_bytes(file_data, pos, subfile.cmp_size);
+        pos += data_padding;
 
         currentSpc.subfiles.append(subfile);
     }
@@ -155,41 +155,41 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    QByteArray outData;
+    QByteArray out_data;
 
-    outData.append(SPC_MAGIC.toUtf8());                     // SPC_MAGIC
-    outData.append(currentSpc.unk1);                        // unk1
-    outData.append(from_u32(currentSpc.subfiles.count()));  // file_count
-    outData.append(from_u32(currentSpc.unk2));              // unk2
-    outData.append(QByteArray(0x10, 0x00));                 // padding
-    outData.append(SPC_TABLE_MAGIC.toUtf8());               // SPC_TABLE_MAGIC
-    outData.append(QByteArray(0x0C, 0x00));                 // padding
+    out_data.append(SPC_MAGIC.toUtf8());                    // SPC_MAGIC
+    out_data.append(currentSpc.unk1);                       // unk1
+    out_data.append(num_to_bytes(currentSpc.subfiles.count())); // file_count
+    out_data.append(num_to_bytes(currentSpc.unk2));             // unk2
+    out_data.append(0x10, 0x00);                            // padding
+    out_data.append(SPC_TABLE_MAGIC.toUtf8());              // SPC_TABLE_MAGIC
+    out_data.append(0x0C, 0x00);                            // padding
 
     for (SpcSubfile subfile : currentSpc.subfiles)
     {
-        outData.append(from_u16(subfile.cmp_flag));         // cmp_flag
-        outData.append(from_u16(subfile.unk_flag));         // unk_flag
-        outData.append(from_u32(subfile.cmp_size));         // cmp_size
-        outData.append(from_u32(subfile.dec_size));         // dec_size
-        outData.append(from_u32(subfile.name_len));         // name_len
-        outData.append(QByteArray(0x10, 0x00));             // padding
+        out_data.append(num_to_bytes(subfile.cmp_flag));         // cmp_flag
+        out_data.append(num_to_bytes(subfile.unk_flag));         // unk_flag
+        out_data.append(num_to_bytes(subfile.cmp_size));         // cmp_size
+        out_data.append(num_to_bytes(subfile.dec_size));         // dec_size
+        out_data.append(num_to_bytes(subfile.name_len));         // name_len
+        out_data.append(0x10, 0x00);             // padding
 
         // Everything's aligned to multiples of 0x10
         uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
         uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
 
-        outData.append(subfile.filename.toUtf8());
+        out_data.append(subfile.filename.toUtf8());
         // Add the null terminator byte to the padding
-        outData.append(QByteArray(name_padding + 1, 0x00));
+        out_data.append(name_padding + 1, 0x00);
 
-        outData.append(subfile.data.Bytes);                 // data
-        outData.append(QByteArray(data_padding, 0x00));     // data_padding
+        out_data.append(subfile.data);                 // data
+        out_data.append(data_padding, 0x00);     // data_padding
     }
 
     QString outName = currentSpc.filename;
     QFile f(outName);
     f.open(QFile::WriteOnly);
-    f.write(outData);
+    f.write(out_data);
     f.close();
     unsavedChanges = false;
 }
@@ -329,8 +329,9 @@ void MainWindow::injectFile(QString name, QByteArray fileData)
 {
     SpcSubfile injectFile;
 
+    int pos = 0;
     injectFile.filename = name;
-    injectFile.data = BinaryData(fileData);
+    injectFile.data = fileData;
     injectFile.data.Position = 0;
 
     for (int i = 0; i < currentSpc.subfiles.size(); i++)

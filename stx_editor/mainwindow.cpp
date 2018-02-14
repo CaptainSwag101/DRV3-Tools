@@ -84,7 +84,7 @@ void MainWindow::on_actionOpen_triggered()
 
     QFile f(currentFilename);
     f.open(QFile::ReadOnly);
-    currentStx = BinaryData(f.readAll());
+    currentStx = f.readAll();
     f.close();
 
     reloadStrings();
@@ -105,7 +105,7 @@ void MainWindow::on_actionSave_triggered()
     currentStx = repack_stx_strings(table_len, stringMap);
     QFile f(currentFilename);
     f.open(QFile::WriteOnly);
-    f.write(currentStx.Bytes);
+    f.write(currentStx);
     f.close();
     unsavedChanges = false;
 }

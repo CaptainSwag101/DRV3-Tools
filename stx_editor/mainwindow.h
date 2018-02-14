@@ -39,7 +39,7 @@ private:
     Ui::MainWindow *ui;
     QFileDialog openStx;
     QString currentFilename;
-    BinaryData currentStx;
+    QByteArray currentStx;
     QFrame *textBoxFrame;
     //QList<QPlainTextEdit *> textBoxes;
     bool unsavedChanges = false;
