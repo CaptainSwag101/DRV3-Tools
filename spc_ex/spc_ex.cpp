@@ -116,7 +116,8 @@ void unpack_data(const QByteArray &data, const QString out_dir)
 
     QByteArray unk1 = get_bytes(data, pos, 0x24);
     uint file_count = bytes_to_num<uint>(data, pos);
-    uint unk2 = bytes_to_num<uint>(data, pos);
+    //uint unk2 = bytes_to_num<uint>(data, pos);
+    pos += 0x04;    // unk2
     pos += 0x10;    // padding?
 
     QString table_magic = bytes_to_str(data, pos, 4);
@@ -249,23 +250,23 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
 
     int file_count = info_strings[0].split('=')[1].toInt();
 
+    cout << "Compressing " << file_count << " files into " << QDir(spc_dir).dirName() << "\n";
+    cout.flush();
+
     // Since 50MB isn't really a huge amount of memory, preallocate that much for decompressing to speed things up
     QByteArray out_data;
     out_data.reserve(50000000);
 
-    out_data.append(SPC_MAGIC.toUtf8());
-    out_data.append(0x04, 0x00);
-    out_data.append(0x08, 0xFF);                // unk1
-    out_data.append(0x18, 0x00);
-    out_data.append(num_to_bytes(file_count));
+    out_data.append(SPC_MAGIC.toUtf8());        // "CPS."
+    out_data.append(0x04, 0x00);                // unk1
+    out_data.append(0x08, (char)0xFF);          // unk1
+    out_data.append(0x18, 0x00);                // unk1
+    out_data.append(num_to_bytes(file_count));  // file_count
     out_data.append(num_to_bytes((uint)0x04));  // unk2
     out_data.append(0x10, 0x00);                // padding
-
-    out_data.append(SPC_TABLE_MAGIC.toUtf8());
+    out_data.append(SPC_TABLE_MAGIC.toUtf8());  // "Root"
     out_data.append(0x0C, 0x00);                // padding
 
-    cout << "Compressing " << file_count << " files into " << QDir(spc_dir).dirName() << "\n";
-    cout.flush();
     for (int i = 1; i + 6 <= info_strings.size(); i += 6)
     {
         QString file_name = info_strings[i + 5].split('=')[1];
@@ -274,29 +275,27 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
 
         QFile f(spc_dir + QDir::separator() + file_name);
         f.open(QFile::ReadOnly);
-        QByteArray subdata = f.readAll();
+        const QByteArray dec_subdata = f.readAll();
         f.close();
 
         out_data.append(num_to_bytes((ushort)0x02));    // cmp_flag
         out_data.append(num_to_bytes(info_strings[i + 1].split('=')[1].toUShort()));  // unk_flag
 
-        uint dec_size = subdata.size();
+        const QByteArray cmp_subdata = spc_cmp(dec_subdata);
+        const QByteArray test_data = spc_dec(cmp_subdata);
 
-        QByteArray orig_subdata = subdata;
-        subdata = spc_cmp(subdata);
-        QByteArray test_data = spc_dec(subdata);
-
-        if (orig_subdata != test_data)
+        if (dec_subdata != test_data)
         {
             cout << "\tError: Compression test failed, compression was not deterministic!\n";
             cout.flush();
         }
 
-        uint cmp_size = subdata.size();
+        uint cmp_size = cmp_subdata.size();
         out_data.append(num_to_bytes(cmp_size));    // cmp_size
+        uint dec_size = dec_subdata.size();
         out_data.append(num_to_bytes(dec_size));    // dec_size
-        uint name_len = file_name.length();         // name_len
-        out_data.append(num_to_bytes(name_len));
+        uint name_len = file_name.length();
+        out_data.append(num_to_bytes(name_len));    // name_len
         out_data.append(0x10, 0x00);                // padding
 
         // Everything's aligned to multiples of 0x10
@@ -307,25 +306,8 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
         out_data.append(file_name.toUtf8());        // file_name
         out_data.append(name_padding + 1, 0x00);
 
-        out_data.append(subdata);                   // data
+        out_data.append(cmp_subdata);               // data
         out_data.append(data_padding, 0x00);
-
-        /*
-        if (file_name.endsWith(".spc"))
-        {
-            QString sub_file = file + QDir::separator() + file_name;
-            extract_data(sub_file, file_data);
-            continue;
-        }
-        else
-        {
-            QFile out(dec_dir.path() + QDir::separator() + file + QDir::separator() + file_name);
-            out.open(QFile::WriteOnly);
-            out.write(file_data.Bytes);
-            out.close();
-        }
-        */
-
     }
     cout << "\n";
 

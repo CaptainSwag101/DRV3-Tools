@@ -30,11 +30,6 @@ struct SpcFile
     QList<SpcSubfile> subfiles;
 };
 
-struct StxFile
-{
-
-};
-
 inline uchar bit_reverse(uchar b);
 QByteArray spc_dec(const QByteArray &data, int dec_size = -1);
 QByteArray spc_cmp(const QByteArray &data);

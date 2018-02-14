@@ -22,6 +22,7 @@ QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
         result.append(c);
     }
 
+    // Don't increment "pos" because bytes_to_num() does that already
     return result;
 }
 

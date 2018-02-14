@@ -329,10 +329,8 @@ void MainWindow::injectFile(QString name, QByteArray fileData)
 {
     SpcSubfile injectFile;
 
-    int pos = 0;
     injectFile.filename = name;
     injectFile.data = fileData;
-    injectFile.data.Position = 0;
 
     for (int i = 0; i < currentSpc.subfiles.size(); i++)
     {

@@ -230,12 +230,12 @@ QByteArray srd_dec(const QByteArray &data)
     }
     pos = 0;
 
-    const int cmp_size = bytes_to_num_be<uint>(data, pos);
+    const int cmp_size = bytes_to_num<uint>(data, pos, true);
     pos += 8;
-    const int dec_size = bytes_to_num_be<uint>(data, pos);
-    const int cmp_size2 = bytes_to_num_be<uint>(data, pos);
+    const int dec_size = bytes_to_num<uint>(data, pos, true);
+    const int cmp_size2 = bytes_to_num<uint>(data, pos, true);
     pos += 4;
-    const int unk = bytes_to_num_be<uint>(data, pos);
+    const int unk = bytes_to_num<uint>(data, pos, true);
 
     result.reserve(dec_size);
 
@@ -246,8 +246,8 @@ QByteArray srd_dec(const QByteArray &data)
         if (!cmp_mode.startsWith("$CL") && cmp_mode != "$CR0")
             break;
 
-        const int chunk_dec_size = bytes_to_num_be<uint>(data, pos);
-        const int chunk_cmp_size = bytes_to_num_be<uint>(data, pos);
+        const int chunk_dec_size = bytes_to_num<uint>(data, pos, true);
+        const int chunk_cmp_size = bytes_to_num<uint>(data, pos, true);
         pos += 4;
 
         QByteArray chunk = get_bytes(data, pos, chunk_cmp_size - 0x10); // Read the rest of the chunk data
