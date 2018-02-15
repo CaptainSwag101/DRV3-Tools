@@ -13,7 +13,6 @@ inline uchar bit_reverse(uchar b)
 QByteArray spc_dec(const QByteArray &data, int dec_size)
 {
     const int cmp_size = data.length();
-    int pos = 0;
 
     if (dec_size <= 0)
         dec_size = cmp_size * 2;
@@ -23,6 +22,8 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
 
     uint flag = 1;
 
+    int pos = 0;
+
     while (pos < cmp_size)
     {
         // We use an 8-bit flag to determine whether something is raw data,
@@ -31,7 +32,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
 
         if (flag == 1)
             // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
-            flag = 0x100 | bit_reverse(bytes_to_num<uchar>(data, pos));
+            flag = 0x100 | bit_reverse(data.at(pos++));
 
         if (pos >= cmp_size)
             break;
@@ -39,7 +40,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
         if (flag & 1)
         {
             // Raw byte
-            result.append(bytes_to_num<uchar>(data, pos));
+            result.append(data.at(pos++));
         }
         else
         {
@@ -85,6 +86,7 @@ QByteArray spc_cmp(const QByteArray &data)
         const int readahead_len = std::min(data_len - window_end + 1, 65);
         // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
         const QByteArray window = data.mid(window_end - window_len, window_len);
+
         QByteArray seq;
         seq.reserve(readahead_len);
 
@@ -120,7 +122,7 @@ QByteArray spc_cmp(const QByteArray &data)
         int seq_len = 1;
 
         // Read 1 byte to start with, so looping is easier.
-        seq.append(bytes_to_num<uchar>(data, pos));
+        seq.append(data.at(pos++));
 
         while (seq.length() < readahead_len)
         {
@@ -151,7 +153,7 @@ QByteArray spc_cmp(const QByteArray &data)
 
                 while (seq2.length() < readahead_len && pos < data_len)
                 {
-                    const char c = bytes_to_num<uchar>(data, pos);
+                    const char c = data.at(pos++);
                     const int dupe_index = seq2.length() % seq_len;
 
                     // Check if the next byte exists in the previous
@@ -191,7 +193,7 @@ QByteArray spc_cmp(const QByteArray &data)
             if (pos >= data_len)
                 break;
 
-            seq.append(bytes_to_num<uchar>(data, pos));
+            seq.append(data.at(pos++));
             seq_len = seq.length();
         }
 
@@ -296,13 +298,13 @@ QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode)
 
     while (pos < chunk_size)
     {
-        const char b = bytes_to_num<uchar>(chunk, pos);
+        const char b = chunk.at(pos++);
 
         if (b & 1)
         {
             // Pull from the buffer
             const int count = (b & mask) >> 1;
-            const int offset = ((b >> shift) << 8) | bytes_to_num<uchar>(chunk, pos);
+            const int offset = ((b >> shift) << 8) | chunk.at(pos++);
 
             for (int i = 0; i < count; i++)
             {

@@ -33,9 +33,9 @@ template <typename T> T bytes_to_num(const QByteArray &data, int &pos, bool big_
     for (int i = 0; i != num_size; i++)
     {
         if (big_endian)
-            result |= (data[pos + i] & 0xFF) << ((num_size - i - 1) * 8);
+            result |= (data.at(pos + i) & 0xFF) << ((num_size - i - 1) * 8);
         else
-            result |= (data[pos + i] & 0xFF) << (i * 8);
+            result |= (data.at(pos + i) & 0xFF) << (i * 8);
     }
 
     pos += num_size;

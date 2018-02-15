@@ -6,15 +6,13 @@ QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
     result.reserve(len);
 
     int i = 0;
-    while (len < 0 || i < len)
+    while (len < 0 || i++ < len)
     {
         QChar c;
         if (utf16)
             c = QChar(bytes_to_num<ushort>(data, pos));
         else
-            c = QChar(bytes_to_num<uchar>(data, pos));
-
-        i++;
+            c = QChar(data.at(pos++));
 
         if (len < 0 && c == QChar(0))
             break;
