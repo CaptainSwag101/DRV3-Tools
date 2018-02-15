@@ -131,34 +131,39 @@ QByteArray spc_cmp(const QByteArray &data)
             //    break;
 
 
-            static int index = -1;
+            int index = -1;
             // TODO: This function is incredibly slow, and we call it a lot.
             // Try to improve performance by remembering the last found index and
             // checking if seq + 1 will fit before the end of the window, and then
             // check if the next byte in the sequence is present.
             // If not, search for a new index.
-            while (last_index > -1 && window_len - last_index > seq_len + 1 && pos < data_len && seq_len < readahead_len)
-            {
-                char c = data.at(pos++);
-                if (window.at(last_index + seq_len + 1) == c)
-                {
-                    index = last_index;
-                    seq.append(c);
-                    seq_len++;
-                }
-                else
-                {
-                    pos--;
-                    break;
-                }
-            }
 
             index = window.lastIndexOf(seq, window_len - seq.length());
 
+            if (index != -1)
+            {
+                int extra_len = 0;
+                while (index + seq_len + extra_len + 1 < window_len && pos < data_len && seq_len + extra_len < readahead_len)
+                {
+                    char c = data.at(pos);
+                    int check_index = index + seq_len + extra_len;
+                    if (window.at(check_index) == c)
+                    {
+                        pos++;
+                        extra_len++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
+                seq.append(data.mid(window_end + seq_len, extra_len));
+                seq_len += extra_len;
+            }
             // If the current sequence is not a duplicate,
             // break and return the previous sequence.
-            if (index == -1)
+            else
             {
                 if (seq_len > 1)
                 {
@@ -175,35 +180,37 @@ QByteArray spc_cmp(const QByteArray &data)
             {
                 QByteArray seq2 = seq;
 
-                while (seq2.length() < readahead_len && pos < data_len)
+                int seq2_len = seq2.length();
+                while (seq2_len < readahead_len && pos < data_len)
                 {
-                    const char c = data.at(pos++);
-                    const int dupe_index = seq2.length() % seq_len;
+                    const char c = data.at(pos);
+                    const int dupe_index = seq2_len % seq_len;
 
                     // Check if the next byte exists in the previous
                     // repeated segment of our sequence.
                     if (c != seq.at(dupe_index))
                     {
-                        pos--;
                         break;
                     }
 
+                    pos++;
                     seq2.append(c);
+                    seq2_len++;
                 }
 
                 // If we can duplicate all bytes of the readahead buffer,
                 // break out immediately (we've found the max compression).
-                if (seq2.length() == readahead_len)
+                if (seq2_len == readahead_len)
                 {
                     last_index = index;
-                    longest_dupe_len = seq2.length();
+                    longest_dupe_len = seq2_len;
                     break;
                 }
 
                 // Go back to the last byte we read before the readahead test,
                 // so normal dupe checking can continue.
-                pos -= (seq2.length() - seq_len);
-                seq_len = seq2.length();
+                pos -= (seq2_len - seq_len);
+                seq_len = seq2_len;
             }
 
             // Check if the current sequence is longer than the last
