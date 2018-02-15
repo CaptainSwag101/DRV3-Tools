@@ -82,8 +82,8 @@ QByteArray spc_cmp(const QByteArray &data)
     while (pos <= data_len)
     {
         const int window_end = pos;
-        const int window_len = std::min(pos, 1023);
-        const int readahead_len = std::min(data_len - window_end + 1, 65);
+        const int window_len = std::min(pos, 1023);     // Max value for window_len = 1023
+        const int readahead_len = std::min(data_len - window_end + 1, 65);  // Max value = 65
         // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
         const QByteArray window = data.mid(window_end - window_len, window_len);
 
@@ -124,13 +124,37 @@ QByteArray spc_cmp(const QByteArray &data)
         // Read 1 byte to start with, so looping is easier.
         seq.append(data.at(pos++));
 
-        while (seq.length() < readahead_len)
+        while (seq_len < readahead_len)
         {
             // Break if the dupe-checking window is out of bounds
             //if (window_end <= 0)
             //    break;
 
-            const int index = window.lastIndexOf(seq);
+
+            static int index = -1;
+            // TODO: This function is incredibly slow, and we call it a lot.
+            // Try to improve performance by remembering the last found index and
+            // checking if seq + 1 will fit before the end of the window, and then
+            // check if the next byte in the sequence is present.
+            // If not, search for a new index.
+            while (last_index > -1 && window_len - last_index > seq_len + 1 && pos < data_len && seq_len < readahead_len)
+            {
+                char c = data.at(pos++);
+                if (window.at(last_index + seq_len + 1) == c)
+                {
+                    index = last_index;
+                    seq.append(c);
+                    seq_len++;
+                }
+                else
+                {
+                    pos--;
+                    break;
+                }
+            }
+
+            index = window.lastIndexOf(seq, window_len - seq.length());
+
 
             // If the current sequence is not a duplicate,
             // break and return the previous sequence.
@@ -158,7 +182,7 @@ QByteArray spc_cmp(const QByteArray &data)
 
                     // Check if the next byte exists in the previous
                     // repeated segment of our sequence.
-                    if (c != seq[dupe_index])
+                    if (c != seq.at(dupe_index))
                     {
                         pos--;
                         break;
@@ -219,6 +243,26 @@ QByteArray spc_cmp(const QByteArray &data)
 
     return result;
 }
+
+
+int find_sequence(const QByteArray &data, const QByteArray &seq)
+{
+    auto it = std::search(
+        std::begin(data), std::end(data),
+        std::begin(seq), std::end(seq));
+
+    if (it == std::end(data))
+    {
+        // not found
+        return -1;
+    }
+    else
+    {
+        // subrange found at std::distance(std::begin(Buffer), it)
+        return std::distance(std::begin(data), it);
+    }
+}
+
 
 QByteArray srd_dec(const QByteArray &data)
 {

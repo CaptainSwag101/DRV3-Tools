@@ -1,7 +1,9 @@
 #ifndef DRV3_DEC_H
 #define DRV3_DEC_H
 
+#include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <QMultiMap>
 #include <QTextCodec>
 #include <QTextStream>
@@ -33,6 +35,7 @@ struct SpcFile
 inline uchar bit_reverse(uchar b);
 QByteArray spc_dec(const QByteArray &data, int dec_size = -1);
 QByteArray spc_cmp(const QByteArray &data);
+int find_sequence(const QByteArray &data, const QByteArray &seq);
 QByteArray srd_dec(const QByteArray &data);
 QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 QStringList get_stx_strings(const QByteArray &data);
