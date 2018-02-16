@@ -12,7 +12,7 @@ inline uchar bit_reverse(uchar b)
 // individual files in an spc archive
 QByteArray spc_dec(const QByteArray &data, int dec_size)
 {
-    const int cmp_size = data.length();
+    const int cmp_size = data.size();
 
     if (dec_size <= 0)
         dec_size = cmp_size * 2;
@@ -67,7 +67,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
 
 QByteArray spc_cmp(const QByteArray &data)
 {
-    const int data_len = data.length();
+    const int data_len = data.size();
     int pos = 0;
 
     QByteArray result;
@@ -138,12 +138,12 @@ QByteArray spc_cmp(const QByteArray &data)
             // check if the next byte in the sequence is present.
             // If not, search for a new index.
 
-            index = window.lastIndexOf(seq, window_len - seq.length());
+            index = window.lastIndexOf(seq, window_len - seq.size());
 
             if (index != -1)
             {
                 int extra_len = 0;
-                while (index + seq_len + extra_len + 1 < window_len && pos < data_len && seq_len + extra_len < readahead_len)
+                while (index + seq_len + extra_len < window_len && pos < data_len && seq_len + extra_len < readahead_len)
                 {
                     char c = data.at(pos);
                     int check_index = index + seq_len + extra_len;
@@ -180,7 +180,7 @@ QByteArray spc_cmp(const QByteArray &data)
             {
                 QByteArray seq2 = seq;
 
-                int seq2_len = seq2.length();
+                int seq2_len = seq2.size();
                 while (seq2_len < readahead_len && pos < data_len)
                 {
                     const char c = data.at(pos);
@@ -225,7 +225,7 @@ QByteArray spc_cmp(const QByteArray &data)
                 break;
 
             seq.append(data.at(pos++));
-            seq_len = seq.length();
+            seq_len = seq.size();
         }
 
 
