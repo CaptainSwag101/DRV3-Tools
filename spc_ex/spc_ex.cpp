@@ -282,14 +282,16 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
         out_data.append(num_to_bytes(info_strings[i + 1].split('=')[1].toUShort()));  // unk_flag
 
         const QByteArray cmp_subdata = spc_cmp(dec_subdata);
+
+#ifdef QT_DEBUG
         const QByteArray test_data = spc_dec(cmp_subdata);
 
-        for (int x = 0; x < test_data.size(); x++)
-            if (dec_subdata[x] != test_data[x])
-            {
-                cout << "\tError: Compression test failed, compression was not deterministic!\n";
-                cout.flush();
-            }
+        if (dec_subdata != test_data)
+        {
+            cout << "\tError: Compression test failed, compression was not deterministic!\n";
+            cout.flush();
+        }
+#endif
 
         uint cmp_size = cmp_subdata.size();
         out_data.append(num_to_bytes(cmp_size));    // cmp_size

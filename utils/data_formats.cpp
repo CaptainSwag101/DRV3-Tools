@@ -65,31 +65,29 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
     return result;
 }
 
+// First, read from the readahead area into the sequence one byte at a time.
+// Then, see if the sequence already exists in the previous 1023 bytes.
+// If it does, note its position. Once we encounter a sequence that
+// is not duplicated, take the last found duplicate and compress it.
+// If we haven't found any duplicate sequences, add the first byte as raw data.
+// If we did find a duplicate sequence, and it is adjacent to the readahead area,
+// see how many bytes of that sequence can be repeated until we encounter
+// a non-duplicate byte or reach the end of the readahead area.
 QByteArray spc_cmp(const QByteArray &data)
 {
     const int data_len = data.size();
     int pos = 0;
+    int flag = 0;
+    int cur_flag_bit = 0;
 
     QByteArray result;
     result.reserve(data_len);
     QByteArray block;
     block.reserve(16);
 
-    uint flag = 0;
-    uint cur_flag_bit = 0;
-
     // This repeats one extra time to allow the final flag and compressed block to be written
     while (pos <= data_len)
     {
-        const int window_end = pos;
-        const int window_len = std::min(pos, 1023);     // Max value for window_len = 1023
-        const int readahead_len = std::min(data_len - window_end + 1, 65);  // Max value = 65
-        // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
-        const QByteArray window = data.mid(window_end - window_len, window_len);
-
-        QByteArray seq;
-        seq.reserve(readahead_len);
-
         // At the end of each 8-byte block, add the flag and compressed block to the result
         if (cur_flag_bit > 7 || pos >= data_len)
         {
@@ -107,169 +105,119 @@ QByteArray spc_cmp(const QByteArray &data)
             break;
 
 
-        // First, read from the readahead area into the sequence one byte at a time.
-        // Then, see if the sequence already exists in the previous 1023 bytes.
-        // If it does, note its position. Once we encounter a sequence that
-        // is not duplicated, take the last found duplicate and compress it.
-        // If we haven't found any duplicate sequences, add the first byte as raw data.
-        // If we did find a duplicate sequence, and it is adjacent to the readahead area,
-        // see how many bytes of that sequence can be repeated until we encounter
-        // a non-duplicate byte or reach the end of the readahead area.
 
-
+        const int window_end = pos;
+        const int window_len = std::min(pos, 1023);     // Max value for window_len = 1023
+        const int readahead_len = std::min(data_len - window_end + 1, 65);  // Max value = 65
         int last_index = -1;
-        int longest_dupe_len = 1;
-        int seq_len = 1;
+        //int longest_dupe_len = 1;
 
-        // Read 1 byte to start with, so looping is easier.
-        seq.append(data.at(pos++));
+        // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
+        const QByteArray window = data.mid(window_end - window_len, window_len);
 
-        while (seq_len < readahead_len)
+        QByteArray seq;
+        seq.reserve(readahead_len);
+
+
+        while (pos < data_len && seq.size() < readahead_len && seq.size() <= window_len)
         {
-            // Break if the dupe-checking window is out of bounds
-            //if (window_end <= 0)
-            //    break;
+            seq.append(data.at(pos++));
 
+            // We need to do this -1 here because QByteArrays are \000 terminated
+            const int index = window.lastIndexOf(seq, window_len - 1);
 
-            int index = -1;
-            // TODO: This function is incredibly slow, and we call it a lot.
-            // Try to improve performance by remembering the last found index and
-            // checking if seq + 1 will fit before the end of the window, and then
-            // check if the next byte in the sequence is present.
-            // If not, search for a new index.
-
-            index = window.lastIndexOf(seq, window_len - seq.size());
-
-            if (index != -1)
-            {
-                int extra_len = 0;
-                while (index + seq_len + extra_len < window_len && pos < data_len && seq_len + extra_len < readahead_len)
-                {
-                    char c = data.at(pos);
-                    int check_index = index + seq_len + extra_len;
-                    if (window.at(check_index) == c)
-                    {
-                        pos++;
-                        extra_len++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                seq.append(data.mid(window_end + seq_len, extra_len));
-                seq_len += extra_len;
-            }
             // If the current sequence is not a duplicate,
             // break and return the previous sequence.
-            else
+            if (index == -1)
             {
-                if (seq_len > 1)
+                if (seq.size() > 1)
                 {
-                    seq.chop(1);
-                    seq_len--;
                     pos--;
-                }
-                break;
-            }
-
-            // If existing dupe is adjacent to the readahead area,
-            // see if it can be repeated INTO the readahead area.
-            if (index + seq_len == window_end)
-            {
-                QByteArray seq2 = seq;
-
-                int seq2_len = seq2.size();
-                while (seq2_len < readahead_len && pos < data_len)
-                {
-                    const char c = data.at(pos);
-                    const int dupe_index = seq2_len % seq_len;
-
-                    // Check if the next byte exists in the previous
-                    // repeated segment of our sequence.
-                    if (c != seq.at(dupe_index))
-                    {
-                        break;
-                    }
-
-                    pos++;
-                    seq2.append(c);
-                    seq2_len++;
-                }
-
-                // If we can duplicate all bytes of the readahead buffer,
-                // break out immediately (we've found the max compression).
-                if (seq2_len == readahead_len)
-                {
-                    last_index = index;
-                    longest_dupe_len = seq2_len;
+                    seq.chop(1);
                     break;
                 }
 
-                // Go back to the last byte we read before the readahead test,
-                // so normal dupe checking can continue.
-                pos -= (seq2_len - seq_len);
-                seq_len = seq2_len;
+                if (last_index == -1)
+                {
+                    break;
+                }
             }
-
-            // Check if the current sequence is longer than the last
-            // duplicate sequence we found, if any.
-            if (seq_len > longest_dupe_len)
+            else
             {
+                while (pos < data_len && index + seq.size() < window_len && seq.size() < readahead_len)
+                {
+                    char c = data.at(pos++);
+                    int check_index = index + seq.size();
+                    if (window.at(check_index) == c)
+                    {
+                        seq.append(c);
+                    }
+                    else
+                    {
+                        pos--;
+                        break;
+                    }
+                }
+
                 last_index = index;
-                longest_dupe_len = seq_len;
             }
 
-            if (pos >= data_len)
-                break;
 
-            seq.append(data.at(pos++));
-            seq_len = seq.size();
+            // If existing dupe is adjacent to the readahead area,
+            // see if it can be repeated INTO the readahead area.
+            if (index + seq.size() == window_end)
+            {
+                const int orig_seq_size = seq.size();
+                while (seq.size() < readahead_len && pos < data_len)
+                {
+                    const int dupe_index = (pos - window_end) % orig_seq_size;
+                    const char c = data.at(pos++);
+                    // Check if the next byte exists in the previous
+                    // repeated segment of our sequence.
+                    if (c == seq.at(dupe_index))
+                    {
+                        seq.append(c);
+                    }
+                    else
+                    {
+                        pos--;
+                        break;
+                    }
+                }
+
+                last_index = index;
+
+                // If we can duplicate all bytes of the readahead buffer,
+                // break out immediately (we've found the max compression).
+                if (seq.size() == readahead_len)
+                {
+                    break;
+                }
+            }
         }
 
 
-        if (last_index == -1 || longest_dupe_len <= 1)  // We found a new raw byte
+        if (last_index == -1 || seq.size() <= 1)    // We found a new raw byte
         {
             flag |= (1 << cur_flag_bit);
             block.append(seq);
         }
-        else                                            // We found a duplicate sequence
+        else                                        // We found a duplicate sequence
         {
             ushort repeat_data = 0;
             repeat_data |= 1024 - (window_len - last_index);
-            repeat_data |= (longest_dupe_len - 2) << 10;
+            repeat_data |= (seq.size() - 2) << 10;
             block.append(num_to_bytes<ushort>(repeat_data));
 
             // Seek back to the end of the duplicated sequence,
             // in case it repeated into the readahead area.
-            pos = window_end + longest_dupe_len;
+            //pos = window_end + longest_dupe_len;
         }
         cur_flag_bit++;
     }
 
     return result;
 }
-
-
-int find_sequence(const QByteArray &data, const QByteArray &seq)
-{
-    auto it = std::search(
-        std::begin(data), std::end(data),
-        std::begin(seq), std::end(seq));
-
-    if (it == std::end(data))
-    {
-        // not found
-        return -1;
-    }
-    else
-    {
-        // subrange found at std::distance(std::begin(Buffer), it)
-        return std::distance(std::begin(data), it);
-    }
-}
-
 
 QByteArray srd_dec(const QByteArray &data)
 {
