@@ -20,8 +20,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
     QByteArray result;
     result.reserve(dec_size);
 
-    uint flag = 1;
-
+    int flag = 1;
     int pos = 0;
 
     while (pos < cmp_size)
@@ -76,14 +75,15 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
 QByteArray spc_cmp(const QByteArray &data)
 {
     const int data_len = data.size();
-    int pos = 0;
-    int flag = 0;
-    int cur_flag_bit = 0;
 
     QByteArray result;
     result.reserve(data_len);
     QByteArray block;
     block.reserve(16);
+
+    int pos = 0;
+    int flag = 0;
+    char cur_flag_bit = 0;
 
     // This repeats one extra time to allow the final flag and compressed block to be written
     while (pos <= data_len)
@@ -165,7 +165,7 @@ QByteArray spc_cmp(const QByteArray &data)
 
             // If existing dupe is adjacent to the readahead area,
             // see if it can be repeated INTO the readahead area.
-            if (index + seq.size() == window_end)
+            if (index + seq.size() == window_len)
             {
                 const int orig_seq_size = seq.size();
                 while (seq.size() < readahead_len && pos < data_len)

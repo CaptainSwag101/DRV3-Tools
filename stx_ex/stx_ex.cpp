@@ -4,131 +4,121 @@
 #include "../utils/binarydata.h"
 #include "../utils/data_formats.h"
 
-int unpack();
-int repack();
+void unpack(const QString in_dir);
+void repack(const QString in_dir);
 
 static QTextStream cout(stdout);
-QDir inDir;
-QDir outDir;
-bool pack = false;
 
 int main(int argc, char *argv[])
 {
-    // Parse args
-    if (argc < 2)
-    {
-        cout << "No input path specified.\n";
-        return 1;
-    }
-    inDir = QDir(argv[1]);
+    QString in_dir;
+    bool pack = false;
 
-    for (int i = 0; i < argc; i++)
+    // Parse args
+    for (int i = 1; i < argc; i++)
     {
-        if (QString(argv[i]) == "-p" || QString(argv[i]) == "--pack")
+        QString arg = QString(argv[i]);
+
+        if (arg == "-p" || arg == "--pack")
             pack = true;
+        else
+            in_dir = QDir(argv[i]).absolutePath();
+    }
+
+    if (in_dir.isEmpty())
+    {
+        cout << "Error: No input path specified.\n";
+        cout.flush();
+        return 1;
     }
 
     if (pack)
-        return repack();
+        repack(in_dir);
     else
-        return unpack();
+        unpack(in_dir);
+
+    return 0;
 }
 
-int unpack()
+void unpack(const QString in_dir)
 {
-    outDir = inDir;
-    outDir.cdUp();
-    if (!outDir.exists("ex"))
-    {
-        if (!outDir.mkdir("ex"))
-        {
-            cout << "Error: Failed to create \"ex\" directory.\n";
-            return 1;
-        }
-    }
-    outDir.cd("ex");
-    if (!outDir.exists(inDir.dirName()))
-    {
-        if (!outDir.mkdir(inDir.dirName()))
-        {
-            cout << "Error: Failed to create \"ex" << QDir::separator() << inDir.dirName() << "\" directory.\n";
-            return 1;
-        }
-    }
-    outDir.cd(inDir.dirName());
+    QString ex_dir = in_dir + "-ex";
 
-    QDirIterator it(inDir.path(), QStringList() << "*.stx", QDir::Files, QDirIterator::Subdirectories);
+    /*
+    if (!QDir(dec_dir).exists())
+    {
+        if (!QDir().mkpath(dec_dir))
+        {
+            cout << "Error: Failed to create \"" << dec_dir << "\" directory.\n";
+            cout.flush();
+            return 1;
+        }
+    }
+    */
+
+    QDirIterator it(in_dir, QStringList() << "*.stx", QDir::Files, QDirIterator::Subdirectories);
     QStringList stxFiles;
     while (it.hasNext())
         stxFiles.append(it.next());
 
     stxFiles.sort();
-    for (int i = 0; i < stxFiles.length(); i++)
+    for (int i = 0; i < stxFiles.count(); i++)
     {
-        QString file = inDir.relativeFilePath(stxFiles[i]);
-        cout << "Extracting file " << (i + 1) << "/" << stxFiles.length() << ": \"" << file << "\"\n";
+        QString file = QDir(in_dir).relativeFilePath(stxFiles.at(i));
+        cout << "Extracting file " << (i + 1) << "/" << stxFiles.count() << ": \"" << file << "\"\n";
         cout.flush();
         QFile f(stxFiles[i]);
         f.open(QFile::ReadOnly);
         QByteArray data = f.readAll();
         f.close();
 
-        outDir.mkpath(file.left(QDir::toNativeSeparators(file).lastIndexOf(QDir::separator())));
+        int dirSeparatorIndex = QDir::toNativeSeparators(file).lastIndexOf(QDir::separator());
+        if (dirSeparatorIndex > 0)
+            QDir(ex_dir).mkpath(file.left(dirSeparatorIndex));
 
         QString outFile = file;
         outFile.replace(".stx", ".txt");
 
         QStringList strings = get_stx_strings(data);
 
-        QFile textFile(outDir.path() + QDir::separator() + outFile);
+        QFile textFile(ex_dir + QDir::separator() + outFile);
         textFile.open(QFile::WriteOnly);
         for (int i = 0; i < strings.size(); i++)
         {
             textFile.write(QString("##### " + QString::number(i).rightJustified(4, '0') + "\n").toUtf8());
-            textFile.write(QString(strings[i] + "\n\n").toUtf8());
+            textFile.write(QString(strings.at(i) + "\n\n").toUtf8());
         }
         textFile.close();
 
     }
-
-    return 0;
 }
 
-int repack()
+void repack(const QString in_dir)
 {
-    outDir = inDir;
-    outDir.cdUp();
-    if (!outDir.exists("cmp"))
+    QString cmp_dir = in_dir + "-cmp";
+
+    /*
+    if (!QDir(cmp_dir).exists())
     {
-        if (!outDir.mkdir("cmp"))
+        if (!QDir().mkpath(cmp_dir))
         {
-            cout << "Error: Failed to create \"cmp\" directory.\n";
-            return 1;
+            cout << "Error: Failed to create \"" << cmp_dir << "\" directory.\n";
+            cout.flush();
+            return;
         }
     }
+    */
 
-    outDir.cd("cmp");
-    if (!outDir.exists(inDir.dirName()))
-    {
-        if (!outDir.mkdir(inDir.dirName()))
-        {
-            cout << "Error: Failed to create \"cmp" << QDir::separator() << inDir.dirName() << "\" directory.\n";
-            return 1;
-        }
-    }
-    outDir.cd(inDir.dirName());
-
-    QString test = inDir.path();
-    QDirIterator it(inDir.path(), QStringList() << "*.txt", QDir::Files, QDirIterator::Subdirectories);
+    QDirIterator it(in_dir, QStringList() << "*.txt", QDir::Files, QDirIterator::Subdirectories);
     QStringList txtFiles;
     while (it.hasNext())
         txtFiles.append(it.next());
 
     txtFiles.sort();
-    for (int f = 0; f < txtFiles.length(); f++)
+    for (int f = 0; f < txtFiles.count(); f++)
     {
-        QString file = inDir.relativeFilePath(txtFiles[f]);
-        cout << "Re-packing file " << (f + 1) << "/" << txtFiles.length() << ": \"" << file << "\"\n";
+        QString file = QDir(in_dir).relativeFilePath(txtFiles.at(f));
+        cout << "Re-packing file " << (f + 1) << "/" << txtFiles.count() << ": \"" << file << "\"\n";
         cout.flush();
 
         // The original files (usually) use Unix-style line breaks.
@@ -168,7 +158,7 @@ int repack()
         str.clear();
         QByteArray stxData = repack_stx_strings(table_len, strings);
 
-        QString outPath = QDir::toNativeSeparators(outDir.path() + QDir::separator() + file);
+        QString outPath = QDir::toNativeSeparators(cmp_dir + QDir::separator() + file);
         outPath.replace(".txt", ".stx");
         QDir().mkpath(outPath.left(outPath.lastIndexOf(QDir::separator())));
         QFile outFile(outPath);
@@ -176,6 +166,4 @@ int repack()
         outFile.write(stxData);
         outFile.close();
     }
-
-    return 0;
 }

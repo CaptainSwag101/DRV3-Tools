@@ -69,7 +69,7 @@ void unpack(const QString in_dir)
     spcNames.sort();
     for (int i = 0; i < spcNames.count(); i++)
     {
-        QString rel_dir = QDir(in_dir).relativeFilePath(spcNames[i]);
+        QString rel_dir = QDir(in_dir).relativeFilePath(spcNames.at(i));
         QString out_dir = dec_dir + '/' + rel_dir;
         if (!QDir(dec_dir).mkpath(rel_dir))
         {
@@ -77,7 +77,7 @@ void unpack(const QString in_dir)
             cout.flush();
             continue;
         }
-        cout << "Extracting file " << (i + 1) << "/" << spcNames.length() << ": " << rel_dir << "\n";
+        cout << "Extracting file " << (i + 1) << "/" << spcNames.size() << ": " << rel_dir << "\n";
         cout.flush();
 
         QFile f(spcNames[i]);
@@ -233,9 +233,16 @@ void repack(QString in_dir)
     */
 
     QDirIterator it(in_dir, QStringList() << "*.spc", QDir::Dirs, QDirIterator::Subdirectories);
+    QStringList spcNames;
     while (it.hasNext())
     {
-        QString spc_dir = it.next();
+        spcNames.append(it.next());
+    }
+
+    spcNames.sort();
+    for (int i = 0; i < spcNames.count(); i++)
+    {
+        QString spc_dir = spcNames.at(i);
         QString out_file = QDir(in_dir).relativeFilePath(spc_dir);
         repack_data(spc_dir, cmp_dir, out_file);
     }
@@ -248,7 +255,7 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
     QStringList info_strings = QString(info_file.readAll()).replace('\r', "").split('\n', QString::SkipEmptyParts);
     info_file.close();
 
-    int file_count = info_strings[0].split('=')[1].toInt();
+    int file_count = info_strings.at(0).split('=').at(1).toInt();
 
     cout << "Compressing " << file_count << " files into " << QDir(spc_dir).dirName() << "\n";
     cout.flush();
@@ -269,7 +276,7 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
 
     for (int i = 1; i + 6 <= info_strings.size(); i += 6)
     {
-        QString file_name = info_strings[i + 5].split('=')[1];
+        QString file_name = info_strings.at(i + 5).split('=').at(1);
         cout << "\t" << file_name << "\n";
         cout.flush();
 
@@ -279,7 +286,7 @@ void repack_data(const QString spc_dir, const QString cmp_dir, const QString out
         f.close();
 
         out_data.append(num_to_bytes((ushort)0x02));    // cmp_flag
-        out_data.append(num_to_bytes(info_strings[i + 1].split('=')[1].toUShort()));  // unk_flag
+        out_data.append(num_to_bytes(info_strings.at(i + 1).split('=').at(1).toUShort()));  // unk_flag
 
         const QByteArray cmp_subdata = spc_cmp(dec_subdata);
 
