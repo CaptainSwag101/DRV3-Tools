@@ -328,7 +328,6 @@ QStringList get_stx_strings(const QByteArray &data)
     QStringList strings;
 
     QString magic = bytes_to_str(data, pos, 4);
-    pos = 0;
     if (magic != STX_MAGIC)
     {
         //cout << "Invalid STX file.\n";
@@ -424,7 +423,6 @@ QStringList put_stx_strings(QStringList strings)
     QStringList strings;
 
     QString magic = bytes_to_str(data, pos, 4);
-    pos = 0;
     if (magic != STX_MAGIC)
     {
         //cout << "Invalid STX file.\n";
