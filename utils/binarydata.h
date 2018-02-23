@@ -7,7 +7,7 @@
 QString bytes_to_str(const QByteArray &data, int &pos, int len = -1, bool utf16 = false);
 QByteArray get_bytes(const QByteArray &data, int &pos, int len = -1);
 
-template <typename T> QByteArray num_to_bytes(T num, bool big_endian = false)
+template <typename T> inline QByteArray num_to_bytes(T num, bool big_endian = false)
 {
     const int num_size = sizeof(T);
 
@@ -25,7 +25,7 @@ template <typename T> QByteArray num_to_bytes(T num, bool big_endian = false)
     return result;
 }
 
-template <typename T> T bytes_to_num(const QByteArray &data, int &pos, bool big_endian = false)
+template <typename T> inline T bytes_to_num(const QByteArray &data, int &pos, bool big_endian = false)
 {
     const int num_size = sizeof(T);
     T result = 0;

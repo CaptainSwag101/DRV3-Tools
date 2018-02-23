@@ -34,11 +34,13 @@ private slots:
     void on_actionExtractSelected_triggered();
     void on_actionInjectFile_triggered();
     void closeEvent(QCloseEvent *event);
+    void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
 
 private:
     bool confirmUnsaved();
     void reloadSubfileList();
+    void openFile(QString filename);
     void extractFile(QString outDir, SpcSubfile subfile);
     void injectFile(QString name, QByteArray fileData);
 

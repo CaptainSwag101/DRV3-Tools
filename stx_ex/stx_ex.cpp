@@ -45,13 +45,13 @@ void unpack(const QString in_dir)
     QString ex_dir = in_dir + "-ex";
 
     /*
-    if (!QDir(dec_dir).exists())
+    if (!QDir(ex_dir).exists())
     {
-        if (!QDir().mkpath(dec_dir))
+        if (!QDir().mkpath(ex_dir))
         {
-            cout << "Error: Failed to create \"" << dec_dir << "\" directory.\n";
+            cout << "Error: Failed to create \"" << ex_dir << "\" directory.\n";
             cout.flush();
-            return 1;
+            return;
         }
     }
     */
@@ -72,7 +72,7 @@ void unpack(const QString in_dir)
         QByteArray data = f.readAll();
         f.close();
 
-        int dirSeparatorIndex = QDir::toNativeSeparators(file).lastIndexOf(QDir::separator());
+        int dirSeparatorIndex = file.lastIndexOf(QDir::separator());
         if (dirSeparatorIndex > 0)
             QDir(ex_dir).mkpath(file.left(dirSeparatorIndex));
 
@@ -129,7 +129,7 @@ void repack(const QString in_dir)
         QStringList allText = QString(txt.readAll()).replace("\r\n", "\n").replace("\r", "\n").split("\n", QString::SkipEmptyParts);
         txt.close();
 
-        QMap<int, QString> strings;
+        QHash<int, QString> strings;
         QString str;
         int index = 0;
         int table_len = 0;

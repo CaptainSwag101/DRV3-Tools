@@ -335,16 +335,16 @@ QStringList get_stx_strings(const QByteArray &data)
     }
 
     QString lang = bytes_to_str(data, pos, 4);      // "JPLL" in the JP and US versions
-    const int unk1 = bytes_to_num<uint>(data, pos); // Table count?
-    const int table_off  = bytes_to_num<uint>(data, pos);
-    const int unk2 = bytes_to_num<uint>(data, pos);
-    const int table_len = bytes_to_num<uint>(data, pos);
+    const uint unk1 = bytes_to_num<uint>(data, pos); // Table count?
+    const uint table_off  = bytes_to_num<uint>(data, pos);
+    const uint unk2 = bytes_to_num<uint>(data, pos);
+    const uint table_len = bytes_to_num<uint>(data, pos);
 
-    for (int i = 0; i < table_len; i++)
+    for (uint i = 0; i < table_len; i++)
     {
         pos = table_off + (8 * i);
-        const int str_id = bytes_to_num<uint>(data, pos);
-        const int str_off = bytes_to_num<uint>(data, pos);
+        const uint str_id = bytes_to_num<uint>(data, pos);
+        const uint str_off = bytes_to_num<uint>(data, pos);
 
         pos = str_off;
 
@@ -355,10 +355,11 @@ QStringList get_stx_strings(const QByteArray &data)
     return strings;
 }
 
-QByteArray repack_stx_strings(int table_len, QMap<int, QString> strings)
+QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings)
 {
     QByteArray result;
     uint table_off = 0x20;
+
     result.append(QString("STXTJPLL").toUtf8());    // header
     result.append(num_to_bytes((uint)0x01));        // table_count?
     result.append(num_to_bytes(table_off));         // table_off

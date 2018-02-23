@@ -4,6 +4,8 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    ui->listWidget->setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
@@ -46,38 +48,6 @@ void MainWindow::reloadSubfileList()
     ui->listWidget->repaint();
 }
 
-void MainWindow::extractFile(QString outDir, SpcSubfile subfile)
-{
-    switch (subfile.cmp_flag)
-    {
-    case 0x01:  // Uncompressed, don't do anything
-        break;
-
-    case 0x02:  // Compressed
-        subfile.data = spc_dec(subfile.data);
-
-        if (subfile.data.size() != subfile.dec_size)
-        {
-            qDebug() << "Error: Size mismatch, size was " << subfile.data.size() << " but should be " << subfile.dec_size;
-        }
-        break;
-
-    case 0x03:  // Load from external file
-        QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
-        QFile ext_file(ext_file_name);
-        ext_file.open(QFile::ReadOnly);
-        QByteArray ext_data = ext_file.readAll();
-        ext_file.close();
-        subfile.data = srd_dec(ext_data);
-        break;
-    }
-
-    QFile out(outDir + QDir::separator() + subfile.filename);
-    out.open(QFile::WriteOnly);
-    out.write(subfile.data);
-    out.close();
-}
-
 void MainWindow::on_actionOpen_triggered()
 {
     if (!confirmUnsaved()) return;
@@ -87,70 +57,8 @@ void MainWindow::on_actionOpen_triggered()
     {
         return;
     }
-    currentSpc.filename = newFilename;
-    QFile f(currentSpc.filename);
-    f.open(QFile::ReadOnly);
 
-    int pos = 0;
-    QByteArray file_data = f.readAll();
-    QString magic = bytes_to_str(file_data, pos, 4);
-    if (magic == "$CMP")
-    {
-        return;
-        file_data = srd_dec(file_data);
-        pos = 0;
-        magic = bytes_to_str(file_data, pos, 4);
-    }
-
-    if (magic != SPC_MAGIC)
-    {
-        QMessageBox::critical(this, "Error", "Invalid SPC file.");
-        return;
-    }
-
-    currentSpc.unk1 = get_bytes(file_data, pos, 0x24);
-    uint file_count = bytes_to_num<uint>(file_data, pos);
-    currentSpc.unk2 = bytes_to_num<uint>(file_data, pos);
-    pos += 0x10;   // padding
-
-    QString table_magic = bytes_to_str(file_data, pos, 4);
-    pos += 0x0C;
-
-    if (table_magic != SPC_TABLE_MAGIC)
-    {
-        QMessageBox::critical(this, "Error", "Invalid SPC file.");
-        return;
-    }
-
-    currentSpc.subfiles.clear();
-
-    for (uint i = 0; i < file_count; i++)
-    {
-        SpcSubfile subfile;
-        subfile.cmp_flag = bytes_to_num<ushort>(file_data, pos);
-        subfile.unk_flag = bytes_to_num<ushort>(file_data, pos);
-        subfile.cmp_size = bytes_to_num<uint>(file_data, pos);
-        subfile.dec_size = bytes_to_num<uint>(file_data, pos);
-        subfile.name_len = bytes_to_num<uint>(file_data, pos); // Null terminator excluded from count
-        pos += 0x10;  // padding
-
-        // Everything's aligned to multiples of 0x10
-        // We don't actually want the null terminator byte, so pretend it's padding
-        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
-        uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
-
-        subfile.filename = bytes_to_str(file_data, pos, subfile.name_len);
-        pos += name_padding + 1;
-
-        subfile.data = get_bytes(file_data, pos, subfile.cmp_size);
-        pos += data_padding;
-
-        currentSpc.subfiles.append(subfile);
-    }
-    f.close();
-
-    this->setWindowTitle("SPC Editor: " + currentSpc.filename);
-    reloadSubfileList();
+    openFile(newFilename);
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -307,6 +215,38 @@ void MainWindow::on_actionExtractSelected_triggered()
     progressDlg.close();
 }
 
+void MainWindow::extractFile(QString outDir, SpcSubfile subfile)
+{
+    switch (subfile.cmp_flag)
+    {
+    case 0x01:  // Uncompressed, don't do anything
+        break;
+
+    case 0x02:  // Compressed
+        subfile.data = spc_dec(subfile.data);
+
+        if (subfile.data.size() != subfile.dec_size)
+        {
+            qDebug() << "Error: Size mismatch, size was " << subfile.data.size() << " but should be " << subfile.dec_size;
+        }
+        break;
+
+    case 0x03:  // Load from external file
+        QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
+        QFile ext_file(ext_file_name);
+        ext_file.open(QFile::ReadOnly);
+        QByteArray ext_data = ext_file.readAll();
+        ext_file.close();
+        subfile.data = srd_dec(ext_data);
+        break;
+    }
+
+    QFile out(outDir + QDir::separator() + subfile.filename);
+    out.open(QFile::WriteOnly);
+    out.write(subfile.data);
+    out.close();
+}
+
 void MainWindow::on_actionInjectFile_triggered()
 {
     QFileDialog dialog;
@@ -323,6 +263,75 @@ void MainWindow::on_actionInjectFile_triggered()
     file.close();
 
     injectFile(QFileInfo(file).fileName(), fileData);
+}
+
+void MainWindow::openFile(QString filename)
+{
+
+    currentSpc.filename = filename;
+    QFile f(currentSpc.filename);
+    f.open(QFile::ReadOnly);
+
+    int pos = 0;
+    QByteArray file_data = f.readAll();
+    QString magic = bytes_to_str(file_data, pos, 4);
+    if (magic == "$CMP")
+    {
+        return;
+        file_data = srd_dec(file_data);
+        pos = 0;
+        magic = bytes_to_str(file_data, pos, 4);
+    }
+
+    if (magic != SPC_MAGIC)
+    {
+        QMessageBox::critical(this, "Error", "Invalid SPC file.");
+        return;
+    }
+
+    currentSpc.unk1 = get_bytes(file_data, pos, 0x24);
+    uint file_count = bytes_to_num<uint>(file_data, pos);
+    currentSpc.unk2 = bytes_to_num<uint>(file_data, pos);
+    pos += 0x10;   // padding
+
+    QString table_magic = bytes_to_str(file_data, pos, 4);
+    pos += 0x0C;
+
+    if (table_magic != SPC_TABLE_MAGIC)
+    {
+        QMessageBox::critical(this, "Error", "Invalid SPC file.");
+        return;
+    }
+
+    currentSpc.subfiles.clear();
+
+    for (uint i = 0; i < file_count; i++)
+    {
+        SpcSubfile subfile;
+        subfile.cmp_flag = bytes_to_num<ushort>(file_data, pos);
+        subfile.unk_flag = bytes_to_num<ushort>(file_data, pos);
+        subfile.cmp_size = bytes_to_num<uint>(file_data, pos);
+        subfile.dec_size = bytes_to_num<uint>(file_data, pos);
+        subfile.name_len = bytes_to_num<uint>(file_data, pos); // Null terminator excluded from count
+        pos += 0x10;  // padding
+
+        // Everything's aligned to multiples of 0x10
+        // We don't actually want the null terminator byte, so pretend it's padding
+        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
+        uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
+
+        subfile.filename = bytes_to_str(file_data, pos, subfile.name_len);
+        pos += name_padding + 1;
+
+        subfile.data = get_bytes(file_data, pos, subfile.cmp_size);
+        pos += data_padding;
+
+        currentSpc.subfiles.append(subfile);
+    }
+    f.close();
+
+    this->setWindowTitle("SPC Editor: " + currentSpc.filename);
+    reloadSubfileList();
 }
 
 void MainWindow::injectFile(QString name, QByteArray fileData)
@@ -352,8 +361,22 @@ void MainWindow::injectFile(QString name, QByteArray fileData)
 
             if (reply == QMessageBox::Yes)
             {
+                QProgressDialog progress("Compressing file, please wait...", QString(), 0, 0, this);
+                progress.setWindowModality(Qt::WindowModal);
+                progress.setValue(0);
+                progress.show();
+                progress.setValue(0);
+                progress.raise();
+                progress.activateWindow();
+                progress.repaint();
+                progress.update();
+
+                QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
                 currentSpc.subfiles[i].cmp_flag = 0x02;
                 currentSpc.subfiles[i].data = spc_cmp(currentSpc.subfiles[i].data);
+
+                progress.close();
             }
             else
             {
@@ -377,8 +400,22 @@ void MainWindow::injectFile(QString name, QByteArray fileData)
 
     if (reply == QMessageBox::Yes)
     {
+        QProgressDialog progress("Compressing file, please wait...", QString(), 0, 0, this);
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setValue(0);
+        progress.show();
+        progress.setValue(0);
+        progress.raise();
+        progress.activateWindow();
+        progress.repaint();
+        progress.update();
+
+        QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
         injectFile.cmp_flag = 0x02;
         injectFile.data = spc_cmp(injectFile.data);
+
+        progress.close();
     }
     else
     {
@@ -401,6 +438,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->accept();
 }
 
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
 void MainWindow::dropEvent(QDropEvent *event)
 {
     const QMimeData *mimeData = event->mimeData();
@@ -409,15 +452,22 @@ void MainWindow::dropEvent(QDropEvent *event)
     {
         QList<QUrl> urlList = mimeData->urls();
 
-        for (auto it = urlList.begin(); it != urlList.end(); it++)
+        for (int i = 0; i < urlList.count(); i++)
         {
-            QFile f(((QUrl)*it).toLocalFile());
-            f.open(QFile::ReadOnly);
-            QString name = QFileInfo(f).fileName();
-            QByteArray fileData = f.readAll();
-            f.close();
+            QString filepath = urlList.at(i).toLocalFile();
 
-            injectFile(name, fileData);
+            if (currentSpc.filename.isEmpty())
+                openFile(filepath);
+            else
+            {
+                QFile f(filepath);
+                f.open(QFile::ReadOnly);
+                QString name = QFileInfo(f).fileName();
+                QByteArray fileData = f.readAll();
+                f.close();
+
+                injectFile(name, fileData);
+            }
         }
 
         event->acceptProposedAction();

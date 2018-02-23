@@ -92,7 +92,7 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    QMap<int, QString> stringMap;
+    QHash<int, QString> stringMap;
     int index = 0;
     int table_len = 0;
     for (QPlainTextEdit *tb : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))

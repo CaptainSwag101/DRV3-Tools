@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <QMultiMap>
+#include <QHash>
 #include <QTextCodec>
 #include <QTextStream>
 #include "binarydata.h"
@@ -38,6 +38,6 @@ QByteArray spc_cmp(const QByteArray &data);
 QByteArray srd_dec(const QByteArray &data);
 QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 QStringList get_stx_strings(const QByteArray &data);
-QByteArray repack_stx_strings(int table_len, QMap<int, QString> strings);
+QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings);
 
 #endif // DRV3_DEC_H
