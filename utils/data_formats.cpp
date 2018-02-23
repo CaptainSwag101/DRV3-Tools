@@ -48,8 +48,8 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
             // Count  -> x + 2 (max length of 65 bytes)
             // Offset -> y (from the beginning of a 1023-byte sliding window)
             const ushort b = bytes_to_num<ushort>(data, pos);
-            const int count = (b >> 10) + 2;
-            const int offset = b & 1023;
+            const char count = (b >> 10) + 2;
+            const short offset = b & 1023;
 
             for (int i = 0; i < count; i++)
             {
@@ -108,7 +108,7 @@ QByteArray spc_cmp(const QByteArray &data)
 
         const int window_end = pos;
         const int window_len = std::min(pos, 1023);     // Max value for window_len = 1023
-        const int readahead_len = std::min(data_len - window_end + 1, 65);  // Max value = 65
+        const int readahead_len = std::min(data_len - window_end, 65);  // Max value = 65
         int last_index = -1;
         //int longest_dupe_len = 1;
 
@@ -119,7 +119,7 @@ QByteArray spc_cmp(const QByteArray &data)
         seq.reserve(readahead_len);
 
 
-        while (pos < data_len && seq.size() < readahead_len && seq.size() <= window_len)
+        while (pos < data_len && seq.size() < readahead_len)
         {
             seq.append(data.at(pos++));
 
@@ -134,11 +134,6 @@ QByteArray spc_cmp(const QByteArray &data)
                 {
                     pos--;
                     seq.chop(1);
-                    break;
-                }
-
-                if (last_index == -1)
-                {
                     break;
                 }
             }
@@ -197,13 +192,15 @@ QByteArray spc_cmp(const QByteArray &data)
         }
 
 
-        if (last_index == -1 || seq.size() <= 1)    // We found a new raw byte
+        if (last_index == -1 || seq.size() <= 1)
         {
+            // We found a new raw byte
             flag |= (1 << cur_flag_bit);
             block.append(seq);
         }
-        else                                        // We found a duplicate sequence
+        else
         {
+            // We found a duplicate sequence
             ushort repeat_data = 0;
             repeat_data |= 1024 - (window_len - last_index);
             repeat_data |= (seq.size() - 2) << 10;

@@ -7,9 +7,10 @@
 #include <QDropEvent>
 #include <QFile>
 #include <QFileDialog>
+#include <QFutureWatcher>
 #include <QMessageBox>
-#include <QMimeData>
 #include <QProgressDialog>
+#include <QtConcurrent/QtConcurrent>
 #include "../utils/binarydata.h"
 #include "../utils/data_formats.h"
 
@@ -41,8 +42,8 @@ private:
     bool confirmUnsaved();
     void reloadSubfileList();
     void openFile(QString filename);
-    void extractFile(QString outDir, SpcSubfile subfile);
-    void injectFile(QString name, QByteArray fileData);
+    void extractFile(QString outDir, const SpcSubfile &subfile);
+    void injectFile(QString name, const QByteArray &fileData);
 
     Ui::MainWindow *ui;
     SpcFile currentSpc;

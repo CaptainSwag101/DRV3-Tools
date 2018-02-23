@@ -8,7 +8,6 @@ QT       -= gui
 
 TARGET = utils
 TEMPLATE = lib
-CONFIG += staticlib
 
 # Remove possible other optimization flags
 #QMAKE_CXXFLAGS_RELEASE -= -O
