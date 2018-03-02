@@ -241,7 +241,6 @@ void MainWindow::reloadSubfileList()
 
 void MainWindow::openFile(QString filename)
 {
-
     currentSpc.filename = filename;
     QFile f(currentSpc.filename);
     f.open(QFile::ReadOnly);

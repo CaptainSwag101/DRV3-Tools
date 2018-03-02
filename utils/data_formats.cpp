@@ -119,7 +119,7 @@ QByteArray spc_cmp(const QByteArray &data)
         seq.reserve(readahead_len);
 
 
-        while (pos < data_len && seq.size() < readahead_len)
+        while (pos < data_len && seq.size() < readahead_len && seq.size() <= window_len)
         {
             seq.append(data.at(pos++));
 
@@ -134,7 +134,9 @@ QByteArray spc_cmp(const QByteArray &data)
                 {
                     pos--;
                     seq.chop(1);
-                    break;
+
+                    if (last_index == -1)
+                        break;
                 }
             }
             else
@@ -160,7 +162,7 @@ QByteArray spc_cmp(const QByteArray &data)
 
             // If existing dupe is adjacent to the readahead area,
             // see if it can be repeated INTO the readahead area.
-            if (index + seq.size() == window_len)
+            if (last_index != (-1) && last_index + seq.size() == window_len)
             {
                 const int orig_seq_size = seq.size();
                 while (seq.size() < readahead_len && pos < data_len)
@@ -180,14 +182,17 @@ QByteArray spc_cmp(const QByteArray &data)
                     }
                 }
 
-                last_index = index;
-
                 // If we can duplicate all bytes of the readahead buffer,
                 // break out immediately (we've found the max compression).
                 if (seq.size() == readahead_len)
                 {
                     break;
                 }
+
+            }
+            if (last_index != -1 && index == -1)
+            {
+                break;
             }
         }
 
