@@ -31,29 +31,18 @@ SOURCES += \
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
-DISTFILES += \
-    test_data/ptt5 \
-    test_data/kennedy.xls \
-    test_data/sum \
-    test_data/cp.html \
-    test_data/fields.c \
-    test_data/a.txt \
-    test_data/aaa.txt \
-    test_data/alice29.txt \
-    test_data/alphabet.txt \
-    test_data/asyoulik.txt \
-    test_data/grammar.lsp \
-    test_data/lcet10.txt \
-    test_data/plrabn12.txt \
-    test_data/random.txt \
-    test_data/xargs.1
-
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../utils/release/ -lutils
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../utils/debug/ -lutils
 else:unix: LIBS += -L$$OUT_PWD/../utils/ -lutils
 
 INCLUDEPATH += $$PWD/../utils
 DEPENDPATH += $$PWD/../utils
+
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/release/libutils.a
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/debug/libutils.a
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/release/utils.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/debug/utils.lib
+else:unix: PRE_TARGETDEPS += $$OUT_PWD/../utils/libutils.a
 
 #QMAKE_POST_LINK += $$quote($(MKDIR) $$OUT_PWD/test_data)$$escape_expand(\n\t)
 QMAKE_POST_LINK += $$quote($(COPY_DIR) $$shell_path($$PWD/test_data) $$shell_path($$OUT_PWD/test_data))

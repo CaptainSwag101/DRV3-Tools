@@ -35,6 +35,8 @@ void SpcCompression::testCase1()
         cmp_data = spc_cmp(orig_data);
         dec_data = spc_dec(cmp_data);
 
+        qDebug() << it.fileName() << ": filesize reduced by " << orig_data.size() - cmp_data.size() << " bytes.\n";
+
         QCOMPARE(dec_data, orig_data);
     }
 }

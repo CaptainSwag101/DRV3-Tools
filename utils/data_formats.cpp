@@ -109,7 +109,7 @@ QByteArray spc_cmp(const QByteArray &data)
         const int window_end = pos;
         const int window_len = std::min(pos, 1023);     // Max value for window_len = 1023
         const int readahead_len = std::min(data_len - window_end, 65);  // Max value = 65
-        int last_index = -1;
+        int found_index = -1;
         //int longest_dupe_len = 1;
 
         // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
@@ -124,27 +124,27 @@ QByteArray spc_cmp(const QByteArray &data)
             seq.append(data.at(pos++));
 
             // We need to do this -1 here because QByteArrays are \000 terminated
-            const int index = window.lastIndexOf(seq, window_len - 1);
+            const int new_index = window.lastIndexOf(seq, window_len - 1);
 
             // If the current sequence is not a duplicate,
             // break and return the previous sequence.
-            if (index == -1)
+            if (new_index == -1)
             {
                 if (seq.size() > 1)
                 {
                     pos--;
                     seq.chop(1);
-
-                    if (last_index == -1)
-                        break;
                 }
+
+                if (found_index == -1)
+                    break;
             }
             else
             {
-                while (pos < data_len && index + seq.size() < window_len && seq.size() < readahead_len)
+                while (pos < data_len && new_index + seq.size() < window_len && seq.size() < readahead_len)
                 {
                     char c = data.at(pos++);
-                    int check_index = index + seq.size();
+                    int check_index = new_index + seq.size();
                     if (window.at(check_index) == c)
                     {
                         seq.append(c);
@@ -156,13 +156,13 @@ QByteArray spc_cmp(const QByteArray &data)
                     }
                 }
 
-                last_index = index;
+                found_index = new_index;
             }
 
 
             // If existing dupe is adjacent to the readahead area,
             // see if it can be repeated INTO the readahead area.
-            if (last_index != (-1) && last_index + seq.size() == window_len)
+            if (found_index != -1 && found_index + seq.size() == window_len)
             {
                 const int orig_seq_size = seq.size();
                 while (seq.size() < readahead_len && pos < data_len)
@@ -190,14 +190,15 @@ QByteArray spc_cmp(const QByteArray &data)
                 }
 
             }
-            if (last_index != -1 && index == -1)
+
+            if (new_index == -1)
             {
                 break;
             }
         }
 
 
-        if (last_index == -1 || seq.size() <= 1)
+        if (found_index == -1 || seq.size() <= 1)
         {
             // We found a new raw byte
             flag |= (1 << cur_flag_bit);
@@ -207,7 +208,7 @@ QByteArray spc_cmp(const QByteArray &data)
         {
             // We found a duplicate sequence
             ushort repeat_data = 0;
-            repeat_data |= 1024 - (window_len - last_index);
+            repeat_data |= 1024 - (window_len - found_index);
             repeat_data |= (seq.size() - 2) << 10;
             block.append(num_to_bytes<ushort>(repeat_data));
 
