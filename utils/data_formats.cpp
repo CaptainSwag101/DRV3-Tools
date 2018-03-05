@@ -8,6 +8,103 @@ inline uchar bit_reverse(uchar b)
     return (b * 0x0202020202 & 0x010884422010) % 1023;
 }
 
+SpcFile spc_from_data(const QByteArray &data)
+{
+    SpcFile result;
+
+    int pos = 0;
+    QString magic = bytes_to_str(data, pos, 4);
+    if (magic == "$CMP")
+    {
+        return spc_from_data(srd_dec(data));
+    }
+
+    if (magic != SPC_MAGIC)
+    {
+        cout << "Error: Invalid SPC file.\n";
+        cout.flush();
+        throw 1;
+    }
+
+    result.unk1 = get_bytes(data, pos, 0x24);
+    uint file_count = bytes_to_num<uint>(data, pos);
+    result.unk2 = bytes_to_num<uint>(data, pos);
+    pos += 0x10;    // padding?
+
+    QString table_magic = bytes_to_str(data, pos, 4);
+    pos += 0x0C;
+
+    if (table_magic != SPC_TABLE_MAGIC)
+    {
+        cout << "Error: Invalid SPC file.\n";
+        cout.flush();
+        throw 2;
+    }
+
+    for (uint i = 0; i < file_count; i++)
+    {
+        SpcSubfile subfile;
+
+        subfile.cmp_flag = bytes_to_num<ushort>(data, pos);
+        subfile.unk_flag = bytes_to_num<ushort>(data, pos);
+        subfile.cmp_size = bytes_to_num<uint>(data, pos);
+        subfile.dec_size = bytes_to_num<uint>(data, pos);
+        uint name_len = bytes_to_num<uint>(data, pos);
+        pos += 0x10;    // Padding?
+
+        // Everything's aligned to multiples of 0x10
+        uint name_padding = (0x10 - (name_len + 1) % 0x10) % 0x10;
+        uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
+
+        subfile.filename = bytes_to_str(data, pos, name_len);
+        // We don't want the null terminator byte, so pretend it's padding
+        pos += name_padding + 1;
+
+        subfile.data = get_bytes(data, pos, subfile.cmp_size);
+        pos += data_padding;
+
+        result.subfiles.append(subfile);
+    }
+
+    return result;
+}
+
+QByteArray spc_to_data(const SpcFile &spc)
+{
+    QByteArray result;
+
+    result.append(SPC_MAGIC.toUtf8());                  // SPC_MAGIC
+    result.append(spc.unk1);                            // unk1
+    result.append(num_to_bytes(spc.subfiles.count()));  // file_count
+    result.append(num_to_bytes(spc.unk2));              // unk2
+    result.append(0x10, 0x00);                          // padding
+    result.append(SPC_TABLE_MAGIC.toUtf8());            // SPC_TABLE_MAGIC
+    result.append(0x0C, 0x00);                          // padding
+
+    for (SpcSubfile subfile : spc.subfiles)
+    {
+        result.append(num_to_bytes(subfile.cmp_flag));  // cmp_flag
+        result.append(num_to_bytes(subfile.unk_flag));  // unk_flag
+        result.append(num_to_bytes(subfile.cmp_size));  // cmp_size
+        result.append(num_to_bytes(subfile.dec_size));  // dec_size
+        result.append(num_to_bytes(subfile.name_len));  // name_len
+        result.append(0x10, 0x00);                      // padding
+
+        // Everything's aligned to multiples of 0x10
+        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
+        uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
+
+        result.append(subfile.filename.toUtf8());
+        // Add the null terminator byte to the padding
+        result.append(name_padding + 1, 0x00);
+
+        result.append(subfile.data);                    // data
+        result.append(data_padding, 0x00);              // data_padding
+    }
+
+    return result;
+}
+
 // This is the compression scheme used for
 // individual files in an spc archive
 QByteArray spc_dec(const QByteArray &data, int dec_size)
@@ -420,37 +517,20 @@ QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings)
     return result;
 }
 
-/*
-QStringList put_stx_strings(QStringList strings)
+WrdFile wrd_from_data(const QByteArray &data, QString name)
 {
-    int pos = 0;
-    QStringList strings;
+    WrdFile result;
 
-    QString magic = bytes_to_str(data, pos, 4);
-    if (magic != STX_MAGIC)
-    {
-        //cout << "Invalid STX file.\n";
-        return strings;
-    }
 
-    QString lang = bytes_to_str(data, pos, 4);  // "JPLL" in the JP and US versions
-    uint unk1 = bytes_to_num<uint>(data, pos);  // Table count?
-    uint table_off  = bytes_to_num<uint>(data, pos);
-    uint unk2 = bytes_to_num<uint>(data, pos);
-    uint table_len = bytes_to_num<uint>(data, pos);
 
-    for (int i = 0; i < table_len; i++)
-    {
-        pos = table_off + (8 * i);
-        uint str_id = bytes_to_num<uint>(data, pos);
-        uint str_off = bytes_to_num<uint>(data, pos);
-
-        pos = str_off;
-
-        QString str = bytes_to_str(data, pos, -1, true);
-        strings.append(str);
-    }
-
-    return strings;
+    return result;
 }
-*/
+
+QByteArray wrd_from_data(const WrdFile &wrd_file)
+{
+    QByteArray result;
+
+
+
+    return result;
+}

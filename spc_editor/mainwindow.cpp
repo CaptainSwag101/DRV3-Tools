@@ -28,37 +28,7 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    QByteArray out_data;
-
-    out_data.append(SPC_MAGIC.toUtf8());                    // SPC_MAGIC
-    out_data.append(currentSpc.unk1);                       // unk1
-    out_data.append(num_to_bytes(currentSpc.subfiles.count())); // file_count
-    out_data.append(num_to_bytes(currentSpc.unk2));             // unk2
-    out_data.append(0x10, 0x00);                            // padding
-    out_data.append(SPC_TABLE_MAGIC.toUtf8());              // SPC_TABLE_MAGIC
-    out_data.append(0x0C, 0x00);                            // padding
-
-    for (SpcSubfile subfile : currentSpc.subfiles)
-    {
-        out_data.append(num_to_bytes(subfile.cmp_flag));         // cmp_flag
-        out_data.append(num_to_bytes(subfile.unk_flag));         // unk_flag
-        out_data.append(num_to_bytes(subfile.cmp_size));         // cmp_size
-        out_data.append(num_to_bytes(subfile.dec_size));         // dec_size
-        out_data.append(num_to_bytes(subfile.name_len));         // name_len
-        out_data.append(0x10, 0x00);             // padding
-
-        // Everything's aligned to multiples of 0x10
-        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
-        uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
-
-        out_data.append(subfile.filename.toUtf8());
-        // Add the null terminator byte to the padding
-        out_data.append(name_padding + 1, 0x00);
-
-        out_data.append(subfile.data);                 // data
-        out_data.append(data_padding, 0x00);     // data_padding
-    }
-
+    QByteArray out_data = spc_to_data(currentSpc);
     QString outName = currentSpc.filename;
     QFile f(outName);
     f.open(QFile::WriteOnly);
@@ -241,66 +211,13 @@ void MainWindow::reloadSubfileList()
 
 void MainWindow::openFile(QString filename)
 {
-    currentSpc.filename = filename;
+
     QFile f(currentSpc.filename);
     f.open(QFile::ReadOnly);
 
-    int pos = 0;
-    QByteArray file_data = f.readAll();
-    QString magic = bytes_to_str(file_data, pos, 4);
-    if (magic == "$CMP")
-    {
-        return;
-        file_data = srd_dec(file_data);
-        pos = 0;
-        magic = bytes_to_str(file_data, pos, 4);
-    }
+    currentSpc = spc_from_data(f.readAll());
+    currentSpc.filename = filename;
 
-    if (magic != SPC_MAGIC)
-    {
-        QMessageBox::critical(this, "Error", "Invalid SPC file.");
-        return;
-    }
-
-    currentSpc.unk1 = get_bytes(file_data, pos, 0x24);
-    uint file_count = bytes_to_num<uint>(file_data, pos);
-    currentSpc.unk2 = bytes_to_num<uint>(file_data, pos);
-    pos += 0x10;   // padding
-
-    QString table_magic = bytes_to_str(file_data, pos, 4);
-    pos += 0x0C;
-
-    if (table_magic != SPC_TABLE_MAGIC)
-    {
-        QMessageBox::critical(this, "Error", "Invalid SPC file.");
-        return;
-    }
-
-    currentSpc.subfiles.clear();
-
-    for (uint i = 0; i < file_count; i++)
-    {
-        SpcSubfile subfile;
-        subfile.cmp_flag = bytes_to_num<ushort>(file_data, pos);
-        subfile.unk_flag = bytes_to_num<ushort>(file_data, pos);
-        subfile.cmp_size = bytes_to_num<uint>(file_data, pos);
-        subfile.dec_size = bytes_to_num<uint>(file_data, pos);
-        subfile.name_len = bytes_to_num<uint>(file_data, pos); // Null terminator excluded from count
-        pos += 0x10;  // padding
-
-        // Everything's aligned to multiples of 0x10
-        // We don't actually want the null terminator byte, so pretend it's padding
-        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
-        uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
-
-        subfile.filename = bytes_to_str(file_data, pos, subfile.name_len);
-        pos += name_padding + 1;
-
-        subfile.data = get_bytes(file_data, pos, subfile.cmp_size);
-        pos += data_padding;
-
-        currentSpc.subfiles.append(subfile);
-    }
     f.close();
 
     this->setWindowTitle("SPC Editor: " + currentSpc.filename);

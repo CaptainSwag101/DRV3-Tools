@@ -1,12 +1,11 @@
 #ifndef DRV3_DEC_H
 #define DRV3_DEC_H
 
-#include <algorithm>
 #include <cmath>
-#include <iterator>
 #include <QHash>
 #include <QTextCodec>
 #include <QTextStream>
+#include <QVector>
 #include "binarydata.h"
 
 const QString SPC_MAGIC = "CPS.";
@@ -28,16 +27,29 @@ struct SpcFile
 {
     QString filename;
     QByteArray unk1;
-    int unk2;
+    uint unk2;
     QList<SpcSubfile> subfiles;
 };
 
+struct WrdFile
+{
+    QString filename;
+    QVector<QByteArray> unk_data;
+    QStringList strings;
+    QStringList cmds;
+    QByteArray code;
+};
+
 inline uchar bit_reverse(uchar b);
+SpcFile spc_from_data(const QByteArray &data);
+QByteArray spc_to_data(const SpcFile &spc);
 QByteArray spc_dec(const QByteArray &data, int dec_size = -1);
 QByteArray spc_cmp(const QByteArray &data);
 QByteArray srd_dec(const QByteArray &data);
 QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 QStringList get_stx_strings(const QByteArray &data);
 QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings);
+WrdFile wrd_from_data(const QByteArray &data, QString name);
+QByteArray wrd_to_data(const WrdFile &wrd);
 
 #endif // DRV3_DEC_H
