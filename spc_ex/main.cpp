@@ -212,27 +212,27 @@ void repack(QString in_dir)
 
             QFile f(spc_dir + QDir::separator() + file_name);
             f.open(QFile::ReadOnly);
-            const QByteArray dec_subdata = f.readAll();
+            QByteArray subdata = f.readAll();
             f.close();
 
-            out_data.append(num_to_bytes((ushort)0x02));    // cmp_flag
-            out_data.append(num_to_bytes(info_strings.at(i + 1).split('=').at(1).toUShort()));  // unk_flag
+            ushort cmp_flag = info_strings.at(i).split('=').at(1).toUShort();
+            uint dec_size = subdata.size();
 
-            const QByteArray cmp_subdata = spc_cmp(dec_subdata);
-
-#ifdef QT_DEBUG
-            const QByteArray test_data = spc_dec(cmp_subdata);
-
-            if (dec_subdata != test_data)
+            if (cmp_flag == 0x02)
             {
-                cout << "\tError: Compression test failed, compression was not deterministic!\n";
-                cout.flush();
-            }
-#endif
+                const QByteArray cmp_subdata = spc_cmp(subdata);
 
-            uint cmp_size = cmp_subdata.size();
+                // If compressing the data doesn't reduce the size, save uncompressed data instead
+                if (cmp_subdata.size() > subdata.size())
+                    cmp_flag = 0x01;
+                else
+                    subdata = cmp_subdata;
+            }
+
+            out_data.append(num_to_bytes(cmp_flag));    // cmp_flag
+            out_data.append(num_to_bytes(info_strings.at(i + 1).split('=').at(1).toUShort()));  // unk_flag
+            uint cmp_size = subdata.size();
             out_data.append(num_to_bytes(cmp_size));    // cmp_size
-            uint dec_size = dec_subdata.size();
             out_data.append(num_to_bytes(dec_size));    // dec_size
             uint name_len = file_name.length();
             out_data.append(num_to_bytes(name_len));    // name_len
@@ -246,7 +246,7 @@ void repack(QString in_dir)
             out_data.append(file_name.toUtf8());        // file_name
             out_data.append(name_padding + 1, 0x00);
 
-            out_data.append(cmp_subdata);               // data
+            out_data.append(subdata);                   // data
             out_data.append(data_padding, 0x00);
         }
         cout << "\n";

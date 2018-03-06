@@ -57,11 +57,9 @@ void MainWindow::on_actionExtractAll_triggered()
     QString outDir = QFileDialog::getExistingDirectory();
     if (outDir.isEmpty()) return;
 
-    QProgressDialog progressDlg(this);
+    QProgressDialog progressDlg("Extracting file", QString(), 0, currentSpc.subfiles.count() - 1, this);
     progressDlg.setWindowModality(Qt::WindowModal);
     progressDlg.setWindowFlags(progressDlg.windowFlags() & ~Qt::WindowCloseButtonHint & ~Qt::WindowContextHelpButtonHint);
-    progressDlg.setCancelButton(0);
-    progressDlg.setMaximum(currentSpc.subfiles.count() - 1);
     progressDlg.show();
 
     bool overwriteAll = false;
@@ -110,11 +108,9 @@ void MainWindow::on_actionExtractSelected_triggered()
 
     QModelIndexList selectedIndexes = ui->listWidget->selectionModel()->selectedIndexes();
 
-    QProgressDialog progressDlg(this);
+    QProgressDialog progressDlg("Extracting file", QString(), 0, selectedIndexes.count() - 1, this);
     progressDlg.setWindowModality(Qt::WindowModal);
     progressDlg.setWindowFlags(progressDlg.windowFlags() & ~Qt::WindowCloseButtonHint & ~Qt::WindowContextHelpButtonHint);
-    progressDlg.setCancelButton(0);
-    progressDlg.setMaximum(selectedIndexes.count() - 1);
     progressDlg.show();
 
     bool overwriteAll = false;
@@ -205,22 +201,18 @@ void MainWindow::reloadSubfileList()
 
     ui->listWidget->clear();
     ui->listWidget->addItems(items);
-    //ui->listWidget->updateGeometry();
     ui->listWidget->repaint();
 }
 
-void MainWindow::openFile(QString filename)
+void MainWindow::openFile(QString filepath)
 {
-
-    QFile f(currentSpc.filename);
+    QFile f(filepath);
     f.open(QFile::ReadOnly);
-
     currentSpc = spc_from_data(f.readAll());
-    currentSpc.filename = filename;
-
     f.close();
 
-    this->setWindowTitle("SPC Editor: " + currentSpc.filename);
+    currentSpc.filename = filepath;
+    this->setWindowTitle("SPC Editor: " + QFileInfo(filepath).fileName());
     reloadSubfileList();
 }
 
@@ -266,14 +258,6 @@ void MainWindow::injectFile(QString name, const QByteArray &fileData)
     injectFile.data = fileData;
     injectFile.dec_size = injectFile.data.size();
 
-    QMessageBox::StandardButton shouldCompress;
-    shouldCompress = QMessageBox::question(this, "Compress Input File",
-                                      "Does this file need to be re-compressed?\nIf unsure, choose \"Yes\".",
-                                      QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
-
-    if (shouldCompress == QMessageBox::Cancel)
-        return;
-
     int fileToOverwrite = -1;
     for (int i = 0; i < currentSpc.subfiles.count(); i++)
     {
@@ -292,28 +276,30 @@ void MainWindow::injectFile(QString name, const QByteArray &fileData)
         }
     }
 
-    if (shouldCompress == QMessageBox::Yes)
-    {
-        QProgressDialog progressDlg("Compressing file, please wait...", QString(), 0, 0, this);
-        progressDlg.setWindowModality(Qt::WindowModal);
-        progressDlg.setWindowFlags(progressDlg.windowFlags() & ~Qt::WindowCloseButtonHint & ~Qt::WindowContextHelpButtonHint);
 
-        QFutureWatcher<QByteArray> cmp_watcher;
-        QObject::connect(&cmp_watcher, &QFutureWatcher<void>::finished, &progressDlg, &QProgressDialog::reset);
+    QProgressDialog progressDlg("Compressing file, please wait...", QString(), 0, 0, this);
+    progressDlg.setWindowModality(Qt::WindowModal);
+    progressDlg.setWindowFlags(progressDlg.windowFlags() & ~Qt::WindowCloseButtonHint & ~Qt::WindowContextHelpButtonHint);
 
-        cmp_watcher.setFuture(QtConcurrent::run(&spc_cmp, injectFile.data));
-        progressDlg.exec();
-        cmp_watcher.waitForFinished();
+    QFutureWatcher<QByteArray> cmp_watcher;
+    QObject::connect(&cmp_watcher, &QFutureWatcher<void>::finished, &progressDlg, &QProgressDialog::reset);
 
-        injectFile.cmp_flag = 0x02;
-        injectFile.data = cmp_watcher.result();
-    }
-    else if (shouldCompress == QMessageBox::No)
+    cmp_watcher.setFuture(QtConcurrent::run(&spc_cmp, injectFile.data));
+    progressDlg.exec();
+    cmp_watcher.waitForFinished();
+
+    // If compressing the data doesn't reduce the size, save uncompressed data instead
+    QByteArray cmp_data = cmp_watcher.result();
+    if (cmp_data.size() > injectFile.data.size())
     {
         injectFile.cmp_flag = 0x01;
     }
+    else
+    {
+        injectFile.cmp_flag = 0x02;
+        injectFile.data = cmp_data;
+    }
     injectFile.cmp_size = injectFile.data.size();
-    injectFile.unk_flag = 0x01;
     injectFile.name_len = injectFile.filename.length();
 
     if (fileToOverwrite > -1)
