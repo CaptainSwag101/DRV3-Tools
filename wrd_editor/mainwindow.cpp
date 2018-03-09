@@ -10,11 +10,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    for (int i = 0; i < labelCodeWidgets.count(); i++)
-    {
-        delete labelCodeWidgets[i];
-    }
-    labelCodeWidgets.clear();
     delete ui;
 }
 
@@ -31,6 +26,11 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
+    return;
+
+
+
+
     QByteArray out_data = wrd_to_data(currentWrd);
     QString outName = currentWrd.filename;
     QFile f(outName);
@@ -84,7 +84,7 @@ void MainWindow::openFile(QString filepath)
     f.close();
 
     currentWrd.filename = filepath;
-    this->setWindowTitle("SPC Editor: " + QFileInfo(filepath).fileName());
+    this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
     reloadLists();
 }
 
@@ -104,25 +104,10 @@ void MainWindow::reloadLists()
         this->ui->tableWidget_Strings->setItem(i, 0, newItem);
     }
 
-    labelCodeWidgets.clear();
-    for (QByteArray label_code : currentWrd.code.values())
+    this->ui->comboBox_SelectLabel->clear();
+    for (QString label_name : currentWrd.labels)
     {
-
-        QTableWidget *widget = new QTableWidget(label_code.size() / 2, 1, this->ui->tabData);
-
-        int pos = 0;
-        while (pos + 1 < label_code.size())
-        {
-            QTableWidgetItem *newItem = new QTableWidgetItem(QString::number(bytes_to_num<ushort>(label_code, pos), 16).rightJustified(4, '0'));
-            widget->setItem((pos / 2), 0, newItem);
-        }
-        //widget->setLayout(new QVBoxLayout());
-        labelCodeWidgets.append(widget);
-    }
-
-    for (int i = currentWrd.code.keys().count(); i > 0; i--)
-    {
-        this->ui->comboBox_SelectLabel->addItem(currentWrd.code.keys().at(i - 1));
+        this->ui->comboBox_SelectLabel->addItem(label_name);
     }
     this->ui->comboBox_SelectLabel->setCurrentIndex(0);
 
@@ -130,6 +115,33 @@ void MainWindow::reloadLists()
 
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
-    this->ui->tableWidget_LabelCode = labelCodeWidgets.at(index);
-    this->ui->tableWidget_LabelCode->repaint();
+    if (index < 0 || index > currentWrd.code.count())
+        return;
+
+    QByteArray label_code = currentWrd.code.at(index);
+    this->ui->tableWidget_LabelCode->setRowCount(0);
+    this->ui->tableWidget_LabelCode->setRowCount(label_code.count(0x70));
+
+    int cmd_num = 0;
+    int pos = 0;
+    QString code = "0x";
+    while (pos < label_code.size())
+    {
+        uchar c = label_code.at(pos++);
+
+        // Don't break on the first byte, which will always be 0x70
+        if (code != "0x" && c == 0x70)
+        {
+            QTableWidgetItem *newItem = new QTableWidgetItem(code);
+            this->ui->tableWidget_LabelCode->setItem(cmd_num++, 0, newItem);
+            code = "0x";
+        }
+
+        code += QString::number(c, 16).toUpper().rightJustified(2, '0');
+    }
+    if (code != "0x")
+    {
+        QTableWidgetItem *newItem = new QTableWidgetItem(code);
+        this->ui->tableWidget_LabelCode->setItem(cmd_num++, 0, newItem);
+    }
 }

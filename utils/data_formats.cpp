@@ -570,7 +570,8 @@ WrdFile wrd_from_data(const QByteArray &data)
         pos = orig_pos + label_code_off;
         QByteArray label_code = data.mid(pos, label_code_len);
 
-        result.code[label_name] = label_code;
+        result.labels.append(label_name);
+        result.code.append(label_code);
     }
 
 
@@ -618,7 +619,7 @@ QByteArray wrd_to_data(const WrdFile &wrd_file)
 {
     QByteArray result;
 
-
+    throw new QException(); // Not implemented
 
     return result;
 }

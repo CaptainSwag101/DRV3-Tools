@@ -2,6 +2,7 @@
 #define DRV3_DEC_H
 
 #include <cmath>
+#include <QException>
 #include <QHash>
 #include <QTextCodec>
 #include <QTextStream>
@@ -34,7 +35,8 @@ struct SpcFile
 struct WrdFile
 {
     QString filename;
-    QHash<QString, QByteArray> code;    // label_name, label_code
+    QStringList labels;
+    QList<QByteArray> code;
     QStringList cmds;
     QStringList strings;
 };

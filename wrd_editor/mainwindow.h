@@ -44,7 +44,6 @@ private:
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;
-    QList<QTableWidget *> labelCodeWidgets;
     bool unsavedChanges = false;
 };
 
