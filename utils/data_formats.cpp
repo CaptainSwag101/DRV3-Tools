@@ -517,16 +517,103 @@ QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings)
     return result;
 }
 
-WrdFile wrd_from_data(const QByteArray &data, QString name)
+WrdFile wrd_from_data(const QByteArray &data)
 {
     WrdFile result;
+    int pos = 0;
+
+    ushort str_count = bytes_to_num<ushort>(data, pos);
+    ushort label_count = bytes_to_num<ushort>(data, pos);
+    ushort cmd_count = bytes_to_num<ushort>(data, pos);
+    ushort unk_count = bytes_to_num<ushort>(data, pos);
+
+    uint unk = bytes_to_num<uint>(data, pos);   // padding?
+    uint unk_off = bytes_to_num<uint>(data, pos);
+    uint label_codeoffset_off = bytes_to_num<uint>(data, pos);
+    uint label_name_off = bytes_to_num<uint>(data, pos);
+    uint cmd_off = bytes_to_num<uint>(data, pos);
+    uint str_off = bytes_to_num<uint>(data, pos);
+
+    // This is usually (unk_off - 0x20), but using pos might be more correct
+    //result.code = get_bytes(data, pos, unk_off - pos);
+
+    // Read the name and code for each label.
+    // NOTE: As far as I can tell, this data can probably just be read
+    // sequentially, and then split at every occurrence of 0x7014.
+    // But let's do it the more complex way for now.
+    int orig_pos = pos;
+    for (ushort i = 0; i < label_count; i++)
+    {
+        pos = label_codeoffset_off + (i * 2);
+        ushort label_code_off = bytes_to_num<ushort>(data, pos);
+        ushort label_code_len;
+        if (i + 1 < label_count)
+        {
+            ushort next = bytes_to_num<ushort>(data, pos);
+            label_code_len = next - label_code_off;
+        }
+        else
+        {
+            label_code_len = label_name_off - label_code_off;
+        }
+
+        pos = label_name_off;
+        for (int j = 0; j < i; j++)
+        {
+            uchar label_name_len = data.at(pos++);
+            pos += (label_name_len + 1);
+        }
+        uchar label_name_len = data.at(pos++);
+        QString label_name = bytes_to_str(data, pos);
+
+        pos = orig_pos + label_code_off;
+        QByteArray label_code = data.mid(pos + label_code_len);
+
+        result.code[label_name] = label_code;
+    }
 
 
+
+    pos = cmd_off;
+    for (ushort i = 0; i < cmd_count; i++)
+    {
+        uchar length = data.at(pos++);
+        QString value = bytes_to_str(data, pos);
+        result.cmds.append(value);
+    }
+
+    /*
+    pos = cmd2_off;
+    for (ushort i = 0; i < cmd2_count; i++)
+    {
+        uchar length = data.at(pos++);
+        QString value = bytes_to_str(data, pos);
+        result.cmds.append(value);
+    }
+    */
+
+    // Text is stored internally
+    if (str_off > 0)
+    {
+        pos = str_off;
+        for (ushort i = 0; i < str_count; i++)
+        {
+            uchar length = data.at(pos++);
+            QString value = bytes_to_str(data, pos, -1, true);
+            result.strings.append(value);
+        }
+    }
+    else
+    {
+        // TODO: Implement this, the strings are probably stored in
+        // the "(current spc name)_text_(region).spc" SPC archive,
+        // within an STX file with the same name as the current WRD file.
+    }
 
     return result;
 }
 
-QByteArray wrd_from_data(const WrdFile &wrd_file)
+QByteArray wrd_to_data(const WrdFile &wrd_file)
 {
     QByteArray result;
 

@@ -19,9 +19,7 @@ void MainWindow::on_actionOpen_triggered()
 
     QString newFilename = QFileDialog::getOpenFileName(this, "Open SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
     if (newFilename.isEmpty())
-    {
         return;
-    }
 
     openFile(newFilename);
 }

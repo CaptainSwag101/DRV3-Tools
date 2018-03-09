@@ -5,8 +5,8 @@ QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
     QString result;
     result.reserve(len);
 
-    int i = 0;
-    while (len < 0 || i++ < len)
+    int orig_pos = pos;
+    while (len < 0 || (pos - orig_pos) < len)
     {
         QChar c;
         if (utf16)
