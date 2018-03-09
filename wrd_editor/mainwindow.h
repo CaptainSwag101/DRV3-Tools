@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QComboBox>
 #include <QCloseEvent>
 #include <QDebug>
 #include <QDropEvent>
@@ -33,13 +34,17 @@ private slots:
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
 
+    void on_comboBox_SelectLabel_currentIndexChanged(int index);
+
 private:
     bool confirmUnsaved();
     void openFile(QString filepath);
     void reloadLists();
+    void updateLabelCodeWidget();
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;
+    QList<QTableWidget *> labelCodeWidgets;
     bool unsavedChanges = false;
 };
 

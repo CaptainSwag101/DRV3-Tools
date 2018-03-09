@@ -76,7 +76,10 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QTableWidget" name="tableWidget_Data">
+         <widget class="QComboBox" name="comboBox_SelectLabel"/>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="tableWidget_LabelCode">
           <property name="sizeAdjustPolicy">
            <enum>QAbstractScrollArea::AdjustToContents</enum>
           </property>
@@ -129,7 +132,7 @@
   </action>
   <action name="actionSave">
    <property name="text">
-    <string>Save...</string>
+    <string>&amp;Save...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>

@@ -547,6 +547,7 @@ WrdFile wrd_from_data(const QByteArray &data)
         pos = label_codeoffset_off + (i * 2);
         ushort label_code_off = bytes_to_num<ushort>(data, pos);
         ushort label_code_len;
+
         if (i + 1 < label_count)
         {
             ushort next = bytes_to_num<ushort>(data, pos);
@@ -554,7 +555,7 @@ WrdFile wrd_from_data(const QByteArray &data)
         }
         else
         {
-            label_code_len = label_name_off - label_code_off;
+            label_code_len = label_codeoffset_off - (orig_pos + label_code_off);
         }
 
         pos = label_name_off;
@@ -567,7 +568,7 @@ WrdFile wrd_from_data(const QByteArray &data)
         QString label_name = bytes_to_str(data, pos);
 
         pos = orig_pos + label_code_off;
-        QByteArray label_code = data.mid(pos + label_code_len);
+        QByteArray label_code = data.mid(pos, label_code_len);
 
         result.code[label_name] = label_code;
     }

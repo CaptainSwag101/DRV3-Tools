@@ -10,6 +10,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    for (int i = 0; i < labelCodeWidgets.count(); i++)
+    {
+        delete labelCodeWidgets[i];
+    }
+    labelCodeWidgets.clear();
     delete ui;
 }
 
@@ -91,7 +96,6 @@ void MainWindow::reloadLists()
         QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.cmds.at(i));
         this->ui->tableWidget_Cmds->setItem(i, 0, newItem);
     }
-    //this->ui->tableWidget_Cmds->repaint();
 
     this->ui->tableWidget_Strings->setRowCount(currentWrd.strings.count());
     for (int i = 0; i < currentWrd.strings.count(); i++)
@@ -99,14 +103,33 @@ void MainWindow::reloadLists()
         QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.strings.at(i));
         this->ui->tableWidget_Strings->setItem(i, 0, newItem);
     }
-    //this->ui->tableWidget_Strings->repaint();
 
-    this->ui->tableWidget_Data->setRowCount(currentWrd.code.count() / 2);
-    int pos = 0;
-    while (pos < currentWrd.code.size())
+    labelCodeWidgets.clear();
+    for (QByteArray label_code : currentWrd.code.values())
     {
-        QTableWidgetItem *newItem = new QTableWidgetItem(QString::number(bytes_to_num<ushort>(currentWrd.code, pos), 16).rightJustified(4, '0'));
-        this->ui->tableWidget_Data->setItem((pos / 2), 0, newItem);
+
+        QTableWidget *widget = new QTableWidget(label_code.size() / 2, 1, this->ui->tabData);
+
+        int pos = 0;
+        while (pos + 1 < label_code.size())
+        {
+            QTableWidgetItem *newItem = new QTableWidgetItem(QString::number(bytes_to_num<ushort>(label_code, pos), 16).rightJustified(4, '0'));
+            widget->setItem((pos / 2), 0, newItem);
+        }
+        //widget->setLayout(new QVBoxLayout());
+        labelCodeWidgets.append(widget);
     }
-    //this->ui->tableWidget_Data->repaint();
+
+    for (int i = currentWrd.code.keys().count(); i > 0; i--)
+    {
+        this->ui->comboBox_SelectLabel->addItem(currentWrd.code.keys().at(i - 1));
+    }
+    this->ui->comboBox_SelectLabel->setCurrentIndex(0);
+
+}
+
+void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
+{
+    this->ui->tableWidget_LabelCode = labelCodeWidgets.at(index);
+    this->ui->tableWidget_LabelCode->repaint();
 }
