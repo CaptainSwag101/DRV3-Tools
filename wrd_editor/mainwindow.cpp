@@ -80,14 +80,16 @@ void MainWindow::openFile(QString filepath)
 {
     QFile f(filepath);
     f.open(QFile::ReadOnly);
-    currentWrd = wrd_from_data(f.readAll());
+    currentWrd = wrd_from_data(f.readAll(), filepath);
     f.close();
 
-    currentWrd.filename = filepath;
     this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
     reloadLists();
 }
 
+// TODO: Change the UI so that everything is shown based on the currently selected label.
+// Since text strings are displayed due to commands in a label, it will help us
+// identify unused strings, flags, or code.
 void MainWindow::reloadLists()
 {
     this->ui->tableWidget_Cmds->setRowCount(currentWrd.cmds.count());

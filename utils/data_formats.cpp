@@ -517,11 +517,12 @@ QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings)
     return result;
 }
 
-WrdFile wrd_from_data(const QByteArray &data)
+WrdFile wrd_from_data(const QByteArray &data, QString in_file)
 {
     WrdFile result;
     int pos = 0;
 
+    result.filename = in_file;
     ushort str_count = bytes_to_num<ushort>(data, pos);
     ushort label_count = bytes_to_num<ushort>(data, pos);
     ushort cmd_count = bytes_to_num<ushort>(data, pos);
@@ -610,6 +611,22 @@ WrdFile wrd_from_data(const QByteArray &data)
         // TODO: Implement this, the strings are probably stored in
         // the "(current spc name)_text_(region).spc" SPC archive,
         // within an STX file with the same name as the current WRD file.
+        QString stx_file = QFileInfo(in_file).absolutePath();
+        if (stx_file.endsWith(".SPC", Qt::CaseInsensitive))
+            stx_file.chop(4);
+        stx_file.append("_text_US.SPC");
+        stx_file.append(QDir::separator());
+        stx_file.append(QFileInfo(in_file).fileName());
+        stx_file.replace(".wrd", ".stx");
+
+        if (QFileInfo(stx_file).exists())
+        {
+            QFile f(stx_file);
+            f.open(QFile::ReadOnly);
+            const QByteArray stx_data = f.readAll();
+            f.close();
+            result.strings = get_stx_strings(stx_data);
+        }
     }
 
     return result;

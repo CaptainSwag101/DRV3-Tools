@@ -2,7 +2,9 @@
 #define DRV3_DEC_H
 
 #include <cmath>
+#include <QDir>
 #include <QException>
+#include <QFileInfo>
 #include <QHash>
 #include <QTextCodec>
 #include <QTextStream>
@@ -50,7 +52,7 @@ QByteArray srd_dec(const QByteArray &data);
 QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 QStringList get_stx_strings(const QByteArray &data);
 QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings);
-WrdFile wrd_from_data(const QByteArray &data);
+WrdFile wrd_from_data(const QByteArray &data, QString filename);
 QByteArray wrd_to_data(const WrdFile &wrd);
 
 #endif // DRV3_DEC_H
