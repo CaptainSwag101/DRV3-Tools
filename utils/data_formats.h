@@ -34,13 +34,19 @@ struct SpcFile
     QList<SpcSubfile> subfiles;
 };
 
+struct WrdCmd
+{
+    ushort opcode;
+    QList<ushort> args;
+};
+
 struct WrdFile
 {
     QString filename;
     QStringList labels;
-    QList<QByteArray> code;
-    QStringList cmds;
+    QStringList flags;
     QStringList strings;
+    QList<WrdCmd> cmds;
 };
 
 inline uchar bit_reverse(uchar b);
@@ -51,7 +57,7 @@ QByteArray spc_cmp(const QByteArray &data);
 QByteArray srd_dec(const QByteArray &data);
 QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 QStringList get_stx_strings(const QByteArray &data);
-QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings);
+QByteArray repack_stx_strings(QStringList strings);
 WrdFile wrd_from_data(const QByteArray &data, QString filename);
 QByteArray wrd_to_data(const WrdFile &wrd);
 

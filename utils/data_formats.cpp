@@ -455,10 +455,11 @@ QStringList get_stx_strings(const QByteArray &data)
     return strings;
 }
 
-QByteArray repack_stx_strings(int table_len, QHash<int, QString> strings)
+QByteArray repack_stx_strings(QStringList strings)
 {
     QByteArray result;
     uint table_off = 0x20;
+    uint table_len = strings.count();
 
     result.append(QString("STXTJPLL").toUtf8());    // header
     result.append(num_to_bytes((uint)0x01));        // table_count?
@@ -525,18 +526,15 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     result.filename = in_file;
     ushort str_count = bytes_to_num<ushort>(data, pos);
     ushort label_count = bytes_to_num<ushort>(data, pos);
-    ushort cmd_count = bytes_to_num<ushort>(data, pos);
+    ushort flag_count = bytes_to_num<ushort>(data, pos);
     ushort unk_count = bytes_to_num<ushort>(data, pos);
 
     uint unk = bytes_to_num<uint>(data, pos);   // padding?
-    uint unk_off = bytes_to_num<uint>(data, pos);
-    uint label_codeoffset_off = bytes_to_num<uint>(data, pos);
-    uint label_name_off = bytes_to_num<uint>(data, pos);
-    uint cmd_off = bytes_to_num<uint>(data, pos);
-    uint str_off = bytes_to_num<uint>(data, pos);
-
-    // This is usually (unk_off - 0x20), but using pos might be more correct
-    //result.code = get_bytes(data, pos, unk_off - pos);
+    uint unk_ptr = bytes_to_num<uint>(data, pos);
+    uint label_offsets_ptr = bytes_to_num<uint>(data, pos);
+    uint label_names_ptr = bytes_to_num<uint>(data, pos);
+    uint flags_ptr = bytes_to_num<uint>(data, pos);
+    uint str_ptr = bytes_to_num<uint>(data, pos);
 
     // Read the name and code for each label.
     // NOTE: As far as I can tell, this data can probably just be read
@@ -545,10 +543,10 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     int orig_pos = pos;
     for (ushort i = 0; i < label_count; i++)
     {
-        pos = label_codeoffset_off + (i * 2);
+        pos = label_offsets_ptr + (i * 2);
         ushort label_code_off = bytes_to_num<ushort>(data, pos);
-        ushort label_code_len;
 
+        ushort label_code_len;
         if (i + 1 < label_count)
         {
             ushort next = bytes_to_num<ushort>(data, pos);
@@ -556,10 +554,10 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
         }
         else
         {
-            label_code_len = label_codeoffset_off - (orig_pos + label_code_off);
+            label_code_len = label_offsets_ptr - (orig_pos + label_code_off);
         }
 
-        pos = label_name_off;
+        pos = label_names_ptr;
         for (int j = 0; j < i; j++)
         {
             uchar label_name_len = data.at(pos++);
@@ -569,20 +567,54 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
         QString label_name = bytes_to_str(data, pos);
 
         pos = orig_pos + label_code_off;
-        QByteArray label_code = data.mid(pos, label_code_len);
+        const QByteArray label_code = data.mid(pos, label_code_len);
+
+
+        int cmd_pos = 0;
+        ushort op = 0;
+        QList<ushort> args;
+        while (cmd_pos + 1 < label_code.size())
+        {
+            ushort c = bytes_to_num<ushort>(label_code, cmd_pos, true);
+
+            // Don't break on the first byte, which will always be 0x70
+            if ((uchar)(c >> 8) == 0x70)
+            {
+                // If this isn't the first command, save the previous one
+                if ((uchar)(op >> 8) == 0x70)
+                {
+                    WrdCmd cmd;
+                    cmd.opcode = op;
+                    cmd.args = args;
+                    result.cmds.append(cmd);
+                }
+
+                op = c;
+                args.clear();
+            }
+            else
+            {
+                args.append(c);
+            }
+        }
+        if ((uchar)(op >> 8) == 0x70)
+        {
+            WrdCmd cmd;
+            cmd.opcode = op;
+            cmd.args = args;
+            result.cmds.append(cmd);
+        }
 
         result.labels.append(label_name);
-        result.code.append(label_code);
     }
 
 
-
-    pos = cmd_off;
-    for (ushort i = 0; i < cmd_count; i++)
+    pos = flags_ptr;
+    for (ushort i = 0; i < flag_count; i++)
     {
         uchar length = data.at(pos++);
         QString value = bytes_to_str(data, pos);
-        result.cmds.append(value);
+        result.flags.append(value);
     }
 
     /*
@@ -596,9 +628,9 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     */
 
     // Text is stored internally
-    if (str_off > 0)
+    if (str_ptr > 0)
     {
-        pos = str_off;
+        pos = str_ptr;
         for (ushort i = 0; i < str_count; i++)
         {
             uchar length = data.at(pos++);
@@ -608,12 +640,13 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     }
     else
     {
-        // TODO: Implement this, the strings are probably stored in
-        // the "(current spc name)_text_(region).spc" SPC archive,
+        // Strings are stored in the "(current spc name)_text_(region).spc" file,
         // within an STX file with the same name as the current WRD file.
         QString stx_file = QFileInfo(in_file).absolutePath();
         if (stx_file.endsWith(".SPC", Qt::CaseInsensitive))
             stx_file.chop(4);
+        if (stx_file.endsWith("_US"))
+            stx_file.chop(3);
         stx_file.append("_text_US.SPC");
         stx_file.append(QDir::separator());
         stx_file.append(QFileInfo(in_file).fileName());

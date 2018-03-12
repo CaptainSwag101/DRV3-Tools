@@ -129,22 +129,20 @@ void repack(const QString in_dir)
         QStringList allText = QString(txt.readAll()).replace("\r\n", "\n").replace("\r", "\n").split("\n", QString::SkipEmptyParts);
         txt.close();
 
-        QHash<int, QString> strings;
+        QStringList strings;
         QString str;
         int index = 0;
-        int table_len = 0;
         for (QString strPart : allText)
         {
             if (strPart.startsWith("#"))
             {
                 if (!str.isEmpty())
                 {
-                    strings[index] = str;
+                    strings.append(str);
                     str.clear();
                 }
 
                 index = strPart.replace("##### ", "").toInt();
-                table_len++;
                 continue;
             }
 
@@ -156,7 +154,7 @@ void repack(const QString in_dir)
         }
         strings[index] = str;
         str.clear();
-        QByteArray stxData = repack_stx_strings(table_len, strings);
+        QByteArray stxData = repack_stx_strings(strings);
 
         QString outPath = QDir::toNativeSeparators(cmp_dir + QDir::separator() + file);
         outPath.replace(".txt", ".stx");

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>451</width>
+    <width>500</width>
     <height>410</height>
    </rect>
   </property>
@@ -20,7 +20,34 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="tabData">
+      <widget class="QWidget" name="tabStrings">
+       <attribute name="title">
+        <string>Strings</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QTableWidget" name="tableWidget_Strings">
+          <property name="font">
+           <font>
+            <family>Noto Mono</family>
+           </font>
+          </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::AdjustToContents</enum>
+          </property>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>Value</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabCode">
        <attribute name="title">
         <string>Code/Data</string>
        </attribute>
@@ -38,58 +65,42 @@
           <property name="sizeAdjustPolicy">
            <enum>QAbstractScrollArea::AdjustToContents</enum>
           </property>
+          <property name="cornerButtonEnabled">
+           <bool>false</bool>
+          </property>
+          <property name="columnCount">
+           <number>2</number>
+          </property>
           <attribute name="horizontalHeaderDefaultSectionSize">
            <number>64</number>
           </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
           </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
           <column>
            <property name="text">
-            <string>Value</string>
+            <string>Opcode</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Args</string>
            </property>
           </column>
          </widget>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabCmds">
+      <widget class="QWidget" name="tabFlags">
        <attribute name="title">
-        <string>Commands</string>
+        <string>Flags</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QTableWidget" name="tableWidget_Cmds">
-          <property name="font">
-           <font>
-            <family>Noto Mono</family>
-           </font>
-          </property>
-          <property name="sizeAdjustPolicy">
-           <enum>QAbstractScrollArea::AdjustToContents</enum>
-          </property>
-          <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>64</number>
-          </attribute>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Value</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabStrings">
-       <attribute name="title">
-        <string>Strings</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <widget class="QTableWidget" name="tableWidget_Strings">
+         <widget class="QTableWidget" name="tableWidget_Flags">
           <property name="font">
            <font>
             <family>Noto Mono</family>
@@ -122,8 +133,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>451</width>
-     <height>20</height>
+     <width>500</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -135,7 +146,14 @@
     <addaction name="actionSaveAs"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <addaction name="actionExportStrings"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -167,6 +185,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionExportStrings">
+   <property name="text">
+    <string>&amp;Export Strings...</string>
    </property>
   </action>
  </widget>

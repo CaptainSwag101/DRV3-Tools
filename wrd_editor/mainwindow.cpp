@@ -92,20 +92,6 @@ void MainWindow::openFile(QString filepath)
 // identify unused strings, flags, or code.
 void MainWindow::reloadLists()
 {
-    this->ui->tableWidget_Cmds->setRowCount(currentWrd.cmds.count());
-    for (int i = 0; i < currentWrd.cmds.count(); i++)
-    {
-        QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.cmds.at(i));
-        this->ui->tableWidget_Cmds->setItem(i, 0, newItem);
-    }
-
-    this->ui->tableWidget_Strings->setRowCount(currentWrd.strings.count());
-    for (int i = 0; i < currentWrd.strings.count(); i++)
-    {
-        QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.strings.at(i));
-        this->ui->tableWidget_Strings->setItem(i, 0, newItem);
-    }
-
     this->ui->comboBox_SelectLabel->clear();
     for (QString label_name : currentWrd.labels)
     {
@@ -113,37 +99,44 @@ void MainWindow::reloadLists()
     }
     this->ui->comboBox_SelectLabel->setCurrentIndex(0);
 
+    this->ui->tableWidget_Flags->clearContents();
+    this->ui->tableWidget_Flags->setRowCount(currentWrd.flags.count());
+    for (int i = 0; i < currentWrd.flags.count(); i++)
+    {
+        QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.flags.at(i));
+        this->ui->tableWidget_Flags->setItem(i, 0, newItem);
+    }
+
+    this->ui->tableWidget_Strings->clearContents();
+    this->ui->tableWidget_Strings->setRowCount(currentWrd.strings.count());
+    for (int i = 0; i < currentWrd.strings.count(); i++)
+    {
+        QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.strings.at(i));
+        this->ui->tableWidget_Strings->setItem(i, 0, newItem);
+    }
 }
 
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
-    if (index < 0 || index > currentWrd.code.count())
+    if (index < 0 || index > currentWrd.cmds.count())
         return;
 
-    QByteArray label_code = currentWrd.code.at(index);
-    this->ui->tableWidget_LabelCode->setRowCount(0);
-    this->ui->tableWidget_LabelCode->setRowCount(label_code.count(0x70));
+    this->ui->tableWidget_LabelCode->clearContents();
+    this->ui->tableWidget_LabelCode->setRowCount(currentWrd.cmds.count());
 
-    int cmd_num = 0;
-    int pos = 0;
-    QString code = "0x";
-    while (pos < label_code.size())
+    for (int i = 0; i < currentWrd.cmds.count(); i++)
     {
-        uchar c = label_code.at(pos++);
+        const WrdCmd cmd = currentWrd.cmds.at(i);
 
-        // Don't break on the first byte, which will always be 0x70
-        if (code != "0x" && c == 0x70)
+        QTableWidgetItem *newOpcode = new QTableWidgetItem(QString::number(cmd.opcode, 16).toUpper().rightJustified(4, '0'));
+        this->ui->tableWidget_LabelCode->setItem(i, 0, newOpcode);
+
+        QString argString;
+        for (ushort arg : cmd.args)
         {
-            QTableWidgetItem *newItem = new QTableWidgetItem(code);
-            this->ui->tableWidget_LabelCode->setItem(cmd_num++, 0, newItem);
-            code = "0x";
+            argString += QString::number(arg, 16).toUpper().rightJustified(4, '0');
         }
-
-        code += QString::number(c, 16).toUpper().rightJustified(2, '0');
-    }
-    if (code != "0x")
-    {
-        QTableWidgetItem *newItem = new QTableWidgetItem(code);
-        this->ui->tableWidget_LabelCode->setItem(cmd_num++, 0, newItem);
+        QTableWidgetItem *newArgs = new QTableWidgetItem(argString);
+        this->ui->tableWidget_LabelCode->setItem(i, 1, newArgs);
     }
 }

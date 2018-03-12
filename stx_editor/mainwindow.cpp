@@ -5,11 +5,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
-    textBoxFrame = new QFrame(ui->scrollArea);
-    ui->scrollArea->setSizeAdjustPolicy(QScrollArea::AdjustToContents);
-    ui->scrollArea->setLayout(new QVBoxLayout());
-    ui->scrollArea->layout()->addWidget(textBoxFrame);
-    textBoxFrame->setLayout(new QVBoxLayout());
+    connect(ui->listWidget, &QListWidget::currentTextChanged, this, &MainWindow::on_textBox_textChanged);
 
     //openStx.setViewMode(QFileDialog::Detail);
     openStx.setNameFilter("STX files (*.stx)");
@@ -45,29 +41,11 @@ bool MainWindow::confirmUnsaved()
 
 void MainWindow::reloadStrings()
 {
+    ui->listWidget->clear();
+
+    // TODO: Do these individually so we can make them editable
     QStringList strings = get_stx_strings(currentStx);
-
-    // Repopulate the text edit boxes
-    for (QPlainTextEdit *old : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))
-    {
-        disconnect(old, &QPlainTextEdit::textChanged, this, &MainWindow::on_textBox_textChanged);
-        textBoxFrame->layout()->removeWidget(old);
-        delete old;
-    }
-
-    for (QString str : strings)
-    {
-        QPlainTextEdit *tb = new QPlainTextEdit(str);
-        tb->setFixedHeight(tb->fontMetrics().height() * 3);
-        connect(tb, &QPlainTextEdit::textChanged, this, &MainWindow::on_textBox_textChanged);
-
-        textBoxFrame->layout()->addWidget(tb);
-    }
-
-    //textBoxFrame->layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
-    ui->scrollArea->setWidget(textBoxFrame);
-    ui->scrollArea->setWidgetResizable(true);
-    ui->scrollArea->adjustSize();
+    ui->listWidget->addItems(strings);
 
     unsavedChanges = false;
 }
@@ -92,17 +70,14 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    QHash<int, QString> stringMap;
-    int index = 0;
-    int table_len = 0;
-    for (QPlainTextEdit *tb : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))
+    QStringList strings;
+    for(int i = 0; i < ui->listWidget->count(); i++)
     {
-        stringMap[index] = tb->document()->toRawText();
-        index++;
-        table_len++;
+        QListWidgetItem *item = ui->listWidget->item(i);
+        strings.append(item->text());
     }
 
-    currentStx = repack_stx_strings(table_len, stringMap);
+    currentStx = repack_stx_strings(strings);
     QFile f(currentFilename);
     f.open(QFile::WriteOnly);
     f.write(currentStx);
