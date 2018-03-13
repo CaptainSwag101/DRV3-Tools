@@ -35,9 +35,21 @@ private slots:
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
     void on_comboBox_SelectLabel_currentIndexChanged(int index);
-    void on_listWidget_Strings_itemChanged(QListWidgetItem *item);
+    void on_tableWidget_Strings_itemChanged(QTableWidgetItem *item);
     void on_tableWidget_LabelCode_cellChanged(int row, int column);
-    void on_listWidget_Flags_itemChanged(QListWidgetItem *item);
+    void on_tableWidget_Flags_itemChanged(QTableWidgetItem *item);
+    void on_toolButton_CmdAdd_clicked();
+    void on_toolButton_CmdDel_clicked();
+    void on_toolButton_CmdUp_clicked();
+    void on_toolButton_CmdDown_clicked();
+    void on_toolButton_StringAdd_clicked();
+    void on_toolButton_StringDel_clicked();
+    void on_toolButton_StringUp_clicked();
+    void on_toolButton_StringDown_clicked();
+    void on_toolButton_FlagAdd_clicked();
+    void on_toolButton_FlagDel_clicked();
+    void on_toolButton_FlagUp_clicked();
+    void on_toolButton_FlagDown_clicked();
 
 private:
     bool confirmUnsaved();
