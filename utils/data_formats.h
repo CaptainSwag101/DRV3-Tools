@@ -46,7 +46,10 @@ struct UTILSSHARED_EXPORT WrdFile
     QStringList labels;
     QStringList flags;
     QStringList strings;
-    QList<WrdCmd> cmds;
+    QList<QList<WrdCmd>> cmds;
+    ushort unk_count;
+    uint unk_ptr;
+    bool external_strings;
 };
 
 UTILSSHARED_EXPORT inline uchar bit_reverse(uchar b);

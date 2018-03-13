@@ -527,10 +527,10 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     ushort str_count = bytes_to_num<ushort>(data, pos);
     ushort label_count = bytes_to_num<ushort>(data, pos);
     ushort flag_count = bytes_to_num<ushort>(data, pos);
-    ushort unk_count = bytes_to_num<ushort>(data, pos);
+    result.unk_count = bytes_to_num<ushort>(data, pos);
 
     uint unk = bytes_to_num<uint>(data, pos);   // padding?
-    uint unk_ptr = bytes_to_num<uint>(data, pos);
+    result.unk_ptr = bytes_to_num<uint>(data, pos);
     uint label_offsets_ptr = bytes_to_num<uint>(data, pos);
     uint label_names_ptr = bytes_to_num<uint>(data, pos);
     uint flags_ptr = bytes_to_num<uint>(data, pos);
@@ -570,6 +570,7 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
         const QByteArray label_code = data.mid(pos, label_code_len);
 
 
+        QList<WrdCmd> cur_label_cmds;
         int cmd_pos = 0;
         ushort op = 0;
         QList<ushort> args;
@@ -586,7 +587,7 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
                     WrdCmd cmd;
                     cmd.opcode = op;
                     cmd.args = args;
-                    result.cmds.append(cmd);
+                    cur_label_cmds.append(cmd);
                 }
 
                 op = c;
@@ -602,10 +603,11 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
             WrdCmd cmd;
             cmd.opcode = op;
             cmd.args = args;
-            result.cmds.append(cmd);
+            cur_label_cmds.append(cmd);
         }
 
         result.labels.append(label_name);
+        result.cmds.append(cur_label_cmds);
     }
 
 
@@ -616,16 +618,6 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
         QString value = bytes_to_str(data, pos);
         result.flags.append(value);
     }
-
-    /*
-    pos = cmd2_off;
-    for (ushort i = 0; i < cmd2_count; i++)
-    {
-        uchar length = data.at(pos++);
-        QString value = bytes_to_str(data, pos);
-        result.cmds.append(value);
-    }
-    */
 
     // Text is stored internally
     if (str_ptr > 0)
@@ -669,7 +661,67 @@ QByteArray wrd_to_data(const WrdFile &wrd_file)
 {
     QByteArray result;
 
-    throw new QException(); // Not implemented
+    result.append(num_to_bytes((ushort)wrd_file.strings.count()));
+    result.append(num_to_bytes((ushort)wrd_file.labels.count()));
+    result.append(num_to_bytes((ushort)wrd_file.flags.count()));
+    result.append(num_to_bytes((ushort)wrd_file.unk_count));
+    result.append(QByteArray(4, 0x00));
+
+    QByteArray code_data;
+    QByteArray code_offsets;
+    QByteArray label_names_data;
+    for (int i = 0; i < wrd_file.labels.count(); i++)
+    {
+        label_names_data.append(str_to_bytes(wrd_file.labels.at(i)));
+
+        code_offsets.append(num_to_bytes((ushort)code_data.size()));
+
+        const QList<WrdCmd> cur_label_cmds = wrd_file.cmds.at(i);
+        for (const WrdCmd cmd : cur_label_cmds)
+        {
+            code_data.append(num_to_bytes(cmd.opcode, true));
+            for (const ushort arg : cmd.args)
+            {
+                code_data.append(num_to_bytes(arg, true));
+            }
+        }
+    }
+
+    QByteArray flags_data;
+    for (const QString flag : wrd_file.flags)
+    {
+        flags_data.append(str_to_bytes(flag));
+    }
+
+    result.append(num_to_bytes(wrd_file.unk_ptr));      // unk_ptr
+    const uint code_start = 0x20;
+    const uint code_end = code_start + code_data.size();
+    const uint code_offsets_ptr = code_end;
+    result.append(num_to_bytes(code_offsets_ptr));      // code_offsets_ptr
+    const uint label_names_ptr = code_offsets_ptr + code_offsets.size();
+    result.append(num_to_bytes(label_names_ptr));       // label_names_ptr
+    const uint flags_ptr = label_names_ptr + label_names_data.size();
+    result.append(num_to_bytes(flags_ptr));             // flags_ptr
+
+    uint str_ptr = 0;
+    if (!wrd_file.external_strings)
+        str_ptr = flags_ptr + flags_data.size();
+    result.append(num_to_bytes(str_ptr));
+
+
+
+    // Now that the offsets/ptrs to the data have been calculated, append the actual data
+    result.append(code_data);
+    result.append(code_offsets);
+    result.append(label_names_data);
+    result.append(flags_data);
+    if (!wrd_file.external_strings)
+    {
+        for (const QString str : wrd_file.strings)
+        {
+            result.append(str_to_bytes(str, true));
+        }
+    }
 
     return result;
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>410</height>
+    <width>600</width>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,24 +26,131 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QTableWidget" name="tableWidget_Strings">
-          <property name="font">
-           <font>
-            <family>Noto Mono</family>
-           </font>
-          </property>
-          <property name="sizeAdjustPolicy">
-           <enum>QAbstractScrollArea::AdjustToContents</enum>
-          </property>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Value</string>
-           </property>
-          </column>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout_Strings">
+          <item>
+           <widget class="QListWidget" name="listWidget_Strings">
+            <property name="midLineWidth">
+             <number>1</number>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
+            </property>
+            <property name="editTriggers">
+             <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+            </property>
+            <property name="resizeMode">
+             <enum>QListView::Adjust</enum>
+            </property>
+            <property name="uniformItemSizes">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_StringButtons">
+            <item>
+             <spacer name="verticalSpacer_7">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_StringAdd">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>+</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_StringDel">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>-</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_8">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_StringUp">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::UpArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_StringDown">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::DownArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_9">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -51,46 +158,157 @@
        <attribute name="title">
         <string>Code/Data</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="verticalLayout_8">
         <item>
          <widget class="QComboBox" name="comboBox_SelectLabel"/>
         </item>
         <item>
-         <widget class="QTableWidget" name="tableWidget_LabelCode">
-          <property name="font">
-           <font>
-            <family>Noto Mono</family>
-           </font>
-          </property>
-          <property name="sizeAdjustPolicy">
-           <enum>QAbstractScrollArea::AdjustToContents</enum>
-          </property>
-          <property name="cornerButtonEnabled">
-           <bool>false</bool>
-          </property>
-          <property name="columnCount">
-           <number>2</number>
-          </property>
-          <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>64</number>
-          </attribute>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Opcode</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Args</string>
-           </property>
-          </column>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QTableWidget" name="tableWidget_LabelCode">
+            <property name="font">
+             <font>
+              <family>Noto Mono</family>
+             </font>
+            </property>
+            <property name="inputMethodHints">
+             <set>Qt::ImhLatinOnly|Qt::ImhNoPredictiveText|Qt::ImhPreferNumbers|Qt::ImhPreferUppercase</set>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
+            </property>
+            <property name="cornerButtonEnabled">
+             <bool>false</bool>
+            </property>
+            <property name="columnCount">
+             <number>2</number>
+            </property>
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>64</number>
+            </attribute>
+            <attribute name="horizontalHeaderStretchLastSection">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="verticalHeaderVisible">
+             <bool>false</bool>
+            </attribute>
+            <column>
+             <property name="text">
+              <string>Opcode</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Args</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_CmdButtons">
+            <item>
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_CmdAdd">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>+</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_CmdDel">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>-</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_CmdUp">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::UpArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_CmdDown">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::DownArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -100,27 +318,124 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QTableWidget" name="tableWidget_Flags">
-          <property name="font">
-           <font>
-            <family>Noto Mono</family>
-           </font>
-          </property>
-          <property name="sizeAdjustPolicy">
-           <enum>QAbstractScrollArea::AdjustToContents</enum>
-          </property>
-          <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>64</number>
-          </attribute>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Value</string>
-           </property>
-          </column>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout_Flags">
+          <item>
+           <widget class="QListWidget" name="listWidget_Flags">
+            <property name="font">
+             <font>
+              <family>Noto Mono</family>
+             </font>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_FlagButtons">
+            <item>
+             <spacer name="verticalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_FlagAdd">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>+</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_FlagDel">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>-</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_5">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_FlagUp">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::UpArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_FlagDown">
+              <property name="minimumSize">
+               <size>
+                <width>24</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="arrowType">
+               <enum>Qt::DownArrow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -133,8 +448,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>500</width>
-     <height>22</height>
+     <width>600</width>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

@@ -1,4 +1,5 @@
 #include "binarydata.h"
+#include <QTextEncoder>
 
 QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
 {
@@ -21,6 +22,33 @@ QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
     }
 
     // Don't increment "pos" because bytes_to_num() does that already
+    return result;
+}
+
+QByteArray str_to_bytes(const QString &string, bool utf16)
+{
+    QByteArray result;
+
+    if (utf16)
+    {
+        QByteArray str_data;
+        for (int i = 0; i < string.size(); i++)
+        {
+            str_data.append(num_to_bytes(string.at(i).unicode()));
+        }
+        result.append((uchar)str_data.size());
+        result.append(str_data);
+        result.append(num_to_bytes((ushort)0x00));   // Null terminator
+    }
+    else
+    {
+        QByteArray str_data;
+        str_data = string.toUtf8();
+        result.append((uchar)str_data.size());
+        result.append(str_data);
+        result.append(num_to_bytes((uchar)0x00));    // Null terminator
+    }
+
     return result;
 }
 

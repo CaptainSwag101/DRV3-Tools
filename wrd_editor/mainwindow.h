@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFutureWatcher>
+#include <QListWidget>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QTableWidget>
@@ -33,8 +34,10 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
-
     void on_comboBox_SelectLabel_currentIndexChanged(int index);
+    void on_listWidget_Strings_itemChanged(QListWidgetItem *item);
+    void on_tableWidget_LabelCode_cellChanged(int row, int column);
+    void on_listWidget_Flags_itemChanged(QListWidgetItem *item);
 
 private:
     bool confirmUnsaved();
