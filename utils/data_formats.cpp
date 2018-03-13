@@ -471,7 +471,7 @@ QByteArray repack_stx_strings(QStringList strings)
     int highest_index = 0;
     for (int i = 0; i < table_len; i++)
     {
-        result.append((table_off + (i * 8)) - (result.size() - 1), (char)0x00); // padding
+        result.append((table_off + (i * 8)) - (result.size()), (char)0x00); // padding
 
         int str_off = 0;
         for (int j = 0; j < i; j++)
