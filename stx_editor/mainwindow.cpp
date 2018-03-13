@@ -43,9 +43,14 @@ void MainWindow::reloadStrings()
 {
     ui->listWidget->clear();
 
-    // TODO: Do these individually so we can make them editable
     QStringList strings = get_stx_strings(currentStx);
-    ui->listWidget->addItems(strings);
+    for (QString str : strings)
+    {
+        str.replace("\n", "\\n");
+        QListWidgetItem *item = new QListWidgetItem(str);
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        ui->listWidget->addItem(item);
+    }
 
     unsavedChanges = false;
 }
@@ -74,7 +79,9 @@ void MainWindow::on_actionSave_triggered()
     for(int i = 0; i < ui->listWidget->count(); i++)
     {
         QListWidgetItem *item = ui->listWidget->item(i);
-        strings.append(item->text());
+        QString text = item->text();
+        text.replace("\\n", "\n");
+        strings.append(text);
     }
 
     currentStx = repack_stx_strings(strings);

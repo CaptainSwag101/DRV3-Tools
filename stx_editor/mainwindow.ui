@@ -17,26 +17,20 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QListWidget" name="listWidget">
-      <property name="cursor" stdset="0">
-       <cursorShape>IBeamCursor</cursorShape>
-      </property>
       <property name="inputMethodHints">
        <set>Qt::ImhMultiLine</set>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Sunken</enum>
       </property>
       <property name="midLineWidth">
        <number>1</number>
       </property>
       <property name="editTriggers">
-       <set>QAbstractItemView::CurrentChanged|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+       <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
       </property>
-      <property name="selectionMode">
-       <enum>QAbstractItemView::NoSelection</enum>
+      <property name="spacing">
+       <number>4</number>
+      </property>
+      <property name="uniformItemSizes">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -48,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>490</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

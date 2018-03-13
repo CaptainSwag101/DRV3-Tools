@@ -87,11 +87,11 @@ QByteArray spc_to_data(const SpcFile &spc)
         result.append(num_to_bytes(subfile.unk_flag));  // unk_flag
         result.append(num_to_bytes(subfile.cmp_size));  // cmp_size
         result.append(num_to_bytes(subfile.dec_size));  // dec_size
-        result.append(num_to_bytes(subfile.name_len));  // name_len
+        result.append(num_to_bytes(subfile.filename.size()));  // name_len
         result.append(0x10, 0x00);                      // padding
 
         // Everything's aligned to multiples of 0x10
-        uint name_padding = (0x10 - (subfile.name_len + 1) % 0x10) % 0x10;
+        uint name_padding = (0x10 - (subfile.filename.size() + 1) % 0x10) % 0x10;
         uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
 
         result.append(subfile.filename.toUtf8());

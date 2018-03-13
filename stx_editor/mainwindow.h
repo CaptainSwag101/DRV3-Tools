@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QFontMetrics>
 #include <QMessageBox>
+#include <QStringLiteral>
 #include <QtWidgets>
 #include <QTextStream>
 #include "../utils/binarydata.h"

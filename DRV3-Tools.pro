@@ -11,7 +11,7 @@ SUBDIRS += \
 
 spc_ex.depends = utils
 stx_ex.depends = utils
-stx_editor.depends = utils
 spc_editor.depends = utils
+stx_editor.depends = utils
 wrd_editor.depends = utils
 unit_tests.depends = utils

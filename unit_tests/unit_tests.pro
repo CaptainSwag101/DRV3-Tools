@@ -37,12 +37,7 @@ else:unix: LIBS += -L$$OUT_PWD/../utils/ -lutils
 
 INCLUDEPATH += $$PWD/../utils
 DEPENDPATH += $$PWD/../utils
-
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/release/libutils.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/debug/libutils.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/release/utils.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../utils/debug/utils.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../utils/libutils.a
+EPS += $$OUT_PWD/../utils/debug/utils.lib
 
 #QMAKE_POST_LINK += $$quote($(MKDIR) $$OUT_PWD/test_data)$$escape_expand(\n\t)
 QMAKE_POST_LINK += $$quote($(COPY_DIR) $$shell_path($$PWD/test_data) $$shell_path($$OUT_PWD/test_data))

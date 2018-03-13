@@ -26,11 +26,6 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    return;
-
-
-
-
     QByteArray out_data = wrd_to_data(currentWrd);
     QString outName = currentWrd.filename;
     QFile f(outName);
@@ -111,7 +106,9 @@ void MainWindow::reloadLists()
     this->ui->tableWidget_Strings->setRowCount(currentWrd.strings.count());
     for (int i = 0; i < currentWrd.strings.count(); i++)
     {
-        QTableWidgetItem *newItem = new QTableWidgetItem(currentWrd.strings.at(i));
+        QString str = currentWrd.strings.at(i);
+        str.replace("\n", "\\n");
+        QTableWidgetItem *newItem = new QTableWidgetItem(str);
         this->ui->tableWidget_Strings->setItem(i, 0, newItem);
     }
 }
