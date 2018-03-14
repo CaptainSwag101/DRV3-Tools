@@ -47,8 +47,7 @@ struct UTILSSHARED_EXPORT WrdFile
     QStringList flags;
     QStringList strings;
     QList<QList<WrdCmd>> code;
-    ushort unk_count;
-    uint unk_ptr;
+    QList<uint> unk_data;
     bool external_strings;
 };
 

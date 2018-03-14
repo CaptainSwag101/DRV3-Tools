@@ -527,13 +527,13 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     ushort str_count = bytes_to_num<ushort>(data, pos);
     ushort label_count = bytes_to_num<ushort>(data, pos);
     ushort flag_count = bytes_to_num<ushort>(data, pos);
-    result.unk_count = bytes_to_num<ushort>(data, pos);
+    uint unk_count = bytes_to_num<ushort>(data, pos);
 
     // padding?
     //uint unk = bytes_to_num<uint>(data, pos);
     pos += 4;
 
-    result.unk_ptr = bytes_to_num<uint>(data, pos);
+    uint unk_ptr = bytes_to_num<uint>(data, pos);
     uint label_offsets_ptr = bytes_to_num<uint>(data, pos);
     uint label_names_ptr = bytes_to_num<uint>(data, pos);
     uint flags_ptr = bytes_to_num<uint>(data, pos);
@@ -562,7 +562,7 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
 
         pos = header_end + label_code_off;
         QList<WrdCmd> cur_label_cmds;
-        while (pos < label_offsets_ptr)
+        while (pos < unk_ptr)
         {
             WrdCmd cmd;
 
@@ -573,6 +573,11 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
             if (op == 0x7011)
             {
                 cur_label_cmds.append(cmd);
+                break;
+            }
+            else if (op == 0x7014 && cur_label_cmds.count() > 0)
+            {
+                pos -= 2;
                 break;
             }
 
@@ -589,6 +594,14 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
         }
 
         result.code.append(cur_label_cmds);
+    }
+
+
+    // Read unknown data
+    pos = unk_ptr;
+    for (ushort i = 0; i < unk_count; i++)
+    {
+        result.unk_data.append(bytes_to_num<uint>(data, pos, true));
     }
 
 
@@ -612,6 +625,8 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
             QString value = bytes_to_str(data, pos, length, true);
             result.strings.append(value);
         }
+
+        result.external_strings = false;
     }
     else                // Text is stored externally.
     {
@@ -635,6 +650,8 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
             f.close();
             result.strings = get_stx_strings(stx_data);
         }
+
+        result.external_strings = true;
     }
 
     return result;
@@ -647,7 +664,7 @@ QByteArray wrd_to_data(const WrdFile &wrd_file)
     result.append(num_to_bytes((ushort)wrd_file.strings.count()));
     result.append(num_to_bytes((ushort)wrd_file.labels.count()));
     result.append(num_to_bytes((ushort)wrd_file.flags.count()));
-    result.append(num_to_bytes((ushort)wrd_file.unk_count));
+    result.append(num_to_bytes((ushort)wrd_file.unk_data.count()));
     result.append(QByteArray(4, 0x00));
 
     QByteArray code_data;
@@ -670,16 +687,23 @@ QByteArray wrd_to_data(const WrdFile &wrd_file)
         }
     }
 
+    QByteArray unk_data_bytes;
+    for (const uint unk : wrd_file.unk_data)
+    {
+        unk_data_bytes.append(num_to_bytes(unk, true));
+    }
+
     QByteArray flags_data;
     for (const QString flag : wrd_file.flags)
     {
         flags_data.append(str_to_bytes(flag));
     }
 
-    result.append(num_to_bytes(wrd_file.unk_ptr));      // unk_ptr
-    const uint code_start = 0x20;
-    const uint code_end = code_start + code_data.size();
-    const uint code_offsets_ptr = code_end;
+
+    const uint header_end = 0x20;
+    const uint unk_ptr = header_end + code_data.size();
+    result.append(num_to_bytes(unk_ptr));               // unk_ptr
+    const uint code_offsets_ptr = unk_ptr + unk_data_bytes.size();
     result.append(num_to_bytes(code_offsets_ptr));      // code_offsets_ptr
     const uint label_names_ptr = code_offsets_ptr + code_offsets.size();
     result.append(num_to_bytes(label_names_ptr));       // label_names_ptr
@@ -695,6 +719,7 @@ QByteArray wrd_to_data(const WrdFile &wrd_file)
 
     // Now that the offsets/ptrs to the data have been calculated, append the actual data
     result.append(code_data);
+    result.append(unk_data_bytes);
     result.append(code_offsets);
     result.append(label_names_data);
     result.append(flags_data);

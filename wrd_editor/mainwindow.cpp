@@ -41,7 +41,7 @@ void MainWindow::on_actionSave_triggered()
     f.write(out_data);
     f.close();
 
-    if (currentWrd.external_strings)
+    if (currentWrd.external_strings && currentWrd.strings.count() > 0)
     {
         // Strings are stored in the "(current spc name)_text_(region).spc" file,
         // within an STX file with the same name as the current WRD file.
@@ -80,6 +80,15 @@ void MainWindow::on_actionExit_triggered()
 {
     this->close();
 }
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (!confirmUnsaved())
+        event->ignore();
+    else
+        event->accept();
+}
+
 
 bool MainWindow::confirmUnsaved()
 {
@@ -138,12 +147,13 @@ void MainWindow::reloadAllLists()
     reloadStringList();
     reloadFlagList();
 
-    unsavedChanges = false;
+    //unsavedChanges = false;
 }
 
 void MainWindow::reloadLabelList()
 {
     ui->comboBox_SelectLabel->blockSignals(true);
+    ui->tableWidget_Code->blockSignals(true);
     ui->comboBox_SelectLabel->clear();
 
     for (QString label_name : currentWrd.labels)
@@ -151,6 +161,7 @@ void MainWindow::reloadLabelList()
         ui->comboBox_SelectLabel->addItem(label_name);
     }
 
+    ui->tableWidget_Code->blockSignals(false);
     ui->comboBox_SelectLabel->blockSignals(false);
 }
 
@@ -236,6 +247,7 @@ void MainWindow::updateHexHeaders(QTableWidget *widget)
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
     reloadCodeList(index);
+    ui->tableWidget_Code->setCurrentCell(-1, -1);
 }
 
 void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
@@ -329,7 +341,7 @@ void MainWindow::on_toolButton_CmdAdd_clicked()
 {
     const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
     const int currentRow = ui->tableWidget_Code->currentRow();
-    if (currentRow < 0 || currentRow >= currentWrd.code[currentLabel].count())
+    if (currentRow < -1 || currentRow >= currentWrd.code[currentLabel].count())
         return;
 
     WrdCmd cmd;
@@ -337,6 +349,7 @@ void MainWindow::on_toolButton_CmdAdd_clicked()
     currentWrd.code[currentLabel].insert(currentRow, cmd);
 
     reloadCodeList();
+    ui->tableWidget_Code->selectRow(currentRow);
     unsavedChanges = true;
 }
 
@@ -350,6 +363,11 @@ void MainWindow::on_toolButton_CmdDel_clicked()
     currentWrd.code[currentLabel].removeAt(currentRow);
 
     reloadCodeList();
+    if (currentRow >= currentWrd.code[currentLabel].count())
+        ui->tableWidget_Code->selectRow(currentRow - 1);
+    else
+        ui->tableWidget_Code->selectRow(currentRow);
+
     unsavedChanges = true;
 }
 
@@ -367,7 +385,7 @@ void MainWindow::on_toolButton_CmdUp_clicked()
     currentWrd.code[currentLabel].replace(currentRow - 1, cmd1);
 
     reloadCodeList();
-    ui->tableWidget_Code->setCurrentCell(currentRow - 1, ui->tableWidget_Code->currentColumn());
+    ui->tableWidget_Code->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
 
@@ -385,7 +403,7 @@ void MainWindow::on_toolButton_CmdDown_clicked()
     currentWrd.code[currentLabel].replace(currentRow + 1, cmd1);
 
     reloadCodeList();
-    ui->tableWidget_Code->setCurrentCell(currentRow + 1, ui->tableWidget_Code->currentColumn());
+    ui->tableWidget_Code->selectRow(currentRow + 1);
     unsavedChanges = true;
 }
 
@@ -394,12 +412,13 @@ void MainWindow::on_toolButton_CmdDown_clicked()
 void MainWindow::on_toolButton_StringAdd_clicked()
 {
     const int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow >= currentWrd.strings.count())
+    if (currentRow < -1 || currentRow >= currentWrd.strings.count())
         return;
 
     currentWrd.strings.insert(currentRow, QString());
 
     reloadStringList();
+    ui->tableWidget_Strings->selectRow(currentRow);
     unsavedChanges = true;
 }
 
@@ -412,6 +431,10 @@ void MainWindow::on_toolButton_StringDel_clicked()
     currentWrd.strings.removeAt(currentRow);
 
     reloadStringList();
+    if (currentRow >= currentWrd.strings.count())
+        ui->tableWidget_Strings->selectRow(currentRow - 1);
+    else
+        ui->tableWidget_Strings->selectRow(currentRow);
     unsavedChanges = true;
 }
 
@@ -428,7 +451,7 @@ void MainWindow::on_toolButton_StringUp_clicked()
     currentWrd.strings.replace(currentRow - 1, str1);
 
     reloadStringList();
-    ui->tableWidget_Strings->setCurrentCell(currentRow - 1, ui->tableWidget_Strings->currentColumn());
+    ui->tableWidget_Strings->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
 
@@ -445,7 +468,7 @@ void MainWindow::on_toolButton_StringDown_clicked()
     currentWrd.strings.replace(currentRow + 1, str1);
 
     reloadStringList();
-    ui->tableWidget_Strings->setCurrentCell(currentRow + 1, ui->tableWidget_Strings->currentColumn());
+    ui->tableWidget_Strings->selectRow(currentRow + 1);
     unsavedChanges = true;
 }
 
@@ -454,12 +477,13 @@ void MainWindow::on_toolButton_StringDown_clicked()
 void MainWindow::on_toolButton_FlagAdd_clicked()
 {
     const int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow >= currentWrd.flags.count())
+    if (currentRow < -1 || currentRow >= currentWrd.flags.count())
         return;
 
     currentWrd.flags.insert(currentRow, QString());
 
     reloadFlagList();
+    ui->tableWidget_Flags->selectRow(currentRow);
     unsavedChanges = true;
 }
 
@@ -472,6 +496,10 @@ void MainWindow::on_toolButton_FlagDel_clicked()
     currentWrd.flags.removeAt(currentRow);
 
     reloadFlagList();
+    if (currentRow >= currentWrd.flags.count())
+        ui->tableWidget_Flags->selectRow(currentRow - 1);
+    else
+        ui->tableWidget_Flags->selectRow(currentRow);
     unsavedChanges = true;
 }
 
@@ -488,7 +516,7 @@ void MainWindow::on_toolButton_FlagUp_clicked()
     currentWrd.flags.replace(currentRow - 1, flag1);
 
     reloadFlagList();
-    ui->tableWidget_Flags->setCurrentCell(currentRow - 1, ui->tableWidget_Flags->currentColumn());
+    ui->tableWidget_Flags->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
 
@@ -505,6 +533,6 @@ void MainWindow::on_toolButton_FlagDown_clicked()
     currentWrd.flags.replace(currentRow + 1, flag1);
 
     reloadFlagList();
-    ui->tableWidget_Flags->setCurrentCell(currentRow + 1, ui->tableWidget_Flags->currentColumn());
+    ui->tableWidget_Flags->selectRow(currentRow + 1);
     unsavedChanges = true;
 }

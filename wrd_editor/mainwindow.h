@@ -35,6 +35,7 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
+    void closeEvent(QCloseEvent *event);
     void on_comboBox_SelectLabel_currentIndexChanged(int index);
     void on_tableWidget_Strings_itemChanged(QTableWidgetItem *item);
     void on_tableWidget_Code_itemChanged(QTableWidgetItem *item);
