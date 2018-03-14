@@ -6,6 +6,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->tableWidget_Code->setColumnWidth(1, 160);
 }
 
 MainWindow::~MainWindow()
@@ -186,11 +187,22 @@ void MainWindow::reloadCodeList(const int index)
         ui->tableWidget_Code->setItem(i, 0, new QTableWidgetItem(opString));
 
         QString argString;
+        QString argNames;
         for (ushort arg : cmd.args)
         {
-            argString += QString::number(arg, 16).toUpper().rightJustified(4, '0');
+            const QString part = QString::number(arg, 16).toUpper().rightJustified(4, '0');
+            argString += part;
+
+            if (arg < currentWrd.flags.count())
+                argNames += currentWrd.flags[arg] + " ";
+            else
+                argNames += "0x" + part + " ";
         }
         ui->tableWidget_Code->setItem(i, 1, new QTableWidgetItem(argString));
+
+        QTableWidgetItem *names = new QTableWidgetItem(argNames.simplified());
+        names->setFlags(names->flags() & ~Qt::ItemIsEditable);
+        ui->tableWidget_Code->setItem(i, 2, names);
     }
 
     ui->tableWidget_Code->blockSignals(false);
@@ -281,9 +293,11 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
         currentWrd.code[currentLabel][row].opcode = val;
     }
     // Args
-    else
+    else if (column == 1)
     {
         const QString argText = item->text();
+        QTableWidgetItem *argNames = ui->tableWidget_Code->item(row, 2);
+        argNames->setText("");
 
         currentWrd.code[currentLabel][row].args.clear();
         for (int argNum = 0; argNum < argText.count() / 4; argNum++)
@@ -308,6 +322,12 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
             }
 
             currentWrd.code[currentLabel][row].args.append(val);
+
+            if (val < currentWrd.flags.count())
+                argNames->setText(argNames->text() + currentWrd.flags[val] + " ");
+            else
+                argNames->setText(argNames->text() + "0x" + splitText + " ");
+            argNames->setText(argNames->text().simplified());
         }
     }
 
