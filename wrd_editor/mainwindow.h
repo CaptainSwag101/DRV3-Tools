@@ -37,7 +37,7 @@ private slots:
     void on_actionExit_triggered();
     void on_comboBox_SelectLabel_currentIndexChanged(int index);
     void on_tableWidget_Strings_itemChanged(QTableWidgetItem *item);
-    void on_tableWidget_LabelCode_cellChanged(int row, int column);
+    void on_tableWidget_Code_itemChanged(QTableWidgetItem *item);
     void on_tableWidget_Flags_itemChanged(QTableWidgetItem *item);
     void on_toolButton_CmdAdd_clicked();
     void on_toolButton_CmdDel_clicked();
@@ -55,7 +55,11 @@ private slots:
 private:
     bool confirmUnsaved();
     void openFile(QString filepath);
-    void reloadLists();
+    void reloadAllLists();
+    void reloadLabelList();
+    void reloadCodeList(const int index = -1);
+    void reloadStringList();
+    void reloadFlagList();
     void updateHexHeaders(QTableWidget *widget);
     void updateLabelCodeWidget();
 

@@ -111,7 +111,7 @@ void MainWindow::openFile(QString filepath)
 
     this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
 
-    ui->tableWidget_LabelCode->setEnabled(true);
+    ui->tableWidget_Code->setEnabled(true);
     ui->tableWidget_Strings->setEnabled(true);
     ui->tableWidget_Flags->setEnabled(true);
     ui->comboBox_SelectLabel->setEnabled(true);
@@ -128,45 +128,95 @@ void MainWindow::openFile(QString filepath)
     ui->toolButton_FlagUp->setEnabled(true);
     ui->toolButton_FlagDown->setEnabled(true);
 
-    reloadLists();
+    reloadAllLists();
 }
 
-void MainWindow::reloadLists()
+void MainWindow::reloadAllLists()
+{
+    reloadLabelList();
+    reloadCodeList();
+    reloadStringList();
+    reloadFlagList();
+
+    unsavedChanges = false;
+}
+
+void MainWindow::reloadLabelList()
 {
     ui->comboBox_SelectLabel->blockSignals(true);
     ui->comboBox_SelectLabel->clear();
+
     for (QString label_name : currentWrd.labels)
     {
         ui->comboBox_SelectLabel->addItem(label_name);
     }
+
     ui->comboBox_SelectLabel->blockSignals(false);
-    this->on_comboBox_SelectLabel_currentIndexChanged(0);
+}
 
-    ui->tableWidget_Flags->blockSignals(true);
-    ui->tableWidget_Flags->clearContents();
-    ui->tableWidget_Flags->setColumnCount(2);
-    ui->tableWidget_Flags->setRowCount(currentWrd.flags.count());
-    for (int i = 0; i < currentWrd.flags.count(); i++)
+void MainWindow::reloadCodeList(const int index)
+{
+    const int currentLabel = (index != -1) ? index : ui->comboBox_SelectLabel->currentIndex();
+
+    if (currentLabel < 0 || currentLabel >= currentWrd.labels.count())
+        return;
+
+    const QList<WrdCmd> cur_label_cmds = currentWrd.code.at(currentLabel);
+
+    ui->tableWidget_Code->blockSignals(true);
+    ui->tableWidget_Code->clearContents();
+    ui->tableWidget_Code->setRowCount(cur_label_cmds.count());
+
+    for (int i = 0; i < cur_label_cmds.count(); i++)
     {
-        ui->tableWidget_Flags->setItem(i, 1, new QTableWidgetItem(currentWrd.flags.at(i)));
-    }
-    updateHexHeaders(ui->tableWidget_Flags);
-    ui->tableWidget_Flags->blockSignals(false);
+        const WrdCmd cmd = cur_label_cmds.at(i);
 
+        QString opString = QString::number(cmd.opcode, 16).toUpper().rightJustified(4, '0');
+        ui->tableWidget_Code->setItem(i, 0, new QTableWidgetItem(opString));
+
+        QString argString;
+        for (ushort arg : cmd.args)
+        {
+            argString += QString::number(arg, 16).toUpper().rightJustified(4, '0');
+        }
+        ui->tableWidget_Code->setItem(i, 1, new QTableWidgetItem(argString));
+    }
+
+    ui->tableWidget_Code->blockSignals(false);
+}
+
+void MainWindow::reloadStringList()
+{
     ui->tableWidget_Strings->blockSignals(true);
     ui->tableWidget_Strings->clearContents();
-    ui->tableWidget_Strings->setColumnCount(2);
-    ui->tableWidget_Strings->setRowCount(currentWrd.strings.count());
-    for (int i = 0; i < currentWrd.strings.count(); i++)
+
+    const int strCount = currentWrd.strings.count();
+    ui->tableWidget_Strings->setRowCount(strCount);
+    for (int i = 0; i < strCount; i++)
     {
         QString str = currentWrd.strings.at(i);
         str.replace("\n", "\\n");
         ui->tableWidget_Strings->setItem(i, 1, new QTableWidgetItem(str));
     }
     updateHexHeaders(ui->tableWidget_Strings);
-    ui->tableWidget_Strings->blockSignals(false);
 
-    unsavedChanges = false;
+    ui->tableWidget_Strings->blockSignals(false);
+}
+
+void MainWindow::reloadFlagList()
+{
+    ui->tableWidget_Flags->blockSignals(true);
+    ui->tableWidget_Flags->clearContents();
+
+    const int flagCount = currentWrd.flags.count();
+    ui->tableWidget_Flags->setRowCount(flagCount);
+    for (int i = 0; i < flagCount; i++)
+    {
+        ui->tableWidget_Flags->setItem(i, 1, new QTableWidgetItem(currentWrd.flags.at(i)));
+    }
+    updateHexHeaders(ui->tableWidget_Flags);
+
+    ui->tableWidget_Flags->blockSignals(false);
 }
 
 void MainWindow::updateHexHeaders(QTableWidget *widget)
@@ -174,289 +224,287 @@ void MainWindow::updateHexHeaders(QTableWidget *widget)
     if (widget == nullptr)
         return;
 
-    const int rows = widget->rowCount();
-    for (int i = 0; i < rows; i++)
+    const int rowCount = widget->rowCount();
+    for (int i = 0; i < rowCount; i++)
     {
         QTableWidgetItem *item = new QTableWidgetItem(QString::number(i, 16).toUpper().rightJustified(4, '0'));
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
-        QTableWidgetItem *old = widget->takeItem(i, 0);
-        delete old;
         widget->setItem(i, 0, item);
     }
 }
 
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
-    if (index < 0 || index > currentWrd.cmds.count())
-        return;
+    reloadCodeList(index);
+}
 
-    const QList<WrdCmd> cur_label_cmds = currentWrd.cmds.at(index);
+void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
+{
+    const int row = ui->tableWidget_Code->row(item);
+    const int column = ui->tableWidget_Code->column(item);
+    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
 
-    ui->tableWidget_LabelCode->blockSignals(true);
-    ui->tableWidget_LabelCode->clearContents();
-    ui->tableWidget_LabelCode->setRowCount(cur_label_cmds.count());
-
-    for (int i = 0; i < cur_label_cmds.count(); i++)
+    // Opcode
+    if (column == 0)
     {
-        const WrdCmd cmd = cur_label_cmds.at(i);
-
-        QTableWidgetItem *newOpcode = new QTableWidgetItem(QString::number(cmd.opcode, 16).toUpper().rightJustified(4, '0'));
-        ui->tableWidget_LabelCode->setItem(i, 0, newOpcode);
-
-        QString argString;
-        for (ushort arg : cmd.args)
+        const QString opText = item->text();
+        if (opText.length() != 4)
         {
-            argString += QString::number(arg, 16).toUpper().rightJustified(4, '0');
+            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Opcode length must be exactly 4 hexadecimal digits (2 bytes).", QMessageBox::Ok, this);
+            errorMsg.exec();
+            ui->tableWidget_Code->editItem(item);
+            return;
         }
-        QTableWidgetItem *newArgs = new QTableWidgetItem(argString);
-        ui->tableWidget_LabelCode->setItem(i, 1, newArgs);
+
+        bool ok;
+        const ushort val = opText.toUShort(&ok, 16);
+        if (!ok)
+        {
+            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Invalid hexadecimal value.", QMessageBox::Ok, this);
+            errorMsg.exec();
+            ui->tableWidget_Code->editItem(item);
+            return;
+        }
+
+        currentWrd.code[currentLabel][row].opcode = val;
     }
-    ui->tableWidget_LabelCode->blockSignals(false);
+    // Args
+    else
+    {
+        const QString argText = item->text();
+
+        currentWrd.code[currentLabel][row].args.clear();
+        for (int argNum = 0; argNum < argText.count() / 4; argNum++)
+        {
+            const QString splitText = argText.mid(argNum * 4, 4);
+            if (splitText.length() != 4)
+            {
+                QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Argument length must be a multiple of 4 hexadecimal digits (2 bytes).", QMessageBox::Ok, this);
+                errorMsg.exec();
+                ui->tableWidget_Code->editItem(item);
+                return;
+            }
+
+            bool ok;
+            const ushort val = splitText.toUShort(&ok, 16);
+            if (!ok)
+            {
+                QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Invalid hexadecimal value.", QMessageBox::Ok, this);
+                errorMsg.exec();
+                ui->tableWidget_Code->editItem(item);
+                return;
+            }
+
+            currentWrd.code[currentLabel][row].args.append(val);
+        }
+    }
+
+    unsavedChanges = true;
 }
 
 void MainWindow::on_tableWidget_Strings_itemChanged(QTableWidgetItem *item)
 {
-    QString str = item->text();
-    if (ui->tableWidget_Strings->column(item) == 0 || str.isEmpty())
+    if (ui->tableWidget_Strings->column(item) == 0)
         return;
 
+    QString str = item->text();
     str.replace("\\n", "\n");
     currentWrd.strings[ui->tableWidget_Strings->row(item)] = str;
     unsavedChanges = true;
 }
 
-void MainWindow::on_tableWidget_LabelCode_cellChanged(int row, int column)
-{
-    QTableWidgetItem *item = ui->tableWidget_LabelCode->item(row, column);
-
-    if (column == 0)   // Opcode
-    {
-        const QString opText = item->text();
-
-        bool ok;
-        ushort val = opText.toUShort(&ok, 16);
-        if (!ok || opText.isEmpty())
-        {
-            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Hex Conversion Error", QMessageBox::Ok, this);
-            errorMsg.exec();
-            return;
-        }
-
-        currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()][row].opcode = val;
-    }
-    else            // Args
-    {
-        const QString argText = item->text();
-
-        currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()][row].args.clear();
-        for (int argNum = 0; argNum < argText.count() / 4; argNum++)
-        {
-            bool ok;
-            ushort val = argText.mid(argNum * 4, 4).toUShort(&ok, 16);
-            if (!ok)
-            {
-                QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Hex Conversion Error", QMessageBox::Ok, this);
-                errorMsg.exec();
-                return;
-            }
-
-            currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()][row].args.append(val);
-        }
-    }
-
-    unsavedChanges = true;
-}
-
 void MainWindow::on_tableWidget_Flags_itemChanged(QTableWidgetItem *item)
 {
-    QString flag = item->text();
-    if (ui->tableWidget_Flags->column(item) == 0 || flag.isEmpty())
+    if (ui->tableWidget_Flags->column(item) == 0)
         return;
 
+    QString flag = item->text();
     currentWrd.flags[ui->tableWidget_Flags->row(item)] = flag;
     unsavedChanges = true;
 }
 
 
+
 void MainWindow::on_toolButton_CmdAdd_clicked()
 {
-    int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 0 || currentRow >= ui->tableWidget_LabelCode->rowCount())
+    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
+    const int currentRow = ui->tableWidget_Code->currentRow();
+    if (currentRow < 0 || currentRow >= currentWrd.code[currentLabel].count())
         return;
-
-    ui->tableWidget_LabelCode->insertRow(currentRow + 1);
-    ui->tableWidget_LabelCode->setItem(currentRow + 1, 0, new QTableWidgetItem("7000"));
-    ui->tableWidget_LabelCode->setItem(currentRow + 1, 1, new QTableWidgetItem(""));
 
     WrdCmd cmd;
     cmd.opcode = 0x7000;
-    currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()].insert(currentRow + 1, cmd);
+    currentWrd.code[currentLabel].insert(currentRow, cmd);
+
+    reloadCodeList();
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdDel_clicked()
 {
-    int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 0 || currentRow >= ui->tableWidget_LabelCode->rowCount())
+    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
+    const int currentRow = ui->tableWidget_Code->currentRow();
+    if (currentRow < 0 || currentRow >= currentWrd.code[currentLabel].count())
         return;
 
-    ui->tableWidget_LabelCode->removeRow(currentRow);
-    currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()].removeAt(currentRow);
+    currentWrd.code[currentLabel].removeAt(currentRow);
+
+    reloadCodeList();
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdUp_clicked()
 {
-    int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 1 || currentRow >= ui->tableWidget_LabelCode->rowCount())
+    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
+    const int currentRow = ui->tableWidget_Code->currentRow();
+    if (currentRow < 1 || currentRow >= currentWrd.code[currentLabel].count())
         return;
 
-    QString op1 = ui->tableWidget_LabelCode->item(currentRow, 0)->text();
-    QString arg1 = ui->tableWidget_LabelCode->item(currentRow, 1)->text();
-    QString op2 = ui->tableWidget_LabelCode->item(currentRow - 1, 0)->text();
-    QString arg2 = ui->tableWidget_LabelCode->item(currentRow - 1, 1)->text();
+    const WrdCmd cmd1 = currentWrd.code[currentLabel][currentRow];
+    const WrdCmd cmd2 = currentWrd.code[currentLabel][currentRow - 1];
 
-    ui->tableWidget_LabelCode->setItem(currentRow - 1, 0, new QTableWidgetItem(op1));
-    ui->tableWidget_LabelCode->setItem(currentRow - 1, 1, new QTableWidgetItem(arg1));
-    ui->tableWidget_LabelCode->setItem(currentRow, 0, new QTableWidgetItem(op2));
-    ui->tableWidget_LabelCode->setItem(currentRow, 1, new QTableWidgetItem(arg2));
+    currentWrd.code[currentLabel].replace(currentRow, cmd2);
+    currentWrd.code[currentLabel].replace(currentRow - 1, cmd1);
 
-    ui->tableWidget_LabelCode->setCurrentCell(currentRow - 1, ui->tableWidget_LabelCode->currentColumn());
+    reloadCodeList();
+    ui->tableWidget_Code->setCurrentCell(currentRow - 1, ui->tableWidget_Code->currentColumn());
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdDown_clicked()
 {
-    int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 0 || currentRow + 1 >= ui->tableWidget_LabelCode->rowCount())
+    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
+    const int currentRow = ui->tableWidget_Code->currentRow();
+    if (currentRow < 0 || currentRow + 1 >= currentWrd.code[currentLabel].count())
         return;
 
-    QString op1 = ui->tableWidget_LabelCode->item(currentRow, 0)->text();
-    QString arg1 = ui->tableWidget_LabelCode->item(currentRow, 1)->text();
-    QString op2 = ui->tableWidget_LabelCode->item(currentRow + 1, 0)->text();
-    QString arg2 = ui->tableWidget_LabelCode->item(currentRow + 1, 1)->text();
+    const WrdCmd cmd1 = currentWrd.code[currentLabel][currentRow];
+    const WrdCmd cmd2 = currentWrd.code[currentLabel][currentRow + 1];
 
-    ui->tableWidget_LabelCode->setItem(currentRow + 1, 0, new QTableWidgetItem(op1));
-    ui->tableWidget_LabelCode->setItem(currentRow + 1, 1, new QTableWidgetItem(arg1));
-    ui->tableWidget_LabelCode->setItem(currentRow, 0, new QTableWidgetItem(op2));
-    ui->tableWidget_LabelCode->setItem(currentRow, 1, new QTableWidgetItem(arg2));
+    currentWrd.code[currentLabel].replace(currentRow, cmd2);
+    currentWrd.code[currentLabel].replace(currentRow + 1, cmd1);
 
-    ui->tableWidget_LabelCode->setCurrentCell(currentRow + 1, ui->tableWidget_LabelCode->currentColumn());
+    reloadCodeList();
+    ui->tableWidget_Code->setCurrentCell(currentRow + 1, ui->tableWidget_Code->currentColumn());
     unsavedChanges = true;
 }
 
 
+
 void MainWindow::on_toolButton_StringAdd_clicked()
 {
-    int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow >= ui->tableWidget_Strings->rowCount())
+    const int currentRow = ui->tableWidget_Strings->currentRow();
+    if (currentRow < 0 || currentRow >= currentWrd.strings.count())
         return;
 
-    ui->tableWidget_Strings->insertRow(currentRow + 1);
-    ui->tableWidget_Strings->setItem(currentRow + 1, 1, new QTableWidgetItem());
+    currentWrd.strings.insert(currentRow, QString());
 
-    updateHexHeaders(ui->tableWidget_Strings);
+    reloadStringList();
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_StringDel_clicked()
 {
-    int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow >= ui->tableWidget_Strings->rowCount())
+    const int currentRow = ui->tableWidget_Strings->currentRow();
+    if (currentRow < 0 || currentRow >= currentWrd.strings.count())
         return;
 
-    ui->tableWidget_Strings->removeRow(currentRow);
+    currentWrd.strings.removeAt(currentRow);
 
-    updateHexHeaders(ui->tableWidget_Strings);
+    reloadStringList();
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_StringUp_clicked()
 {
-    int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 1 || currentRow >= ui->tableWidget_Strings->rowCount())
+    const int currentRow = ui->tableWidget_Strings->currentRow();
+    if (currentRow < 1 || currentRow >= currentWrd.strings.count())
         return;
 
-    QString str1 = ui->tableWidget_Strings->item(currentRow, 1)->text();
-    QString str2 = ui->tableWidget_Strings->item(currentRow - 1, 1)->text();
+    const QString str1 = currentWrd.strings[currentRow];
+    const QString str2 = currentWrd.strings[currentRow - 1];
 
-    ui->tableWidget_Strings->setItem(currentRow - 1, 1, new QTableWidgetItem(str1));
-    ui->tableWidget_Strings->setItem(currentRow, 1, new QTableWidgetItem(str2));
+    currentWrd.strings.replace(currentRow, str2);
+    currentWrd.strings.replace(currentRow - 1, str1);
 
+    reloadStringList();
     ui->tableWidget_Strings->setCurrentCell(currentRow - 1, ui->tableWidget_Strings->currentColumn());
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_StringDown_clicked()
 {
-    int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow + 1 >= ui->tableWidget_Strings->rowCount())
+    const int currentRow = ui->tableWidget_Strings->currentRow();
+    if (currentRow < 0 || currentRow + 1 >= currentWrd.strings.count())
         return;
 
-    QString str1 = ui->tableWidget_Strings->item(currentRow, 1)->text();
-    QString str2 = ui->tableWidget_Strings->item(currentRow + 1, 1)->text();
+    const QString str1 = currentWrd.strings[currentRow];
+    const QString str2 = currentWrd.strings[currentRow + 1];
 
-    ui->tableWidget_Strings->setItem(currentRow + 1, 1, new QTableWidgetItem(str1));
-    ui->tableWidget_Strings->setItem(currentRow, 1, new QTableWidgetItem(str2));
+    currentWrd.strings.replace(currentRow, str2);
+    currentWrd.strings.replace(currentRow + 1, str1);
 
+    reloadStringList();
     ui->tableWidget_Strings->setCurrentCell(currentRow + 1, ui->tableWidget_Strings->currentColumn());
     unsavedChanges = true;
 }
 
 
+
 void MainWindow::on_toolButton_FlagAdd_clicked()
 {
-    int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow >= ui->tableWidget_Flags->rowCount())
+    const int currentRow = ui->tableWidget_Flags->currentRow();
+    if (currentRow < 0 || currentRow >= currentWrd.flags.count())
         return;
 
-    ui->tableWidget_Flags->insertRow(currentRow + 1);
-    ui->tableWidget_Flags->setItem(currentRow + 1, 1, new QTableWidgetItem());
+    currentWrd.flags.insert(currentRow, QString());
 
-    updateHexHeaders(ui->tableWidget_Flags);
+    reloadFlagList();
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagDel_clicked()
 {
-    int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow >= ui->tableWidget_Flags->rowCount())
+    const int currentRow = ui->tableWidget_Flags->currentRow();
+    if (currentRow < 0 || currentRow >= currentWrd.flags.count())
         return;
 
-    ui->tableWidget_Flags->removeRow(currentRow);
+    currentWrd.flags.removeAt(currentRow);
 
-    updateHexHeaders(ui->tableWidget_Flags);
+    reloadFlagList();
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagUp_clicked()
 {
-    int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 1 || currentRow >= ui->tableWidget_Flags->rowCount())
+    const int currentRow = ui->tableWidget_Flags->currentRow();
+    if (currentRow < 1 || currentRow >= currentWrd.flags.count())
         return;
 
-    QString flag1 = ui->tableWidget_Flags->item(currentRow, 1)->text();
-    QString flag2 = ui->tableWidget_Flags->item(currentRow - 1, 1)->text();
+    const QString flag1 = currentWrd.flags[currentRow];
+    const QString flag2 = currentWrd.flags[currentRow - 1];
 
-    ui->tableWidget_Flags->setItem(currentRow - 1, 1, new QTableWidgetItem(flag1));
-    ui->tableWidget_Flags->setItem(currentRow, 1, new QTableWidgetItem(flag2));
+    currentWrd.flags.replace(currentRow, flag2);
+    currentWrd.flags.replace(currentRow - 1, flag1);
 
+    reloadFlagList();
     ui->tableWidget_Flags->setCurrentCell(currentRow - 1, ui->tableWidget_Flags->currentColumn());
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagDown_clicked()
 {
-    int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow + 1 >= ui->tableWidget_Flags->rowCount())
+    const int currentRow = ui->tableWidget_Flags->currentRow();
+    if (currentRow < 0 || currentRow + 1 >= currentWrd.flags.count())
         return;
 
-    QString flag1 = ui->tableWidget_Flags->item(currentRow, 1)->text();
-    QString flag2 = ui->tableWidget_Flags->item(currentRow + 1, 1)->text();
+    const QString flag1 = currentWrd.flags[currentRow];
+    const QString flag2 = currentWrd.flags[currentRow + 1];
 
-    ui->tableWidget_Flags->setItem(currentRow + 1, 1, new QTableWidgetItem(flag1));
-    ui->tableWidget_Flags->setItem(currentRow, 1, new QTableWidgetItem(flag2));
+    currentWrd.flags.replace(currentRow, flag2);
+    currentWrd.flags.replace(currentRow + 1, flag1);
 
+    reloadFlagList();
     ui->tableWidget_Flags->setCurrentCell(currentRow + 1, ui->tableWidget_Flags->currentColumn());
     unsavedChanges = true;
 }

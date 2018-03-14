@@ -15,7 +15,7 @@ QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
         else
             c = QChar(data.at(pos++));
 
-        if (len < 0 && c == QChar(0))
+        if (c == QChar(0))
             break;
 
         result.append(c);

@@ -38,7 +38,7 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_Code">
           <item>
-           <widget class="QTableWidget" name="tableWidget_LabelCode">
+           <widget class="QTableWidget" name="tableWidget_Code">
             <property name="enabled">
              <bool>false</bool>
             </property>

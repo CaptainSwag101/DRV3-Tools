@@ -459,7 +459,7 @@ QByteArray repack_stx_strings(QStringList strings)
 {
     QByteArray result;
     uint table_off = 0x20;
-    uint table_len = strings.count();
+    int table_len = strings.count();
 
     result.append(QString("STXTJPLL").toUtf8());    // header
     result.append(num_to_bytes((uint)0x01));        // table_count?
@@ -529,108 +529,91 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     ushort flag_count = bytes_to_num<ushort>(data, pos);
     result.unk_count = bytes_to_num<ushort>(data, pos);
 
-    uint unk = bytes_to_num<uint>(data, pos);   // padding?
+    // padding?
+    //uint unk = bytes_to_num<uint>(data, pos);
+    pos += 4;
+
     result.unk_ptr = bytes_to_num<uint>(data, pos);
     uint label_offsets_ptr = bytes_to_num<uint>(data, pos);
     uint label_names_ptr = bytes_to_num<uint>(data, pos);
     uint flags_ptr = bytes_to_num<uint>(data, pos);
     uint str_ptr = bytes_to_num<uint>(data, pos);
 
-    // Read the name and code for each label.
+
+    // Read the name for each label.
+    pos = label_names_ptr;
+    for (ushort i = 0; i < label_count; i++)
+    {
+        const uchar label_name_len = data.at(pos++) + 1;    // Include null terminator
+        QString label_name = bytes_to_str(data, pos, label_name_len);
+        result.labels.append(label_name);
+    }
+
+
+    // Read the code for each label.
     // NOTE: As far as I can tell, this data can probably just be read
-    // sequentially, and then split at every occurrence of 0x7014.
+    // sequentially, and then split after every occurrence of 0x7011.
     // But let's do it the more complex way for now.
-    int orig_pos = pos;
+    const int header_end = 0x20;
     for (ushort i = 0; i < label_count; i++)
     {
         pos = label_offsets_ptr + (i * 2);
-        ushort label_code_off = bytes_to_num<ushort>(data, pos);
+        const ushort label_code_off = bytes_to_num<ushort>(data, pos);
 
-        ushort label_code_len;
-        if (i + 1 < label_count)
-        {
-            ushort next = bytes_to_num<ushort>(data, pos);
-            label_code_len = next - label_code_off;
-        }
-        else
-        {
-            label_code_len = label_offsets_ptr - (orig_pos + label_code_off);
-        }
-
-        pos = label_names_ptr;
-        for (int j = 0; j < i; j++)
-        {
-            uchar label_name_len = data.at(pos++);
-            pos += (label_name_len + 1);
-        }
-        uchar label_name_len = data.at(pos++);
-        QString label_name = bytes_to_str(data, pos);
-
-        pos = orig_pos + label_code_off;
-        const QByteArray label_code = data.mid(pos, label_code_len);
-
-
+        pos = header_end + label_code_off;
         QList<WrdCmd> cur_label_cmds;
-        int cmd_pos = 0;
-        ushort op = 0;
-        QList<ushort> args;
-        while (cmd_pos + 1 < label_code.size())
-        {
-            ushort c = bytes_to_num<ushort>(label_code, cmd_pos, true);
-
-            // Don't break on the first byte, which will always be 0x70
-            if ((uchar)(c >> 8) == 0x70)
-            {
-                // If this isn't the first command, save the previous one
-                if ((uchar)(op >> 8) == 0x70)
-                {
-                    WrdCmd cmd;
-                    cmd.opcode = op;
-                    cmd.args = args;
-                    cur_label_cmds.append(cmd);
-                }
-
-                op = c;
-                args.clear();
-            }
-            else
-            {
-                args.append(c);
-            }
-        }
-        if ((uchar)(op >> 8) == 0x70)
+        while (pos < label_offsets_ptr)
         {
             WrdCmd cmd;
+
+            const ushort op = bytes_to_num<ushort>(data, pos, true);
             cmd.opcode = op;
-            cmd.args = args;
+
+            // If we've reached the end of the label
+            if (op == 0x7011)
+            {
+                cur_label_cmds.append(cmd);
+                break;
+            }
+
+            ushort arg = bytes_to_num<ushort>(data, pos, true);
+            while ((uchar)(arg >> 8) != 0x70)
+            {
+                // If this isn't the next command's opcode, it's an argument
+                cmd.args.append(arg);
+                arg = bytes_to_num<ushort>(data, pos, true);
+            }
+
+            pos -= 2;
             cur_label_cmds.append(cmd);
         }
 
-        result.labels.append(label_name);
-        result.cmds.append(cur_label_cmds);
+        result.code.append(cur_label_cmds);
     }
 
 
+    // Read command/argument names.
     pos = flags_ptr;
     for (ushort i = 0; i < flag_count; i++)
     {
-        uchar length = data.at(pos++);
-        QString value = bytes_to_str(data, pos);
+        uchar length = data.at(pos++) + 1;  // Include null terminator
+        QString value = bytes_to_str(data, pos, length);
         result.flags.append(value);
     }
 
-    // Text is stored internally
-    if (str_ptr > 0)
+
+    // Read text strings
+    if (str_ptr > 0)    // Text is stored internally.
     {
         pos = str_ptr;
         for (ushort i = 0; i < str_count; i++)
         {
-            uchar length = data.at(pos++);
-            QString value = bytes_to_str(data, pos, -1, true);
+            uchar length = data.at(pos++) + 1;  // Include null terminator
+            QString value = bytes_to_str(data, pos, length, true);
             result.strings.append(value);
         }
     }
-    else
+    else                // Text is stored externally.
     {
         // Strings are stored in the "(current spc name)_text_(region).spc" file,
         // within an STX file with the same name as the current WRD file.
@@ -676,7 +659,7 @@ QByteArray wrd_to_data(const WrdFile &wrd_file)
 
         code_offsets.append(num_to_bytes((ushort)code_data.size()));
 
-        const QList<WrdCmd> cur_label_cmds = wrd_file.cmds.at(i);
+        const QList<WrdCmd> cur_label_cmds = wrd_file.code.at(i);
         for (const WrdCmd cmd : cur_label_cmds)
         {
             code_data.append(num_to_bytes(cmd.opcode, true));
