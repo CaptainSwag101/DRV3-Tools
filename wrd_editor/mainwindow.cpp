@@ -285,9 +285,12 @@ void MainWindow::on_toolButton_CmdAdd_clicked()
         return;
 
     ui->tableWidget_LabelCode->insertRow(currentRow + 1);
-    ui->tableWidget_LabelCode->setItem(currentRow + 1, 0, new QTableWidgetItem());
-    ui->tableWidget_LabelCode->setItem(currentRow + 1, 1, new QTableWidgetItem());
+    ui->tableWidget_LabelCode->setItem(currentRow + 1, 0, new QTableWidgetItem("7000"));
+    ui->tableWidget_LabelCode->setItem(currentRow + 1, 1, new QTableWidgetItem(""));
 
+    WrdCmd cmd;
+    cmd.opcode = 0x7000;
+    currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()].insert(currentRow + 1, cmd);
     unsavedChanges = true;
 }
 
@@ -298,6 +301,7 @@ void MainWindow::on_toolButton_CmdDel_clicked()
         return;
 
     ui->tableWidget_LabelCode->removeRow(currentRow);
+    currentWrd.cmds[ui->comboBox_SelectLabel->currentIndex()].removeAt(currentRow);
     unsavedChanges = true;
 }
 
