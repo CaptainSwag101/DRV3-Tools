@@ -211,6 +211,7 @@ void MainWindow::openFile(QString filepath)
 
     currentSpc.filename = filepath;
     this->setWindowTitle("SPC Editor: " + QFileInfo(filepath).fileName());
+    ui->listWidget->setEnabled(true);
     reloadSubfileList();
 }
 

@@ -23,6 +23,9 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QListWidget" name="listWidget">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="acceptDrops">
        <bool>true</bool>
       </property>

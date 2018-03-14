@@ -287,6 +287,8 @@ void MainWindow::on_toolButton_CmdAdd_clicked()
     ui->tableWidget_LabelCode->insertRow(currentRow + 1);
     ui->tableWidget_LabelCode->setItem(currentRow + 1, 0, new QTableWidgetItem());
     ui->tableWidget_LabelCode->setItem(currentRow + 1, 1, new QTableWidgetItem());
+
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdDel_clicked()
@@ -296,6 +298,7 @@ void MainWindow::on_toolButton_CmdDel_clicked()
         return;
 
     ui->tableWidget_LabelCode->removeRow(currentRow);
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdUp_clicked()
@@ -315,6 +318,7 @@ void MainWindow::on_toolButton_CmdUp_clicked()
     ui->tableWidget_LabelCode->setItem(currentRow, 1, new QTableWidgetItem(arg2));
 
     ui->tableWidget_LabelCode->setCurrentCell(currentRow - 1, ui->tableWidget_LabelCode->currentColumn());
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdDown_clicked()
@@ -334,6 +338,7 @@ void MainWindow::on_toolButton_CmdDown_clicked()
     ui->tableWidget_LabelCode->setItem(currentRow, 1, new QTableWidgetItem(arg2));
 
     ui->tableWidget_LabelCode->setCurrentCell(currentRow + 1, ui->tableWidget_LabelCode->currentColumn());
+    unsavedChanges = true;
 }
 
 
@@ -347,6 +352,7 @@ void MainWindow::on_toolButton_StringAdd_clicked()
     ui->tableWidget_Strings->setItem(currentRow + 1, 1, new QTableWidgetItem());
 
     updateHexHeaders(ui->tableWidget_Strings);
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_StringDel_clicked()
@@ -358,6 +364,7 @@ void MainWindow::on_toolButton_StringDel_clicked()
     ui->tableWidget_Strings->removeRow(currentRow);
 
     updateHexHeaders(ui->tableWidget_Strings);
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_StringUp_clicked()
@@ -373,6 +380,7 @@ void MainWindow::on_toolButton_StringUp_clicked()
     ui->tableWidget_Strings->setItem(currentRow, 1, new QTableWidgetItem(str2));
 
     ui->tableWidget_Strings->setCurrentCell(currentRow - 1, ui->tableWidget_Strings->currentColumn());
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_StringDown_clicked()
@@ -388,6 +396,7 @@ void MainWindow::on_toolButton_StringDown_clicked()
     ui->tableWidget_Strings->setItem(currentRow, 1, new QTableWidgetItem(str2));
 
     ui->tableWidget_Strings->setCurrentCell(currentRow + 1, ui->tableWidget_Strings->currentColumn());
+    unsavedChanges = true;
 }
 
 
@@ -401,6 +410,7 @@ void MainWindow::on_toolButton_FlagAdd_clicked()
     ui->tableWidget_Flags->setItem(currentRow + 1, 1, new QTableWidgetItem());
 
     updateHexHeaders(ui->tableWidget_Flags);
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagDel_clicked()
@@ -412,6 +422,7 @@ void MainWindow::on_toolButton_FlagDel_clicked()
     ui->tableWidget_Flags->removeRow(currentRow);
 
     updateHexHeaders(ui->tableWidget_Flags);
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagUp_clicked()
@@ -427,6 +438,7 @@ void MainWindow::on_toolButton_FlagUp_clicked()
     ui->tableWidget_Flags->setItem(currentRow, 1, new QTableWidgetItem(flag2));
 
     ui->tableWidget_Flags->setCurrentCell(currentRow - 1, ui->tableWidget_Flags->currentColumn());
+    unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagDown_clicked()
@@ -442,4 +454,5 @@ void MainWindow::on_toolButton_FlagDown_clicked()
     ui->tableWidget_Flags->setItem(currentRow, 1, new QTableWidgetItem(flag2));
 
     ui->tableWidget_Flags->setCurrentCell(currentRow + 1, ui->tableWidget_Flags->currentColumn());
+    unsavedChanges = true;
 }

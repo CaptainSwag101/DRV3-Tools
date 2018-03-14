@@ -70,6 +70,7 @@ void MainWindow::on_actionOpen_triggered()
     currentStx = f.readAll();
     f.close();
 
+    ui->listWidget->setEnabled(true);
     reloadStrings();
 }
 
