@@ -1,9 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+#include <cmath>
+
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 }
@@ -144,25 +144,45 @@ void MainWindow::reloadLists()
 
     ui->tableWidget_Flags->blockSignals(true);
     ui->tableWidget_Flags->clearContents();
+    ui->tableWidget_Flags->setColumnCount(2);
     ui->tableWidget_Flags->setRowCount(currentWrd.flags.count());
     for (int i = 0; i < currentWrd.flags.count(); i++)
     {
-        ui->tableWidget_Flags->setItem(i, 0, new QTableWidgetItem(currentWrd.flags.at(i)));
+        ui->tableWidget_Flags->setItem(i, 1, new QTableWidgetItem(currentWrd.flags.at(i)));
     }
+    updateHexHeaders(ui->tableWidget_Flags);
     ui->tableWidget_Flags->blockSignals(false);
 
     ui->tableWidget_Strings->blockSignals(true);
     ui->tableWidget_Strings->clearContents();
+    ui->tableWidget_Strings->setColumnCount(2);
     ui->tableWidget_Strings->setRowCount(currentWrd.strings.count());
     for (int i = 0; i < currentWrd.strings.count(); i++)
     {
         QString str = currentWrd.strings.at(i);
         str.replace("\n", "\\n");
-        ui->tableWidget_Strings->setItem(i, 0, new QTableWidgetItem(str));
+        ui->tableWidget_Strings->setItem(i, 1, new QTableWidgetItem(str));
     }
+    updateHexHeaders(ui->tableWidget_Strings);
     ui->tableWidget_Strings->blockSignals(false);
 
     unsavedChanges = false;
+}
+
+void MainWindow::updateHexHeaders(QTableWidget *widget)
+{
+    if (widget == nullptr)
+        return;
+
+    const int rows = widget->rowCount();
+    for (int i = 0; i < rows; i++)
+    {
+        QTableWidgetItem *item = new QTableWidgetItem(QString::number(i, 16).toUpper().rightJustified(4, '0'));
+        item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+        QTableWidgetItem *old = widget->takeItem(i, 0);
+        delete old;
+        widget->setItem(i, 0, item);
+    }
 }
 
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
@@ -197,6 +217,9 @@ void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 void MainWindow::on_tableWidget_Strings_itemChanged(QTableWidgetItem *item)
 {
     QString str = item->text();
+    if (ui->tableWidget_Strings->column(item) == 0 || str.isEmpty())
+        return;
+
     str.replace("\\n", "\n");
     currentWrd.strings[ui->tableWidget_Strings->row(item)] = str;
     unsavedChanges = true;
@@ -212,7 +235,7 @@ void MainWindow::on_tableWidget_LabelCode_cellChanged(int row, int column)
 
         bool ok;
         ushort val = opText.toUShort(&ok, 16);
-        if (!ok)
+        if (!ok || opText.isEmpty())
         {
             QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Hex Conversion Error", QMessageBox::Ok, this);
             errorMsg.exec();
@@ -247,6 +270,9 @@ void MainWindow::on_tableWidget_LabelCode_cellChanged(int row, int column)
 void MainWindow::on_tableWidget_Flags_itemChanged(QTableWidgetItem *item)
 {
     QString flag = item->text();
+    if (ui->tableWidget_Flags->column(item) == 0 || flag.isEmpty())
+        return;
+
     currentWrd.flags[ui->tableWidget_Flags->row(item)] = flag;
     unsavedChanges = true;
 }
@@ -255,16 +281,18 @@ void MainWindow::on_tableWidget_Flags_itemChanged(QTableWidgetItem *item)
 void MainWindow::on_toolButton_CmdAdd_clicked()
 {
     int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 0 || currentRow > ui->tableWidget_LabelCode->rowCount())
+    if (currentRow < 0 || currentRow >= ui->tableWidget_LabelCode->rowCount())
         return;
 
-    ui->tableWidget_LabelCode->insertRow(currentRow);
+    ui->tableWidget_LabelCode->insertRow(currentRow + 1);
+    ui->tableWidget_LabelCode->setItem(currentRow + 1, 0, new QTableWidgetItem());
+    ui->tableWidget_LabelCode->setItem(currentRow + 1, 1, new QTableWidgetItem());
 }
 
 void MainWindow::on_toolButton_CmdDel_clicked()
 {
     int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 0 || currentRow > ui->tableWidget_LabelCode->rowCount())
+    if (currentRow < 0 || currentRow >= ui->tableWidget_LabelCode->rowCount())
         return;
 
     ui->tableWidget_LabelCode->removeRow(currentRow);
@@ -273,7 +301,7 @@ void MainWindow::on_toolButton_CmdDel_clicked()
 void MainWindow::on_toolButton_CmdUp_clicked()
 {
     int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 1 || currentRow > ui->tableWidget_LabelCode->rowCount())
+    if (currentRow < 1 || currentRow >= ui->tableWidget_LabelCode->rowCount())
         return;
 
     QString op1 = ui->tableWidget_LabelCode->item(currentRow, 0)->text();
@@ -292,7 +320,7 @@ void MainWindow::on_toolButton_CmdUp_clicked()
 void MainWindow::on_toolButton_CmdDown_clicked()
 {
     int currentRow = ui->tableWidget_LabelCode->currentRow();
-    if (currentRow < 0 || currentRow + 1 > ui->tableWidget_LabelCode->rowCount())
+    if (currentRow < 0 || currentRow + 1 >= ui->tableWidget_LabelCode->rowCount())
         return;
 
     QString op1 = ui->tableWidget_LabelCode->item(currentRow, 0)->text();
@@ -312,32 +340,37 @@ void MainWindow::on_toolButton_CmdDown_clicked()
 void MainWindow::on_toolButton_StringAdd_clicked()
 {
     int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow > ui->tableWidget_Strings->rowCount())
+    if (currentRow < 0 || currentRow >= ui->tableWidget_Strings->rowCount())
         return;
 
-    ui->tableWidget_Strings->insertRow(currentRow);
+    ui->tableWidget_Strings->insertRow(currentRow + 1);
+    ui->tableWidget_Strings->setItem(currentRow + 1, 1, new QTableWidgetItem());
+
+    updateHexHeaders(ui->tableWidget_Strings);
 }
 
 void MainWindow::on_toolButton_StringDel_clicked()
 {
     int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow > ui->tableWidget_Strings->rowCount())
+    if (currentRow < 0 || currentRow >= ui->tableWidget_Strings->rowCount())
         return;
 
     ui->tableWidget_Strings->removeRow(currentRow);
+
+    updateHexHeaders(ui->tableWidget_Strings);
 }
 
 void MainWindow::on_toolButton_StringUp_clicked()
 {
     int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 1 || currentRow > ui->tableWidget_Strings->rowCount())
+    if (currentRow < 1 || currentRow >= ui->tableWidget_Strings->rowCount())
         return;
 
-    QString str1 = ui->tableWidget_Strings->item(currentRow, 0)->text();
-    QString str2 = ui->tableWidget_Strings->item(currentRow - 1, 0)->text();
+    QString str1 = ui->tableWidget_Strings->item(currentRow, 1)->text();
+    QString str2 = ui->tableWidget_Strings->item(currentRow - 1, 1)->text();
 
-    ui->tableWidget_Strings->setItem(currentRow - 1, 0, new QTableWidgetItem(str1));
-    ui->tableWidget_Strings->setItem(currentRow, 0, new QTableWidgetItem(str2));
+    ui->tableWidget_Strings->setItem(currentRow - 1, 1, new QTableWidgetItem(str1));
+    ui->tableWidget_Strings->setItem(currentRow, 1, new QTableWidgetItem(str2));
 
     ui->tableWidget_Strings->setCurrentCell(currentRow - 1, ui->tableWidget_Strings->currentColumn());
 }
@@ -345,14 +378,14 @@ void MainWindow::on_toolButton_StringUp_clicked()
 void MainWindow::on_toolButton_StringDown_clicked()
 {
     int currentRow = ui->tableWidget_Strings->currentRow();
-    if (currentRow < 0 || currentRow + 1 > ui->tableWidget_Strings->rowCount())
+    if (currentRow < 0 || currentRow + 1 >= ui->tableWidget_Strings->rowCount())
         return;
 
-    QString str1 = ui->tableWidget_Strings->item(currentRow, 0)->text();
-    QString str2 = ui->tableWidget_Strings->item(currentRow + 1, 0)->text();
+    QString str1 = ui->tableWidget_Strings->item(currentRow, 1)->text();
+    QString str2 = ui->tableWidget_Strings->item(currentRow + 1, 1)->text();
 
-    ui->tableWidget_Strings->setItem(currentRow + 1, 0, new QTableWidgetItem(str1));
-    ui->tableWidget_Strings->setItem(currentRow, 0, new QTableWidgetItem(str2));
+    ui->tableWidget_Strings->setItem(currentRow + 1, 1, new QTableWidgetItem(str1));
+    ui->tableWidget_Strings->setItem(currentRow, 1, new QTableWidgetItem(str2));
 
     ui->tableWidget_Strings->setCurrentCell(currentRow + 1, ui->tableWidget_Strings->currentColumn());
 }
@@ -361,32 +394,37 @@ void MainWindow::on_toolButton_StringDown_clicked()
 void MainWindow::on_toolButton_FlagAdd_clicked()
 {
     int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow > ui->tableWidget_Flags->rowCount())
+    if (currentRow < 0 || currentRow >= ui->tableWidget_Flags->rowCount())
         return;
 
-    ui->tableWidget_Flags->insertRow(currentRow);
+    ui->tableWidget_Flags->insertRow(currentRow + 1);
+    ui->tableWidget_Flags->setItem(currentRow + 1, 1, new QTableWidgetItem());
+
+    updateHexHeaders(ui->tableWidget_Flags);
 }
 
 void MainWindow::on_toolButton_FlagDel_clicked()
 {
     int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow > ui->tableWidget_Flags->rowCount())
+    if (currentRow < 0 || currentRow >= ui->tableWidget_Flags->rowCount())
         return;
 
     ui->tableWidget_Flags->removeRow(currentRow);
+
+    updateHexHeaders(ui->tableWidget_Flags);
 }
 
 void MainWindow::on_toolButton_FlagUp_clicked()
 {
     int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 1 || currentRow > ui->tableWidget_Flags->rowCount())
+    if (currentRow < 1 || currentRow >= ui->tableWidget_Flags->rowCount())
         return;
 
-    QString str1 = ui->tableWidget_Flags->item(currentRow, 0)->text();
-    QString str2 = ui->tableWidget_Flags->item(currentRow - 1, 0)->text();
+    QString flag1 = ui->tableWidget_Flags->item(currentRow, 1)->text();
+    QString flag2 = ui->tableWidget_Flags->item(currentRow - 1, 1)->text();
 
-    ui->tableWidget_Flags->setItem(currentRow - 1, 0, new QTableWidgetItem(str1));
-    ui->tableWidget_Flags->setItem(currentRow, 0, new QTableWidgetItem(str2));
+    ui->tableWidget_Flags->setItem(currentRow - 1, 1, new QTableWidgetItem(flag1));
+    ui->tableWidget_Flags->setItem(currentRow, 1, new QTableWidgetItem(flag2));
 
     ui->tableWidget_Flags->setCurrentCell(currentRow - 1, ui->tableWidget_Flags->currentColumn());
 }
@@ -394,14 +432,14 @@ void MainWindow::on_toolButton_FlagUp_clicked()
 void MainWindow::on_toolButton_FlagDown_clicked()
 {
     int currentRow = ui->tableWidget_Flags->currentRow();
-    if (currentRow < 0 || currentRow + 1 > ui->tableWidget_Flags->rowCount())
+    if (currentRow < 0 || currentRow + 1 >= ui->tableWidget_Flags->rowCount())
         return;
 
-    QString flag1 = ui->tableWidget_Flags->item(currentRow, 0)->text();
-    QString flag2 = ui->tableWidget_Flags->item(currentRow + 1, 0)->text();
+    QString flag1 = ui->tableWidget_Flags->item(currentRow, 1)->text();
+    QString flag2 = ui->tableWidget_Flags->item(currentRow + 1, 1)->text();
 
-    ui->tableWidget_Flags->setItem(currentRow + 1, 0, new QTableWidgetItem(flag1));
-    ui->tableWidget_Flags->setItem(currentRow, 0, new QTableWidgetItem(flag2));
+    ui->tableWidget_Flags->setItem(currentRow + 1, 1, new QTableWidgetItem(flag1));
+    ui->tableWidget_Flags->setItem(currentRow, 1, new QTableWidgetItem(flag2));
 
     ui->tableWidget_Flags->setCurrentCell(currentRow + 1, ui->tableWidget_Flags->currentColumn());
 }

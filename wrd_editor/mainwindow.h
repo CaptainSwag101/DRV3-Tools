@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFutureWatcher>
+#include <QHeaderView>
 #include <QListWidget>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -55,6 +56,7 @@ private:
     bool confirmUnsaved();
     void openFile(QString filepath);
     void reloadLists();
+    void updateHexHeaders(QTableWidget *widget);
     void updateLabelCodeWidget();
 
     Ui::MainWindow *ui;
