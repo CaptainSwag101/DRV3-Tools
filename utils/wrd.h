@@ -32,6 +32,7 @@ enum opcodes : ushort
     CHARA_SHAKE = 0x7025,
     LOAD_MAP = 0x7027,
     OBJ_PARAM = 0x7028,
+    CAMERA_MODE = 0x702B,
     CAMERA_TRANS = 0x7033,
     LOAD_OBJ = 0x7035,
     DISPLAY_TEXT = 0x7046,
@@ -57,5 +58,7 @@ struct UTILSSHARED_EXPORT WrdFile
 
 UTILSSHARED_EXPORT WrdFile wrd_from_data(const QByteArray &data, QString filename);
 UTILSSHARED_EXPORT QByteArray wrd_to_data(const WrdFile &wrd);
+QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &data);
+QByteArray wrd_cmds_to_code(const QByteArray &wrd);
 
 #endif // WRD_H

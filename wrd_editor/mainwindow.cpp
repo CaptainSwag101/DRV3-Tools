@@ -6,7 +6,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->tableWidget_Code->setColumnWidth(1, 160);
+    ui->tableWidget_Code->setColumnWidth(1, 170);
 }
 
 MainWindow::~MainWindow()
@@ -354,11 +354,9 @@ void MainWindow::updateArgumentPreviews()
             break;
         case MAP_PARAM:     // args: param, value?, state
             argNames += "MAP_PARAM: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
+            argNames += currentWrd.flags[cmd.args[0]] + " ";
+            argNames += QString::number(cmd.args[1]) + " ";
+            argNames += currentWrd.flags[cmd.args[2]];
             break;
         case OBJ_PARAM:     // args: obj, param1?, param2?
             argNames += "OBJ_PARAM: ";
@@ -418,6 +416,14 @@ void MainWindow::updateArgumentPreviews()
 
         case SET_MODIFIER:  // args: modifier, param1, param2, param3
             argNames += "SET_MODIFIER: ";
+            for (const ushort arg : cmd.args)
+                if (arg < currentWrd.flags.count())
+                    argNames += currentWrd.flags[arg] + " ";
+                else
+                    argNames += QString::number(arg) + " ";
+            break;
+        case CAMERA_MODE:   // args: camera, mode, start_pos, speed, angle?
+            argNames += "CAMERA_MODE: ";
             for (const ushort arg : cmd.args)
                 if (arg < currentWrd.flags.count())
                     argNames += currentWrd.flags[arg] + " ";
@@ -540,8 +546,6 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
     else if (column == 1)
     {
         const QString argText = item->text();
-        QTableWidgetItem *argNames = ui->tableWidget_Code->item(row, 2);
-        argNames->setText("");
 
         currentWrd.code[currentLabel][row].args.clear();
         for (int argNum = 0; argNum < argText.count() / 4; argNum++)
@@ -566,15 +570,10 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
             }
 
             currentWrd.code[currentLabel][row].args.append(val);
-
-            // One-argument commands usually are dealing with a raw number instead of a named flag
-            if (val < currentWrd.flags.count() && (argText.count() / 4) > 1)
-                argNames->setText(argNames->text() + currentWrd.flags[val] + " ");
-            else
-                argNames->setText(argNames->text() + splitText + " ");
-            argNames->setText(argNames->text().simplified());
         }
     }
+
+    updateArgumentPreviews();
 
     unsavedChanges = true;
 }

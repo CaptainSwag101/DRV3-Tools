@@ -69,9 +69,9 @@ void unpack(const QString in_dir)
         QByteArray data = f.readAll();
         f.close();
 
-        int dirSeparatorIndex = file.lastIndexOf(QDir::separator());
+        int dirSeparatorIndex = QDir::toNativeSeparators(file).lastIndexOf(QDir::separator());
         if (dirSeparatorIndex > 0)
-            QDir(ex_dir).mkpath(file.left(dirSeparatorIndex));
+            QDir(ex_dir).mkpath(QDir::toNativeSeparators(file).left(dirSeparatorIndex));
 
         QString outFile = file;
         outFile.replace(".stx", ".txt");

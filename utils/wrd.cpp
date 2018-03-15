@@ -35,51 +35,57 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
     }
 
 
-    // Read the code for each label.
+    // Parse the code for each label.
     // NOTE: As far as I can tell, this data can probably just be read
-    // sequentially, and then split after every occurrence of 0x7011.
+    // sequentially, and then split after every occurrence of 0x7014.
     // But let's do it the more complex way for now.
     const int header_end = 0x20;
-    for (ushort i = 0; i < label_count; i++)
+    pos = header_end;
+    QList<WrdCmd> cur_label_cmds;
+
+    // We need at least 2 bytes for a command
+    while (pos < unk_ptr - 1)
     {
-        pos = label_offsets_ptr + (i * 2);
-        const ushort label_code_off = bytes_to_num<ushort>(data, pos);
+        const ushort op = bytes_to_num<ushort>(data, pos, true);
+        if ((op >> 8) != 0x70)
+            continue;
 
-        pos = header_end + label_code_off;
-        QList<WrdCmd> cur_label_cmds;
-        while (pos < unk_ptr)
+        WrdCmd cmd;
+        cmd.opcode = op;
+
+        // If we've reached the end of the script/label
+        if (op == 0x7011)
         {
-            WrdCmd cmd;
+            cur_label_cmds.append(cmd);
+            result.code.append(cur_label_cmds);
+            cur_label_cmds.clear();
+            continue;
+        }
+        // If we've reached the start of a new label
+        else if (op == 0x7014 && cur_label_cmds.count() > 0)
+        {
+            result.code.append(cur_label_cmds);
+            cur_label_cmds.clear();
+            pos -= 2;
+            continue;
+        }
 
-            const ushort op = bytes_to_num<ushort>(data, pos, true);
-            cmd.opcode = op;
+        while (pos < unk_ptr - 1)
+        {
+            const ushort arg = bytes_to_num<ushort>(data, pos, true);
 
-            // If we've reached the end of the label
-            if (op == 0x7011)
-            {
-                cur_label_cmds.append(cmd);
-                break;
-            }
-            else if (op == 0x7014 && cur_label_cmds.count() > 0)
+            if ((uchar)(arg >> 8) == 0x70)
             {
                 pos -= 2;
                 break;
             }
 
-            ushort arg = bytes_to_num<ushort>(data, pos, true);
-            while ((uchar)(arg >> 8) != 0x70)
-            {
-                // If this isn't the next command's opcode, it's an argument
-                cmd.args.append(arg);
-                arg = bytes_to_num<ushort>(data, pos, true);
-            }
-
-            pos -= 2;
-            cur_label_cmds.append(cmd);
+            cmd.args.append(arg);
         }
 
-        result.code.append(cur_label_cmds);
+        cur_label_cmds.append(cmd);
     }
+    result.code.append(cur_label_cmds);
 
 
     // Read unknown data
@@ -106,9 +112,14 @@ WrdFile wrd_from_data(const QByteArray &data, QString in_file)
         pos = str_ptr;
         for (ushort i = 0; i < str_count; i++)
         {
-            uchar length = data.at(pos++) + 1;  // Include null terminator
-            QString value = bytes_to_str(data, pos, length, true);
-            result.strings.append(value);
+            int str_len = data.at(pos++);
+
+            // ┐(´∀｀)┌
+            if (str_len >= 0x80)
+                str_len += (data.at(pos++) - 1) * 0x80;
+
+            QString str = bytes_to_str(data, pos, str_len, true);
+            result.strings.append(str);
         }
 
         result.external_strings = false;
