@@ -24,12 +24,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     binarydata.cpp \
-    data_formats.cpp
+    wrd.cpp \
+    stx.cpp \
+    spc.cpp
 
 HEADERS += \
     utils_global.h \
     binarydata.h \
-    data_formats.h
+    wrd.h \
+    stx.h \
+    spc.h
 
 unix {
     target.path = /usr/lib

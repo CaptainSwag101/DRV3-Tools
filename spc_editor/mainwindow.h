@@ -12,7 +12,7 @@
 #include <QProgressDialog>
 #include <QtConcurrent/QtConcurrent>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/spc.h"
 
 namespace Ui {
 class MainWindow;

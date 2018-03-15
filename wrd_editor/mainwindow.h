@@ -16,7 +16,7 @@
 #include <QTableWidget>
 #include <QtConcurrent/QtConcurrent>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/wrd.h"
 
 namespace Ui {
 class MainWindow;
@@ -62,7 +62,7 @@ private:
     void reloadStringList();
     void reloadFlagList();
     void updateHexHeaders(QTableWidget *widget);
-    void updateLabelCodeWidget();
+    void updateArgumentPreviews();
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;

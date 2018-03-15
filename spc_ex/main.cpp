@@ -1,11 +1,8 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
-#include <QTextStream>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
-
-static QTextStream cout(stdout);
+#include "../utils/spc.h"
 
 void unpack(const QString in_dir);
 void repack(const QString in_dir);

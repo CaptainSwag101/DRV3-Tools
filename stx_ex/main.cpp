@@ -1,13 +1,10 @@
 #include <QDir>
 #include <QDirIterator>
-#include <QTextStream>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/stx.h"
 
 void unpack(const QString in_dir);
 void repack(const QString in_dir);
-
-static QTextStream cout(stdout);
 
 int main(int argc, char *argv[])
 {

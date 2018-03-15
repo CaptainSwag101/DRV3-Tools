@@ -1,7 +1,7 @@
 #include <QFile>
 #include <QtTest>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/spc.h"
 
 class SpcCompression : public QObject
 {

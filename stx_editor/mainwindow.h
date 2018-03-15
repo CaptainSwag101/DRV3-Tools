@@ -11,7 +11,7 @@
 #include <QtWidgets>
 #include <QTextStream>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/stx.h"
 
 namespace Ui {
 class MainWindow;
