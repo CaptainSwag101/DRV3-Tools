@@ -274,7 +274,18 @@ void MainWindow::updateArgumentPreviews()
             argNames += "LABEL_INDEX: ";
             argNames += QString::number(cmd.args[0], 10);
             break;
-
+        case UNK_NUM_1:     // args: number?
+            argNames += "UNK_NUM_1: ";
+            argNames += QString::number(cmd.args[0], 10);
+            break;
+        case UNK_NUM_2:     // args: number?
+            argNames += "UNK_NUM_2: ";
+            argNames += QString::number(cmd.args[0], 10);
+            break;
+        case UNK_START:     // args: code_section_id?
+            argNames += "UNK_START: ";
+            argNames += QString::number(cmd.args[0], 10);
+            break;
 
         case SPEAKER_ID:    // args: speaker_name
             argNames += "SPEAKER_ID: ";
@@ -286,16 +297,16 @@ void MainWindow::updateArgumentPreviews()
             break;
 
 
-        case SET_FLAG:      // args: state, flag
-            argNames += "SET_FLAG: ";
+        case BOOL_FLAG:     // args: state, flag
+            argNames += "BOOL_FLAG: ";
             for (const ushort arg : cmd.args)
                 if (arg < currentWrd.flags.count())
                     argNames += currentWrd.flags[arg] + " ";
                 else
                     argNames += QString::number(arg) + " ";
             break;
-        case SET_FLAG_2:    // args: flag, state
-            argNames += "SET_FLAG_2: ";
+        case SET_FLAG:      // args: flag, value
+            argNames += "SET_FLAG: ";
             for (const ushort arg : cmd.args)
                 if (arg < currentWrd.flags.count())
                     argNames += currentWrd.flags[arg] + " ";
@@ -414,8 +425,8 @@ void MainWindow::updateArgumentPreviews()
             break;
 
 
-        case SET_MODIFIER:  // args: modifier, param1, param2, param3
-            argNames += "SET_MODIFIER: ";
+        case SET_MODE:      // args: mode, param1, param2, param3
+            argNames += "SET_MODE: ";
             for (const ushort arg : cmd.args)
                 if (arg < currentWrd.flags.count())
                     argNames += currentWrd.flags[arg] + " ";
@@ -473,13 +484,14 @@ void MainWindow::updateArgumentPreviews()
             break;
 
 
-        case DISPLAY_TEXT:  // args: string_num
-            argNames += "DISPLAY_TEXT: ";
+        case LOAD_STRING:   // args: string_num
+            argNames += "LOAD_STRING: ";
             argNames += currentWrd.strings[cmd.args[0]];
             break;
 
 
-        case WAIT_FOR_INPUT:// No args
+        // No args
+        case WAIT_FOR_INPUT:
             argNames += "WAIT_FOR_INPUT";
             break;
         case SCRIPT_END:
@@ -487,6 +499,9 @@ void MainWindow::updateArgumentPreviews()
             break;
         case SUB_RETURN:
             argNames += "SUB_RETURN";
+            break;
+        case UNK_END:
+            argNames += "UNK_END";
             break;
 
 

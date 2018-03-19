@@ -4,8 +4,8 @@ SUBDIRS += \
     utils \
     spc_ex \
     stx_ex \
-    stx_editor \
     spc_editor \
+    stx_editor \
     wrd_editor \
     unit_tests
 

@@ -7,11 +7,13 @@
 
 enum opcodes : ushort
 {
-    SET_FLAG = 0x7000,
+    BOOL_FLAG = 0x7000,
     SET_VALUE = 0x7002,
     CHECK_VALUE = 0x7003,
-    SET_MODIFIER = 0x7008,
-    SET_FLAG_2 = 0x700B,
+    UNK_NUM_1 = 0x7005,
+    SET_MODE = 0x7008,
+    UNK_NUM_2 = 0x700A,
+    SET_FLAG = 0x700B,
     CAMERA_MOVE = 0x700E,
     GOTO_EXTERN = 0x7010,
     SCRIPT_END = 0x7011,
@@ -35,8 +37,10 @@ enum opcodes : ushort
     CAMERA_MODE = 0x702B,
     CAMERA_TRANS = 0x7033,
     LOAD_OBJ = 0x7035,
-    DISPLAY_TEXT = 0x7046,
+    LOAD_STRING = 0x7046,
     WAIT_FOR_INPUT = 0x7047,
+    UNK_END = 0x704A,
+    UNK_START = 0x704B,
 };
 
 struct UTILSSHARED_EXPORT WrdCmd
