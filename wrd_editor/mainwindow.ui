@@ -14,12 +14,12 @@
    <string>WRD Editor</string>
   </property>
   <widget class="QWidget" name="centralWidget">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -29,19 +29,12 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <item>
-         <widget class="QComboBox" name="comboBox_SelectLabel">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-         </widget>
+         <widget class="QComboBox" name="comboBox_SelectLabel"/>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_Code">
           <item>
            <widget class="QTableWidget" name="tableWidget_Code">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="font">
              <font>
               <family>Noto Mono</family>
@@ -120,9 +113,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_CmdAdd">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -142,9 +132,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_CmdDel">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -180,9 +167,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_CmdUp">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -205,9 +189,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_CmdDown">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -256,9 +237,6 @@
          <layout class="QHBoxLayout" name="horizontalLayout_Flags">
           <item>
            <widget class="QTableWidget" name="tableWidget_Flags">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="sizeAdjustPolicy">
              <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
@@ -330,9 +308,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_FlagAdd">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -352,9 +327,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_FlagDel">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -390,9 +362,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_FlagUp">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -415,9 +384,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_FlagDown">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -466,9 +432,6 @@
          <layout class="QHBoxLayout" name="horizontalLayout_Strings">
           <item>
            <widget class="QTableWidget" name="tableWidget_Strings">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="midLineWidth">
              <number>1</number>
             </property>
@@ -543,9 +506,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_StringAdd">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -565,9 +525,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_StringDel">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -603,9 +560,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_StringUp">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>
@@ -628,9 +582,6 @@
             </item>
             <item>
              <widget class="QToolButton" name="toolButton_StringDown">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="minimumSize">
                <size>
                 <width>26</width>

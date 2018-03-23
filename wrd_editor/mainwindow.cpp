@@ -24,6 +24,8 @@ void MainWindow::on_actionOpen_triggered()
 
     openFile(newFilename);
 
+    ui->centralWidget->setEnabled(true);
+
     ui->tableWidget_Code->scrollToTop();
     ui->tableWidget_Strings->scrollToTop();
     ui->tableWidget_Flags->scrollToTop();
@@ -94,7 +96,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->accept();
 }
 
-
 bool MainWindow::confirmUnsaved()
 {
     if (!unsavedChanges) return true;
@@ -125,23 +126,6 @@ void MainWindow::openFile(QString filepath)
 
     this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
 
-    ui->tableWidget_Code->setEnabled(true);
-    ui->tableWidget_Strings->setEnabled(true);
-    ui->tableWidget_Flags->setEnabled(true);
-    ui->comboBox_SelectLabel->setEnabled(true);
-    ui->toolButton_CmdAdd->setEnabled(true);
-    ui->toolButton_CmdDel->setEnabled(true);
-    ui->toolButton_CmdUp->setEnabled(true);
-    ui->toolButton_CmdDown->setEnabled(true);
-    ui->toolButton_StringAdd->setEnabled(true);
-    ui->toolButton_StringDel->setEnabled(true);
-    ui->toolButton_StringUp->setEnabled(true);
-    ui->toolButton_StringDown->setEnabled(true);
-    ui->toolButton_FlagAdd->setEnabled(true);
-    ui->toolButton_FlagDel->setEnabled(true);
-    ui->toolButton_FlagUp->setEnabled(true);
-    ui->toolButton_FlagDown->setEnabled(true);
-
     reloadAllLists();
 }
 
@@ -170,7 +154,7 @@ void MainWindow::reloadLabelList()
     ui->comboBox_SelectLabel->blockSignals(false);
 }
 
-void MainWindow::reloadCodeList(const int index)
+void MainWindow::reloadCodeList(int index)
 {
     const int currentLabel = (index != -1) ? index : ui->comboBox_SelectLabel->currentIndex();
 
@@ -187,19 +171,40 @@ void MainWindow::reloadCodeList(const int index)
     {
         const WrdCmd cmd = cur_label_cmds.at(i);
 
-        QString opString = QString::number(cmd.opcode, 16).toUpper().rightJustified(4, '0');
+        QString opString = QString::number(cmd.opcode, 16).toUpper().rightJustified(2, '0');
         ui->tableWidget_Code->setItem(i, 0, new QTableWidgetItem(opString));
 
-        QString argString;
+        QString argHexString;
         for (ushort arg : cmd.args)
         {
             const QString part = QString::number(arg, 16).toUpper().rightJustified(4, '0');
-            argString += part;
+            argHexString += part;
         }
-        ui->tableWidget_Code->setItem(i, 1, new QTableWidgetItem(argString));
-    }
+        ui->tableWidget_Code->setItem(i, 1, new QTableWidgetItem(argHexString.simplified()));
 
-    updateArgumentPreviews();
+
+        QString argParsedString;
+        argParsedString += cmd.name;
+
+        if (cmd.args.count() > 0)
+            argParsedString += ": ";
+
+        for (int a = 0; a < cmd.args.count(); a++)
+        {
+            const ushort arg = cmd.args.at(a);
+
+            if (cmd.arg_types.at(a) == 0 && arg < currentWrd.flags.count())
+                argParsedString += currentWrd.flags.at(arg) + " ";
+            else if (cmd.arg_types.at(a) == 1 && arg < currentWrd.strings.count())
+                argParsedString += currentWrd.strings.at(arg) + " ";
+            else
+                argParsedString += QString::number(arg) + " ";
+        }
+
+        QTableWidgetItem *names = new QTableWidgetItem(argParsedString.simplified());
+        names->setFlags(names->flags() & ~Qt::ItemIsEditable);
+        ui->tableWidget_Code->setItem(i, 2, names);
+    }
 
     ui->tableWidget_Code->blockSignals(false);
 }
@@ -252,275 +257,6 @@ void MainWindow::updateHexHeaders(QTableWidget *widget)
     }
 }
 
-// TODO: Include special cases for various opcodes once we know what they do.
-void MainWindow::updateArgumentPreviews()
-{
-    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
-    if (currentLabel < 0 || currentLabel >= currentWrd.labels.count())
-        return;
-
-    const QList<WrdCmd> cur_label_cmds = currentWrd.code.at(currentLabel);
-    for (int i = 0; i < cur_label_cmds.count(); i++)
-    {
-        const WrdCmd cmd = cur_label_cmds.at(i);
-
-        // FIXME: There's probably a better way to print
-        // the individual opcode names while not duplicating
-        // the argument-printing code.
-        QString argNames;
-        switch (cmd.opcode)
-        {
-        case LABEL_INDEX:   // args: label_num
-            argNames += "LABEL_INDEX: ";
-            argNames += QString::number(cmd.args[0], 10);
-            break;
-        case UNK_NUM_1:     // args: number?
-            argNames += "UNK_NUM_1: ";
-            argNames += QString::number(cmd.args[0], 10);
-            break;
-        case UNK_NUM_2:     // args: number?
-            argNames += "UNK_NUM_2: ";
-            argNames += QString::number(cmd.args[0], 10);
-            break;
-        case UNK_START:     // args: code_section_id?
-            argNames += "UNK_START: ";
-            argNames += QString::number(cmd.args[0], 10);
-            break;
-
-        case SPEAKER_ID:    // args: speaker_name
-            argNames += "SPEAKER_ID: ";
-            argNames += currentWrd.flags[cmd.args[0]];
-            break;
-        case GOTO:          // args: label_name
-            argNames += "GOTO: ";
-            argNames += currentWrd.flags[cmd.args[0]];
-            break;
-
-
-        case BOOL_FLAG:     // args: state, flag
-            argNames += "BOOL_FLAG: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case SET_FLAG:      // args: flag, value
-            argNames += "SET_FLAG: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case GOTO_EXTERN:   // args: file, label_name
-            argNames += "GOTO_EXTERN: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case SUB_CALL:      // args: file, label_name
-            argNames += "SUB_CALL: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case PLAY_VOICE:    // args: file, volume
-            argNames += "PLAY_VOICE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case PLAY_SFX:      // args: file, volume
-            argNames += "PLAY_SFX: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case PLAY_JINGLE:   // args: file, volume
-            argNames += "PLAY_JINGLE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-
-
-        case PLAY_BGM:      // args: file, volume, fade
-            argNames += "PLAY_BGM: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case MAP_PARAM:     // args: param, value?, state
-            argNames += "MAP_PARAM: ";
-            argNames += currentWrd.flags[cmd.args[0]] + " ";
-            argNames += QString::number(cmd.args[1]) + " ";
-            argNames += currentWrd.flags[cmd.args[2]];
-            break;
-        case OBJ_PARAM:     // args: obj, param1?, param2?
-            argNames += "OBJ_PARAM: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case SET_VALUE:     // args: out_value, math_operation, in_value (example: "wkWAIT = 10")
-            argNames += "SET_VALUE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case CHECK_VALUE:   // args: value, operator, compare_to
-            argNames += "CHECK_VALUE: ";
-            argNames += currentWrd.flags[cmd.args[0]] + " ";
-            argNames += currentWrd.flags[cmd.args[1]] + " ";
-            argNames += QString::number(cmd.args[2]);
-            break;
-        case LOAD_MAP:      // args: file, start_pos, mode
-            argNames += "LOAD_MAP: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case LOAD_OBJ:      // args: param, obj, state, unk1, unk2
-            argNames += "LOAD_OBJ: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case SCENE_TRANS:   // args: transition, color, speed
-            argNames += "SCENE_TRANS: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case CAMERA_SHAKE:  // args: camera, strength, speed
-            argNames += "CAMERA_SHAKE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-
-
-        case SET_MODE:      // args: mode, param1, param2, param3
-            argNames += "SET_MODE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case CAMERA_MODE:   // args: camera, mode, start_pos, speed, angle?
-            argNames += "CAMERA_MODE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case CAMERA_TRANS:  // args: transition, param1?, param2?, param3?
-            argNames += "CAMERA_TRANS: ";
-            argNames += currentWrd.flags[cmd.args[0]] + " ";
-            argNames += QString::number(cmd.args[1]) + " ";
-            argNames += QString::number(cmd.args[2]) + " ";
-            argNames += QString::number(cmd.args[3]);
-            break;
-        case EVENT_SCENE:   // args: file, anim, priority, camera
-            argNames += "EVENT_SCENE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-
-
-        case CAMERA_MOVE:   // args: camera, view_pos, chara, anim, transition
-            argNames += "CAMERA_MOVE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case CHARA_PARAM:   // args: draw_mode, chara, anim, pos, mode
-            argNames += "CHARA_PARAM: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        case CHARA_SHAKE:   // args: chara, strength, speed1, speed2, speed3
-            argNames += "CHARA_SHAKE: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-
-
-        case LOAD_STRING:   // args: string_num
-            argNames += "LOAD_STRING: ";
-            argNames += currentWrd.strings[cmd.args[0]];
-            break;
-
-
-        // No args
-        case WAIT_FOR_INPUT:
-            argNames += "WAIT_FOR_INPUT";
-            break;
-        case SCRIPT_END:
-            argNames += "SCRIPT_END";
-            break;
-        case SUB_RETURN:
-            argNames += "SUB_RETURN";
-            break;
-        case UNK_END:
-            argNames += "UNK_END";
-            break;
-
-
-        default:
-            argNames += "UNKNOWN_CMD: ";
-            for (const ushort arg : cmd.args)
-                if (arg < currentWrd.flags.count())
-                    argNames += currentWrd.flags[arg] + " ";
-                else
-                    argNames += QString::number(arg) + " ";
-            break;
-        }
-
-        QTableWidgetItem *names = new QTableWidgetItem(argNames.simplified());
-        names->setFlags(names->flags() & ~Qt::ItemIsEditable);
-        ui->tableWidget_Code->setItem(i, 2, names);
-    }
-}
-
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
     reloadCodeList(index);
@@ -531,22 +267,22 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
 {
     const int row = ui->tableWidget_Code->row(item);
     const int column = ui->tableWidget_Code->column(item);
-    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
+    const int label = ui->comboBox_SelectLabel->currentIndex();
 
     // Opcode
     if (column == 0)
     {
         const QString opText = item->text();
-        if (opText.length() != 4)
+        if (opText.length() != 2)
         {
-            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Opcode length must be exactly 4 hexadecimal digits (2 bytes).", QMessageBox::Ok, this);
+            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Opcode length must be exactly 2 hexadecimal digits (1 byte).", QMessageBox::Ok, this);
             errorMsg.exec();
             ui->tableWidget_Code->editItem(item);
             return;
         }
 
         bool ok;
-        const ushort val = opText.toUShort(&ok, 16);
+        const uchar val = (uchar)opText.toUShort(&ok, 16);
         if (!ok)
         {
             QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Invalid hexadecimal value.", QMessageBox::Ok, this);
@@ -555,14 +291,30 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
             return;
         }
 
-        currentWrd.code[currentLabel][row].opcode = val;
+        currentWrd.code[label][row].opcode = val;
+        currentWrd.code[label][row].name = "UNKNOWN_CMD";
+        currentWrd.code[label][row].arg_types.clear();
+
+        for (const WrdCmd known_cmd : known_commands)
+        {
+            if (val == known_cmd.opcode)
+            {
+                currentWrd.code[label][row].name = known_cmd.name;
+                currentWrd.code[label][row].arg_types = known_cmd.arg_types;
+                break;
+            }
+        }
+
+        if (currentWrd.code[label][row].arg_types.count() < currentWrd.code[label][row].args.count())
+            for (int i = currentWrd.code[label][row].arg_types.count(); i < currentWrd.code[label][row].args.count(); i++)
+                currentWrd.code[label][row].arg_types.append(0);
     }
     // Args
     else if (column == 1)
     {
         const QString argText = item->text();
 
-        currentWrd.code[currentLabel][row].args.clear();
+        currentWrd.code[label][row].args.clear();
         for (int argNum = 0; argNum < argText.count() / 4; argNum++)
         {
             const QString splitText = argText.mid(argNum * 4, 4);
@@ -584,11 +336,15 @@ void MainWindow::on_tableWidget_Code_itemChanged(QTableWidgetItem *item)
                 return;
             }
 
-            currentWrd.code[currentLabel][row].args.append(val);
+            currentWrd.code[label][row].args.append(val);
         }
+
+        if (currentWrd.code[label][row].arg_types.count() < currentWrd.code[label][row].args.count())
+            for (int i = currentWrd.code[label][row].arg_types.count(); i < currentWrd.code[label][row].args.count(); i++)
+                currentWrd.code[label][row].arg_types.append(0);
     }
 
-    updateArgumentPreviews();
+    reloadCodeList();
 
     unsavedChanges = true;
 }
@@ -627,7 +383,7 @@ void MainWindow::on_toolButton_CmdAdd_clicked()
         return;
 
     WrdCmd cmd;
-    cmd.opcode = 0x7000;
+    cmd.opcode = 0x47;
     currentWrd.code[currentLabel].insert(currentRow, cmd);
 
     reloadCodeList();

@@ -5,49 +5,52 @@
 #include "binarydata.h"
 #include "stx.h"
 
-enum opcodes : ushort
-{
-    BOOL_FLAG = 0x7000,
-    SET_VALUE = 0x7002,
-    CHECK_VALUE = 0x7003,
-    UNK_NUM_1 = 0x7005,
-    SET_MODE = 0x7008,
-    UNK_NUM_2 = 0x700A,
-    SET_FLAG = 0x700B,
-    CAMERA_MOVE = 0x700E,
-    GOTO_EXTERN = 0x7010,
-    SCRIPT_END = 0x7011,
-    SUB_CALL = 0x7012,
-    SUB_RETURN = 0x7013,
-    LABEL_INDEX = 0x7014,
-    GOTO = 0x7015,
-    EVENT_SCENE = 0x7017,
-    PLAY_VOICE = 0x7019,
-    PLAY_BGM = 0x701A,
-    PLAY_SFX = 0x701B,
-    PLAY_JINGLE = 0x701C,
-    SPEAKER_ID = 0x701D,
-    CAMERA_SHAKE = 0x701E,
-    SCENE_TRANS = 0x701F,
-    MAP_PARAM = 0x7021,
-    CHARA_PARAM = 0x7022,
-    CHARA_SHAKE = 0x7025,
-    LOAD_MAP = 0x7027,
-    OBJ_PARAM = 0x7028,
-    CAMERA_MODE = 0x702B,
-    CAMERA_TRANS = 0x7033,
-    LOAD_OBJ = 0x7035,
-    LOAD_STRING = 0x7046,
-    WAIT_FOR_INPUT = 0x7047,
-    UNK_END = 0x704A,
-    UNK_START = 0x704B,
-};
-
 struct UTILSSHARED_EXPORT WrdCmd
 {
-    ushort opcode;
+    uchar opcode;
+    QString name;
     QList<ushort> args;
+    QList<uchar> arg_types;  // 0 = flag, 1 = string, 2 = raw number
 };
+
+static QList<WrdCmd> known_commands = {
+    {0x00, "BOOL_FLAG", {}, {0, 0}},
+    {0x01, "CHECK_FLAG", {}, {0, 0, 0}},
+    {0x02, "SET_VALUE", {}, {0, 0, 0}},
+    {0x03, "CHECK_NUM", {}, {0, 0, 2}},
+    {0x05, "UNK_NUM_1", {}, {2}},
+    {0x08, "SET_MODE", {}, {0, 0, 0, 0}},
+    {0x0A, "UNK_NUM_2", {}, {2}},
+    {0x0B, "SET_FLAG", {}, {0, 0}},
+    {0x0E, "MOVE_CAMERA", {}, {0, 0, 0, 0, 0}},
+    {0x10, "GOTO_EXTERN", {}, {0, 0}},
+    {0x11, "SCRIPT_END", {}, {}},
+    {0x12, "SUB_CALL", {}, {0, 0}},
+    {0x13, "SUB_RETURN", {}, {}},
+    {0x14, "LABEL_INDEX", {}, {2}},
+    {0x15, "GOTO", {}, {0}},
+    {0x17, "EVENT_SCENE", {}, {0, 0, 0, 0}},
+    {0x19, "PLAY_VOICE", {}, {0, 0}},
+    {0x1A, "PLAY_BGM", {}, {0, 0, 0}},
+    {0x1B, "PLAY_SFX", {}, {0, 0}},
+    {0x1C, "PLAY_JINGLE", {}, {0, 0}},
+    {0x1D, "SPEAKER_ID", {}, {0}},
+    {0x1E, "CAMERA_SHAKE", {}, {0, 0, 0}},
+    {0x1F, "SCENE_TRANS", {}, {0, 0, 0}},
+    {0x21, "MAP_PARAM", {}, {0, 0, 0}},
+    {0x22, "CHARA_PARAM", {}, {0, 0, 0, 0, 0}},
+    {0x25, "CHARA_SHAKE", {}, {0, 0, 0, 0 ,0}},
+    {0x27, "LOAD_MAP", {}, {0, 0, 0}},
+    {0x28, "OBJ_PARAM", {}, {0, 0, 0}},
+    {0x2B, "CAMERA_MODE", {}, {0, 0, 0, 0, 0}},
+    {0x33, "CAMERA_TRANS", {}, {0, 0, 0, 0}},
+    {0x35, "LOAD_OBJ", {}, {0, 0, 0, 0, 0}},
+    {0x46, "LOAD_STRING", {}, {1}},
+    {0x47, "PRINT_TEXTBOX", {}, {}},
+    {0x4A, "UNK_END", {}, {}},
+    {0x4B, "UNK_START", {}, {2}}
+};
+
 
 struct UTILSSHARED_EXPORT WrdFile
 {

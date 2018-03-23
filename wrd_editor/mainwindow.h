@@ -58,11 +58,10 @@ private:
     void openFile(QString filepath);
     void reloadAllLists();
     void reloadLabelList();
-    void reloadCodeList(const int index = -1);
+    void reloadCodeList(int index = -1);
     void reloadStringList();
     void reloadFlagList();
     void updateHexHeaders(QTableWidget *widget);
-    void updateArgumentPreviews();
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;
