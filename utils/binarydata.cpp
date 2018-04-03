@@ -1,31 +1,42 @@
 #include "binarydata.h"
 #include <QTextEncoder>
 
-QString bytes_to_str(const QByteArray &data, int &pos, int len, bool utf16)
+QString bytes_to_str(const QByteArray &data, int &pos, const int len, const bool utf16)
 {
     QString result;
     result.reserve(len);
 
-    int orig_pos = pos;
-    while (len < 0 || (pos - orig_pos) < len)
+    const int orig_pos = pos;
+    if (utf16)
     {
-        QChar c;
-        if (utf16)
-            c = QChar(bytes_to_num<ushort>(data, pos));
-        else
-            c = QChar(data.at(pos++));
+        while (len < 0 || (pos - orig_pos) < len)
+        {
+            const QChar c = QChar(bytes_to_num<ushort>(data, pos));
 
-        if (c == QChar(0))
-            break;
+            if (c == QChar(0))
+                break;
 
-        result.append(c);
+            result.append(c);
+        }
+    }
+    else
+    {
+        while (len < 0 || (pos - orig_pos) < len)
+        {
+            const QChar c = QChar(data.at(pos++));
+
+            if (c == QChar(0))
+                break;
+
+            result.append(c);
+        }
     }
 
     // Don't increment "pos" because bytes_to_num() does that already
     return result;
 }
 
-QByteArray str_to_bytes(const QString &string, bool utf16)
+QByteArray str_to_bytes(const QString &string, const bool utf16)
 {
     QByteArray result;
 
@@ -52,7 +63,7 @@ QByteArray str_to_bytes(const QString &string, bool utf16)
     return result;
 }
 
-QByteArray get_bytes(const QByteArray &data, int &pos, int len)
+QByteArray get_bytes(const QByteArray &data, int &pos, const int len)
 {
     QByteArray result = data.mid(pos, len);
     pos += result.size();
