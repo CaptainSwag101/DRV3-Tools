@@ -4,12 +4,13 @@
 #include "../utils/binarydata.h"
 #include "../utils/spc.h"
 
-void unpack(const QString in_dir);
-void repack(const QString in_dir);
+void unpack(const QString in_path);
+void unpack_file(const QString in_file, const QString dec_path);
+void repack(const QString in_path);
 
 int main(int argc, char *argv[])
 {
-    QString in_dir;
+    QString in_path;
     bool pack = false;
 
     // Parse args
@@ -20,10 +21,10 @@ int main(int argc, char *argv[])
         if (arg == "-p" || arg == "--pack")
             pack = true;
         else
-            in_dir = QDir(argv[i]).absolutePath();
+            in_path = QDir::toNativeSeparators(QDir(argv[i]).absolutePath());
     }
 
-    if (in_dir.isEmpty())
+    if (in_path.isEmpty())
     {
         cout << "Error: No input path specified.\n";
         cout.flush();
@@ -31,132 +32,156 @@ int main(int argc, char *argv[])
     }
 
     if (pack)
-        repack(in_dir);
+        repack(in_path);
     else
-        unpack(in_dir);
+        unpack(in_path);
 
     return 0;
 }
 
-void unpack(const QString in_dir)
+void unpack(const QString in_path)
 {
-    QString dec_dir = in_dir + "-dec";
-
-    QDirIterator it(in_dir, QStringList() << "*.spc", QDir::Files, QDirIterator::Subdirectories);
-    QStringList spcNames;
-    while (it.hasNext())
+    if (QFileInfo(in_path).isDir())
     {
-        spcNames.append(it.next());
+        QString dec_path = in_path + "-dec";
+
+        QDirIterator it(in_path, QStringList() << "*.spc", QDir::Files, QDirIterator::Subdirectories);
+        QStringList spcNames;
+        while (it.hasNext())
+        {
+            spcNames.append(QDir::toNativeSeparators(it.next()));
+        }
+
+        spcNames.sort();
+        for (int i = 0; i < spcNames.count(); i++)
+        {
+            cout << "Extracting file " << (i + 1) << "/" << spcNames.size() << ": " << QFileInfo(spcNames.at(i)).fileName() << "\n";
+            cout.flush();
+
+            unpack_file(spcNames.at(i), dec_path);
+        }
+    }
+    else
+    {
+        if (QFileInfo(in_path).suffix().compare("spc", Qt::CaseInsensitive) != 0)
+        {
+            cout << "This is not a .spc file.\n";
+            cout.flush();
+            return;
+        }
+
+        QString dec_path = QFileInfo(in_path).dir().absolutePath() + "-dec";
+        unpack_file(in_path, dec_path);
+    }
+}
+
+void unpack_file(const QString in_file, const QString dec_path)
+{
+    QString rel_path = QDir::toNativeSeparators(QFileInfo(in_file).dir().relativeFilePath(in_file));
+    QString out_path = dec_path + QDir::separator() + rel_path;
+
+
+    if (!QDir().mkpath(out_path))
+    {
+        cout << "Error: Failed to create \"" << out_path << "\" directory.\n";
+        cout.flush();
+        return;
     }
 
-    spcNames.sort();
-    for (int i = 0; i < spcNames.count(); i++)
+
+    QFile f(in_file);
+    f.open(QFile::ReadOnly);
+    SpcFile spc = spc_from_data(f.readAll());
+    spc.filename = in_file;
+
+
+    // Create a text file containing index data and other info for the extracted files,
+    // so we can re-pack them in the correct order (not sure if it matters though)
+    QFile info_file(out_path + ".info");
+    if (info_file.exists())
+        info_file.remove();
+    info_file.open(QFile::WriteOnly);
+    info_file.write(QString("file_count=" + QString::number(spc.subfiles.count()) + "\n").toUtf8());
+
+    for (SpcSubfile subfile : spc.subfiles)
     {
-        QString rel_dir = QDir(in_dir).relativeFilePath(spcNames.at(i));
-        QString out_dir = dec_dir + '/' + rel_dir;
-        if (!QDir(dec_dir).mkpath(rel_dir))
+        // Write subfile data
+        switch (subfile.cmp_flag)
         {
-            cout << "Error: Failed to create \"" << QDir::toNativeSeparators(out_dir) << "\" directory.\n";
+        case 0x01:  // Uncompressed
+        {
+            QFile out(out_path + QDir::separator() + subfile.filename);
+            out.open(QFile::WriteOnly);
+            out.write(subfile.data);
+            out.close();
+            break;
+        }
+        case 0x02:  // Compressed
+        {
+            QByteArray dec_data = spc_dec(subfile.data, subfile.dec_size);
+
+            if (dec_data.size() != subfile.dec_size)
+            {
+                cout << "Error: Size mismatch, size was " << dec_data.size() << " but should be " << subfile.dec_size << "\n";
+                cout.flush();
+            }
+
+            QFile out(out_path + QDir::separator() + subfile.filename);
+            out.open(QFile::WriteOnly);
+            out.write(dec_data);
+            out.close();
+
+            break;
+        }
+        case 0x03:  // Load from external file
+        {
+            QString ext_file_name = spc.filename + "_" + subfile.filename;
+            cout << "Loading from external file: " << ext_file_name << "\n";
             cout.flush();
+
+            QFile ext_file(ext_file_name);
+            ext_file.open(QFile::ReadOnly);
+            QByteArray ext_data = ext_file.readAll();
+            ext_file.close();
+
+            ext_data = srd_dec(ext_data);
+
+            QFile out(out_path + QDir::separator() + subfile.filename);
+            out.open(QFile::WriteOnly);
+            out.write(ext_data);
+            out.close();
+            break;
+        }
+        }
+
+        /*
+        if (file_name.endsWith(".spc"))
+        {
+            QString sub_file = out_dir + QDir::separator() + file_name;
+            unpack_data(file_data, sub_file);
             continue;
         }
-        cout << "Extracting file " << (i + 1) << "/" << spcNames.size() << ": " << rel_dir << "\n";
-        cout.flush();
-
-        QFile f(spcNames[i]);
-        f.open(QFile::ReadOnly);
-        SpcFile spc = spc_from_data(f.readAll());
-        spc.filename = spcNames[i];
-
-
-        // Create a text file containing index data and other info for the extracted files,
-        // so we can re-pack them in the correct order (not sure if it matters though)
-        QFile info_file(out_dir + ".info");
-        if (info_file.exists())
-            info_file.remove();
-        info_file.open(QFile::WriteOnly);
-        info_file.write(QString("file_count=" + QString::number(spc.subfiles.count()) + "\n").toUtf8());
-
-        for (SpcSubfile subfile : spc.subfiles)
+        else
         {
-            // Write subfile data
-            switch (subfile.cmp_flag)
-            {
-            case 0x01:  // Uncompressed
-            {
-                QFile out(out_dir + QDir::separator() + subfile.filename);
-                out.open(QFile::WriteOnly);
-                out.write(subfile.data);
-                out.close();
-                break;
-            }
-            case 0x02:  // Compressed
-            {
-                QByteArray dec_data = spc_dec(subfile.data, subfile.dec_size);
-
-                if (dec_data.size() != subfile.dec_size)
-                {
-                    cout << "Error: Size mismatch, size was " << dec_data.size() << " but should be " << subfile.dec_size << "\n";
-                    cout.flush();
-                }
-
-                QFile out(out_dir + QDir::separator() + subfile.filename);
-                out.open(QFile::WriteOnly);
-                out.write(dec_data);
-                out.close();
-
-                break;
-            }
-            case 0x03:  // Load from external file
-            {
-                QString ext_file_name = spc.filename + "_" + subfile.filename;
-                cout << "Loading from external file: " << ext_file_name << "\n";
-                cout.flush();
-
-                QFile ext_file(ext_file_name);
-                ext_file.open(QFile::ReadOnly);
-                QByteArray ext_data = ext_file.readAll();
-                ext_file.close();
-
-                ext_data = srd_dec(ext_data);
-
-                QFile out(out_dir + QDir::separator() + subfile.filename);
-                out.open(QFile::WriteOnly);
-                out.write(ext_data);
-                out.close();
-                break;
-            }
-            }
-
-            /*
-            if (file_name.endsWith(".spc"))
-            {
-                QString sub_file = out_dir + QDir::separator() + file_name;
-                unpack_data(file_data, sub_file);
-                continue;
-            }
-            else
-            {
-                QFile out(out_dir + QDir::separator() + file_name);
-                out.open(QFile::WriteOnly);
-                out.write(file_data.Bytes);
-                out.close();
-            }
-            */
-
-            // Write subfile info
-            info_file.write(QString("\n").toUtf8());
-            info_file.write(QString("cmp_flag=" + QString::number(subfile.cmp_flag) + "\n").toUtf8());
-            info_file.write(QString("unk_flag=" + QString::number(subfile.unk_flag) + "\n").toUtf8());
-            info_file.write(QString("cmp_size=" + QString::number(subfile.cmp_size) + "\n").toUtf8());
-            info_file.write(QString("dec_size=" + QString::number(subfile.dec_size) + "\n").toUtf8());
-            info_file.write(QString("filename=" + subfile.filename + "\n").toUtf8());
+            QFile out(out_dir + QDir::separator() + file_name);
+            out.open(QFile::WriteOnly);
+            out.write(file_data.Bytes);
+            out.close();
         }
-        info_file.close();
+        */
 
-
-        f.close();
+        // Write subfile info
+        info_file.write(QString("\n").toUtf8());
+        info_file.write(QString("cmp_flag=" + QString::number(subfile.cmp_flag) + "\n").toUtf8());
+        info_file.write(QString("unk_flag=" + QString::number(subfile.unk_flag) + "\n").toUtf8());
+        info_file.write(QString("cmp_size=" + QString::number(subfile.cmp_size) + "\n").toUtf8());
+        info_file.write(QString("dec_size=" + QString::number(subfile.dec_size) + "\n").toUtf8());
+        info_file.write(QString("filename=" + subfile.filename + "\n").toUtf8());
     }
+    info_file.close();
+
+
+    f.close();
 }
 
 void repack(QString in_dir)

@@ -47,7 +47,7 @@ static QList<WrdCmd> known_commands = {
     {0x35, "LOAD_OBJ", {}, {0, 0, 0, 0, 0}},
     {0x46, "LOAD_STRING", {}, {1}},
     {0x47, "PRINT_TEXTBOX", {}, {}},
-    {0x4A, "UNK_END", {}, {}},
+    {0x4A, "UNK_END", {}, {2}},
     {0x4B, "UNK_START", {}, {2}}
 };
 
