@@ -60,7 +60,7 @@ void MainWindow::on_actionSave_triggered()
         if (stx_file.right(3).startsWith("_"))
         {
             region = stx_file.right(3);
-            region.chop(3);
+            stx_file.chop(3);
         }
 
         stx_file.append("_text" + region + ".SPC");
@@ -133,7 +133,7 @@ void MainWindow::openFile(QString filepath)
     this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
 
     reloadLabelList();
-    //ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, index));
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
     ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
 }
@@ -171,7 +171,7 @@ void MainWindow::on_toolButton_CmdAdd_clicked()
     cmd.opcode = 0x47;
     currentWrd.code[currentLabel].insert(currentRow, cmd);
 
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     ui->tableCode->selectRow(currentRow);
     unsavedChanges = true;
 }
@@ -185,7 +185,7 @@ void MainWindow::on_toolButton_CmdDel_clicked()
 
     currentWrd.code[currentLabel].removeAt(currentRow);
 
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     if (currentRow >= currentWrd.code[currentLabel].count())
         ui->tableCode->selectRow(currentRow - 1);
     else
@@ -207,7 +207,7 @@ void MainWindow::on_toolButton_CmdUp_clicked()
     currentWrd.code[currentLabel].replace(currentRow, cmd2);
     currentWrd.code[currentLabel].replace(currentRow - 1, cmd1);
 
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     ui->tableCode->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
@@ -225,7 +225,7 @@ void MainWindow::on_toolButton_CmdDown_clicked()
     currentWrd.code[currentLabel].replace(currentRow, cmd2);
     currentWrd.code[currentLabel].replace(currentRow + 1, cmd1);
 
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     ui->tableCode->selectRow(currentRow + 1);
     unsavedChanges = true;
 }
@@ -240,7 +240,7 @@ void MainWindow::on_toolButton_StringAdd_clicked()
 
     currentWrd.strings.insert(currentRow, QString());
 
-    //reloadStringList();
+    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
     ui->tableStrings->selectRow(currentRow);
     unsavedChanges = true;
 }
@@ -253,7 +253,7 @@ void MainWindow::on_toolButton_StringDel_clicked()
 
     currentWrd.strings.removeAt(currentRow);
 
-    //reloadStringList();
+    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
     if (currentRow >= currentWrd.strings.count())
         ui->tableStrings->selectRow(currentRow - 1);
     else
@@ -273,7 +273,7 @@ void MainWindow::on_toolButton_StringUp_clicked()
     currentWrd.strings.replace(currentRow, str2);
     currentWrd.strings.replace(currentRow - 1, str1);
 
-    //reloadStringList();
+    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
     ui->tableStrings->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
@@ -290,7 +290,7 @@ void MainWindow::on_toolButton_StringDown_clicked()
     currentWrd.strings.replace(currentRow, str2);
     currentWrd.strings.replace(currentRow + 1, str1);
 
-    //reloadStringList();
+    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
     ui->tableStrings->selectRow(currentRow + 1);
     unsavedChanges = true;
 }
@@ -305,11 +305,11 @@ void MainWindow::on_toolButton_FlagAdd_clicked()
 
     currentWrd.flags.insert(currentRow, QString());
 
-    //reloadFlagList();
+    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
     ui->tableFlags->selectRow(currentRow);
 
     // We need to update the argument name previews now
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }
 
@@ -321,14 +321,14 @@ void MainWindow::on_toolButton_FlagDel_clicked()
 
     currentWrd.flags.removeAt(currentRow);
 
-    //reloadFlagList();
+    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
     if (currentRow >= currentWrd.flags.count())
         ui->tableFlags->selectRow(currentRow - 1);
     else
         ui->tableFlags->selectRow(currentRow);
 
     // We need to update the argument name previews now
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }
 
@@ -344,11 +344,11 @@ void MainWindow::on_toolButton_FlagUp_clicked()
     currentWrd.flags.replace(currentRow, flag2);
     currentWrd.flags.replace(currentRow - 1, flag1);
 
-    //reloadFlagList();
+    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
     ui->tableFlags->selectRow(currentRow - 1);
 
     // We need to update the argument name previews now
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }
 
@@ -364,10 +364,10 @@ void MainWindow::on_toolButton_FlagDown_clicked()
     currentWrd.flags.replace(currentRow, flag2);
     currentWrd.flags.replace(currentRow + 1, flag1);
 
-    //reloadFlagList();
+    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
     ui->tableFlags->selectRow(currentRow + 1);
 
     // We need to update the argument name previews now
-    //reloadCodeList();
+    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }

@@ -150,7 +150,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
         if (stx_file.right(3).startsWith("_"))
         {
             region = stx_file.right(3);
-            region.chop(3);
+            stx_file.chop(3);
         }
 
         stx_file.append("_text" + region + ".SPC");
@@ -267,7 +267,7 @@ int WrdCodeModel::columnCount(const QModelIndex &parent) const
 }
 QVariant WrdCodeModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::DisplayRole)
+    if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
         const WrdCmd cmd = (*wrd_file).code[label].at(index.row());
 
@@ -417,7 +417,7 @@ bool WrdCodeModel::setData(const QModelIndex &index, const QVariant &value, int 
 }
 Qt::ItemFlags WrdCodeModel::flags(const QModelIndex &index) const
 {
-    if (index.row() == 2)
+    if (index.column() == 2)
         return QAbstractTableModel::flags(index) & ~Qt::ItemIsEditable;
     else
         return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
@@ -438,7 +438,7 @@ int WrdStringsModel::columnCount(const QModelIndex &parent) const
 }
 QVariant WrdStringsModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::DisplayRole)
+    if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
         if (index.column() == 0)
         {
@@ -455,24 +455,6 @@ QVariant WrdStringsModel::data(const QModelIndex &index, int role) const
 
     return QVariant();
 }
-QVariant WrdStringsModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    if (role == Qt::DisplayRole)
-    {
-        if (orientation == Qt::Horizontal) {
-            switch (section)
-            {
-            case 0:
-                return QString("first");
-            case 1:
-                return QString("second");
-            case 2:
-                return QString("third");
-            }
-        }
-    }
-    return QVariant();
-}
 bool WrdStringsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (index.column() == 0)
@@ -486,7 +468,10 @@ bool WrdStringsModel::setData(const QModelIndex &index, const QVariant &value, i
 }
 Qt::ItemFlags WrdStringsModel::flags(const QModelIndex &index) const
 {
-    return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    if (index.column() == 0)
+        return QAbstractTableModel::flags(index) & ~Qt::ItemIsEditable;
+    else
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 }
 
 
@@ -500,11 +485,11 @@ int WrdFlagsModel::rowCount(const QModelIndex &parent) const
 }
 int WrdFlagsModel::columnCount(const QModelIndex &parent) const
 {
-    return 3;
+    return 2;
 }
 QVariant WrdFlagsModel::data(const QModelIndex &index, int role) const
 {
-    if (role == Qt::DisplayRole)
+    if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
         if (index.column() == 0)
         {
@@ -519,24 +504,6 @@ QVariant WrdFlagsModel::data(const QModelIndex &index, int role) const
 
     return QVariant();
 }
-QVariant WrdFlagsModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    if (role == Qt::DisplayRole)
-    {
-        if (orientation == Qt::Horizontal) {
-            switch (section)
-            {
-            case 0:
-                return QString("first");
-            case 1:
-                return QString("second");
-            case 2:
-                return QString("third");
-            }
-        }
-    }
-    return QVariant();
-}
 bool WrdFlagsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (index.column() == 0)
@@ -549,5 +516,8 @@ bool WrdFlagsModel::setData(const QModelIndex &index, const QVariant &value, int
 }
 Qt::ItemFlags WrdFlagsModel::flags(const QModelIndex &index) const
 {
-    return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    if (index.column() == 0)
+        return QAbstractTableModel::flags(index) & ~Qt::ItemIsEditable;
+    else
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 }

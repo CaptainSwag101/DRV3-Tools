@@ -4,19 +4,38 @@ QString bytes_to_str(const QByteArray &data, int &pos, const int len, const QStr
 {
     const int orig_pos = pos;
 
-    QByteArray result;
-
-    while (len < 0 || (pos - orig_pos) < len)
+    if (codec == "UTF-16")
     {
-        const char c = data.at(pos++);
+        QString result;
 
-        if (c == 0)
-            break;
+        while (len < 0 || (pos - orig_pos) < len)
+        {
+            const ushort c = bytes_to_num<ushort>(data, pos);
 
-        result.append(c);
+            if (c == 0)
+                break;
+
+            result.append(QChar(c));
+        }
+
+        return result;
     }
+    else
+    {
+        QByteArray result;
 
-    return QString::fromUtf8(result);
+        while (len < 0 || (pos - orig_pos) < len)
+        {
+            const char c = data.at(pos++);
+
+            if (c == 0)
+                break;
+
+            result.append(c);
+        }
+
+        return QString::fromUtf8(result);
+    }
 }
 
 QByteArray str_to_bytes(const QString &string, const bool utf16)
