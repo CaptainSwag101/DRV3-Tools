@@ -26,7 +26,7 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    QByteArray out_data = spc_to_data(currentSpc);
+    const QByteArray out_data = spc_to_bytes(currentSpc);
     QString outName = currentSpc.filename;
     QFile f(outName);
     f.open(QFile::WriteOnly);
@@ -64,7 +64,7 @@ void MainWindow::on_actionExtractAll_triggered()
     bool skipAll = false;
     for (int i = 0; i < currentSpc.subfiles.count(); i++)
     {
-        SpcSubfile subfile = currentSpc.subfiles[i];
+        const SpcSubfile subfile = currentSpc.subfiles.at(i);
 
         progressDlg.setLabelText("Extracting file " + QString::number(i + 1) + "/" + QString::number(currentSpc.subfiles.count()) + ": " + subfile.filename);
         progressDlg.setValue(i);
@@ -102,7 +102,10 @@ void MainWindow::on_actionExtractSelected_triggered()
 {
     QFileDialog folderDlg;
     QString outDir = folderDlg.getExistingDirectory();
-    if (outDir.isEmpty()) return;
+    if (outDir.isEmpty())
+    {
+        return;
+    }
 
     QModelIndexList selectedIndexes = ui->listWidget->selectionModel()->selectedIndexes();
 
@@ -116,7 +119,7 @@ void MainWindow::on_actionExtractSelected_triggered()
     for (int i = 0; i < selectedIndexes.count(); i++)
     {
         int index = ui->listWidget->selectionModel()->selectedIndexes().at(i).row();
-        SpcSubfile subfile = currentSpc.subfiles.at(index);
+        const SpcSubfile subfile = currentSpc.subfiles.at(index);
 
         progressDlg.setLabelText("Extracting file " + QString::number(i + 1) + "/" + QString::number(selectedIndexes.count()) + ": " + subfile.filename);
         progressDlg.setValue(i);
@@ -162,7 +165,7 @@ void MainWindow::on_actionInjectFile_triggered()
 
     QFile file(injectName);
     file.open(QFile::ReadOnly);
-    QByteArray fileData = file.readAll();
+    const QByteArray fileData = file.readAll();
     file.close();
 
     injectFile(QFileInfo(file).fileName(), fileData);
@@ -192,7 +195,7 @@ bool MainWindow::confirmUnsaved()
 void MainWindow::reloadSubfileList()
 {
     QStringList items;
-    for (SpcSubfile subfile : currentSpc.subfiles)
+    for (const SpcSubfile subfile : currentSpc.subfiles)
     {
         items.append(subfile.filename);
     }
@@ -206,7 +209,7 @@ void MainWindow::openFile(QString filepath)
 {
     QFile f(filepath);
     f.open(QFile::ReadOnly);
-    currentSpc = spc_from_data(f.readAll());
+    currentSpc = spc_from_bytes(f.readAll());
     f.close();
 
     currentSpc.filename = filepath;
@@ -237,7 +240,7 @@ void MainWindow::extractFile(QString outDir, const SpcSubfile &subfile)
         QString ext_file_name = currentSpc.filename + "_" + subfile.filename;
         QFile ext_file(ext_file_name);
         ext_file.open(QFile::ReadOnly);
-        QByteArray ext_data = ext_file.readAll();
+        const QByteArray ext_data = ext_file.readAll();
         ext_file.close();
         outData = srd_dec(ext_data);
         break;
@@ -288,7 +291,7 @@ void MainWindow::injectFile(QString name, const QByteArray &fileData)
     cmp_watcher.waitForFinished();
 
     // If compressing the data doesn't reduce the size, save uncompressed data instead
-    QByteArray cmp_data = cmp_watcher.result();
+    const QByteArray cmp_data = cmp_watcher.result();
     if (cmp_data.size() > injectFile.data.size())
     {
         injectFile.cmp_flag = 0x01;
@@ -343,7 +346,7 @@ void MainWindow::dropEvent(QDropEvent *event)
                 QFile f(filepath);
                 f.open(QFile::ReadOnly);
                 QString name = QFileInfo(f).fileName();
-                QByteArray fileData = f.readAll();
+                const QByteArray fileData = f.readAll();
                 f.close();
 
                 injectFile(name, fileData);

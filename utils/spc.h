@@ -26,11 +26,11 @@ struct UTILSSHARED_EXPORT SpcFile
     QList<SpcSubfile> subfiles;
 };
 
-UTILSSHARED_EXPORT SpcFile spc_from_data(const QByteArray &data);
-UTILSSHARED_EXPORT QByteArray spc_to_data(const SpcFile &spc);
-UTILSSHARED_EXPORT QByteArray spc_dec(const QByteArray &data, int dec_size = -1);
-UTILSSHARED_EXPORT QByteArray spc_cmp(const QByteArray &data);
-UTILSSHARED_EXPORT QByteArray srd_dec(const QByteArray &data);
+UTILSSHARED_EXPORT SpcFile spc_from_bytes(const QByteArray &bytes);
+UTILSSHARED_EXPORT QByteArray spc_to_bytes(const SpcFile &spc);
+UTILSSHARED_EXPORT QByteArray spc_dec(const QByteArray &bytes, int dec_size = -1);
+UTILSSHARED_EXPORT QByteArray spc_cmp(const QByteArray &bytes);
+UTILSSHARED_EXPORT QByteArray srd_dec(const QByteArray &bytes);
 UTILSSHARED_EXPORT QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 
 #endif // SPC_H

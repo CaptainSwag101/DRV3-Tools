@@ -1,14 +1,14 @@
 #include "spc.h"
 
-SpcFile spc_from_data(const QByteArray &data)
+SpcFile spc_from_bytes(const QByteArray &bytes)
 {
     SpcFile result;
 
     int pos = 0;
-    QString magic = bytes_to_str(data, pos, 4);
+    QString magic = bytes_to_str(bytes, pos, 4);
     if (magic == "$CMP")
     {
-        return spc_from_data(srd_dec(data));
+        return spc_from_bytes(srd_dec(bytes));
     }
 
     if (magic != SPC_MAGIC)
@@ -18,12 +18,12 @@ SpcFile spc_from_data(const QByteArray &data)
         throw 1;
     }
 
-    result.unk1 = get_bytes(data, pos, 0x24);
-    uint file_count = bytes_to_num<uint>(data, pos);
-    result.unk2 = bytes_to_num<uint>(data, pos);
+    result.unk1 = get_bytes(bytes, pos, 0x24);
+    uint file_count = bytes_to_num<uint>(bytes, pos);
+    result.unk2 = bytes_to_num<uint>(bytes, pos);
     pos += 0x10;    // padding?
 
-    QString table_magic = bytes_to_str(data, pos, 4);
+    QString table_magic = bytes_to_str(bytes, pos, 4);
     pos += 0x0C;
 
     if (table_magic != SPC_TABLE_MAGIC)
@@ -37,22 +37,22 @@ SpcFile spc_from_data(const QByteArray &data)
     {
         SpcSubfile subfile;
 
-        subfile.cmp_flag = bytes_to_num<ushort>(data, pos);
-        subfile.unk_flag = bytes_to_num<ushort>(data, pos);
-        subfile.cmp_size = bytes_to_num<uint>(data, pos);
-        subfile.dec_size = bytes_to_num<uint>(data, pos);
-        uint name_len = bytes_to_num<uint>(data, pos);
+        subfile.cmp_flag = bytes_to_num<ushort>(bytes, pos);
+        subfile.unk_flag = bytes_to_num<ushort>(bytes, pos);
+        subfile.cmp_size = bytes_to_num<uint>(bytes, pos);
+        subfile.dec_size = bytes_to_num<uint>(bytes, pos);
+        uint name_len = bytes_to_num<uint>(bytes, pos);
         pos += 0x10;    // Padding?
 
         // Everything's aligned to multiples of 0x10
         uint name_padding = (0x10 - (name_len + 1) % 0x10) % 0x10;
         uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
 
-        subfile.filename = bytes_to_str(data, pos, name_len);
+        subfile.filename = bytes_to_str(bytes, pos, name_len);
         // We don't want the null terminator byte, so pretend it's padding
         pos += name_padding + 1;
 
-        subfile.data = get_bytes(data, pos, subfile.cmp_size);
+        subfile.data = get_bytes(bytes, pos, subfile.cmp_size);
         pos += data_padding;
 
         result.subfiles.append(subfile);
@@ -61,7 +61,7 @@ SpcFile spc_from_data(const QByteArray &data)
     return result;
 }
 
-QByteArray spc_to_data(const SpcFile &spc)
+QByteArray spc_to_bytes(const SpcFile &spc)
 {
     QByteArray result;
 
@@ -73,7 +73,7 @@ QByteArray spc_to_data(const SpcFile &spc)
     result.append(SPC_TABLE_MAGIC.toUtf8());            // SPC_TABLE_MAGIC
     result.append(0x0C, 0x00);                          // padding
 
-    for (SpcSubfile subfile : spc.subfiles)
+    for (const SpcSubfile subfile : spc.subfiles)
     {
         result.append(num_to_bytes(subfile.cmp_flag));  // cmp_flag
         result.append(num_to_bytes(subfile.unk_flag));  // unk_flag
@@ -99,9 +99,9 @@ QByteArray spc_to_data(const SpcFile &spc)
 
 // This is the compression scheme used for
 // individual files in an spc archive
-QByteArray spc_dec(const QByteArray &data, int dec_size)
+QByteArray spc_dec(const QByteArray &bytes, int dec_size)
 {
-    const int cmp_size = data.size();
+    const int cmp_size = bytes.size();
 
     if (dec_size <= 0)
         dec_size = cmp_size * 2;
@@ -120,7 +120,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
 
         if (flag == 1)
             // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
-            flag = 0x100 | bit_reverse(data.at(pos++));
+            flag = 0x100 | bit_reverse(bytes.at(pos++));
 
         if (pos >= cmp_size)
             break;
@@ -128,7 +128,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
         if (flag & 1)
         {
             // Raw byte
-            result.append(data.at(pos++));
+            result.append(bytes.at(pos++));
         }
         else
         {
@@ -136,7 +136,7 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
             // xxxxxxyy yyyyyyyy
             // Count  -> x + 2 (max length of 65 bytes)
             // Offset -> y (from the beginning of a 1023-byte sliding window)
-            const ushort b = bytes_to_num<ushort>(data, pos);
+            const ushort b = bytes_to_num<ushort>(bytes, pos);
             const char count = (b >> 10) + 2;
             const short offset = b & 1023;
 
@@ -161,9 +161,9 @@ QByteArray spc_dec(const QByteArray &data, int dec_size)
 // If we did find a duplicate sequence, and it is adjacent to the readahead area,
 // see how many bytes of that sequence can be repeated until we encounter
 // a non-duplicate byte or reach the end of the readahead area.
-QByteArray spc_cmp(const QByteArray &data)
+QByteArray spc_cmp(const QByteArray &bytes)
 {
-    const int data_len = data.size();
+    const int data_len = bytes.size();
 
     QByteArray result;
     result.reserve(data_len);
@@ -202,7 +202,7 @@ QByteArray spc_cmp(const QByteArray &data)
         //int longest_dupe_len = 1;
 
         // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
-        const QByteArray window = data.mid(window_end - window_len, window_len);
+        const QByteArray window = bytes.mid(window_end - window_len, window_len);
 
         QByteArray seq;
         seq.reserve(readahead_len);
@@ -210,7 +210,7 @@ QByteArray spc_cmp(const QByteArray &data)
 
         while (pos < data_len && seq.size() < readahead_len && seq.size() <= window_len)
         {
-            seq.append(data.at(pos++));
+            seq.append(bytes.at(pos++));
 
             // We need to do this -1 here because QByteArrays are \000 terminated
             const int new_index = window.lastIndexOf(seq, window_len - 1);
@@ -232,7 +232,7 @@ QByteArray spc_cmp(const QByteArray &data)
             {
                 while (pos < data_len && new_index + seq.size() < window_len && seq.size() < readahead_len)
                 {
-                    char c = data.at(pos++);
+                    char c = bytes.at(pos++);
                     int check_index = new_index + seq.size();
                     if (window.at(check_index) == c)
                     {
@@ -257,7 +257,7 @@ QByteArray spc_cmp(const QByteArray &data)
                 while (seq.size() < readahead_len && pos < data_len)
                 {
                     const int dupe_index = (pos - window_end) % orig_seq_size;
-                    const char c = data.at(pos++);
+                    const char c = bytes.at(pos++);
                     // Check if the next byte exists in the previous
                     // repeated segment of our sequence.
                     if (c == seq.at(dupe_index))
@@ -311,39 +311,39 @@ QByteArray spc_cmp(const QByteArray &data)
     return result;
 }
 
-QByteArray srd_dec(const QByteArray &data)
+QByteArray srd_dec(const QByteArray &bytes)
 {
     int pos = 0;
     QByteArray result;
 
-    if (bytes_to_str(data, pos, 4) != "$CMP")
+    if (bytes_to_str(bytes, pos, 4) != "$CMP")
     {
-        result.append(data);
+        result.append(bytes);
         return result;
     }
     pos = 0;
 
-    const int cmp_size = bytes_to_num<uint>(data, pos, true);
+    const int cmp_size = bytes_to_num<uint>(bytes, pos, true);
     pos += 8;
-    const int dec_size = bytes_to_num<uint>(data, pos, true);
-    const int cmp_size2 = bytes_to_num<uint>(data, pos, true);
+    const int dec_size = bytes_to_num<uint>(bytes, pos, true);
+    const int cmp_size2 = bytes_to_num<uint>(bytes, pos, true);
     pos += 4;
-    const int unk = bytes_to_num<uint>(data, pos, true);
+    const int unk = bytes_to_num<uint>(bytes, pos, true);
 
     result.reserve(dec_size);
 
     while (true)
     {
-        QString cmp_mode = bytes_to_str(data, pos, 4);
+        QString cmp_mode = bytes_to_str(bytes, pos, 4);
 
         if (!cmp_mode.startsWith("$CL") && cmp_mode != "$CR0")
             break;
 
-        const int chunk_dec_size = bytes_to_num<uint>(data, pos, true);
-        const int chunk_cmp_size = bytes_to_num<uint>(data, pos, true);
+        const int chunk_dec_size = bytes_to_num<uint>(bytes, pos, true);
+        const int chunk_cmp_size = bytes_to_num<uint>(bytes, pos, true);
         pos += 4;
 
-        QByteArray chunk = get_bytes(data, pos, chunk_cmp_size - 0x10); // Read the rest of the chunk data
+        QByteArray chunk = get_bytes(bytes, pos, chunk_cmp_size - 0x10); // Read the rest of the chunk data
 
         // If not "$CR0", chunk is compressed
         if (cmp_mode != "$CR0")

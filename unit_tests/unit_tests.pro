@@ -8,7 +8,7 @@ QT       += testlib
 
 QT       -= gui
 
-TARGET = tst_spccompression
+TARGET = unit_tests
 CONFIG   += console
 CONFIG   -= app_bundle
 
@@ -27,7 +27,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
-        tst_spccompression.cpp
+    unit_tests.cpp
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 

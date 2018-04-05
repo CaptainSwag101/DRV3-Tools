@@ -41,7 +41,7 @@ void MainWindow::on_actionSave_triggered()
     }
     */
 
-    const QByteArray out_data = wrd_to_data(currentWrd);
+    const QByteArray out_data = wrd_to_bytes(currentWrd);
     QString out_file = currentWrd.filename;
     QFile f(out_file);
     f.open(QFile::WriteOnly);
@@ -55,9 +55,15 @@ void MainWindow::on_actionSave_triggered()
         QString stx_file = QFileInfo(out_file).absolutePath();
         if (stx_file.endsWith(".SPC", Qt::CaseInsensitive))
             stx_file.chop(4);
-        if (stx_file.endsWith("_US"))
-            stx_file.chop(3);
-        stx_file.append("_text_US.SPC");
+
+        QString region = "_US";
+        if (stx_file.right(3).startsWith("_"))
+        {
+            region = stx_file.right(3);
+            region.chop(3);
+        }
+
+        stx_file.append("_text" + region + ".SPC");
         stx_file.append(QDir::separator());
         stx_file.append(QFileInfo(out_file).fileName());
         stx_file.replace(".wrd", ".stx");
@@ -121,7 +127,7 @@ void MainWindow::openFile(QString filepath)
 {
     QFile f(filepath);
     f.open(QFile::ReadOnly);
-    currentWrd = wrd_from_data(f.readAll(), filepath);
+    currentWrd = wrd_from_bytes(f.readAll(), filepath);
     f.close();
 
     this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());

@@ -26,14 +26,16 @@ SOURCES += \
     binarydata.cpp \
     wrd.cpp \
     stx.cpp \
-    spc.cpp
+    spc.cpp \
+    dat.cpp
 
 HEADERS += \
     utils_global.h \
     binarydata.h \
     wrd.h \
     stx.h \
-    spc.h
+    spc.h \
+    dat.h
 
 unix {
     target.path = /usr/lib

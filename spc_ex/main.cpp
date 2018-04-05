@@ -71,17 +71,21 @@ void unpack(const QString in_path)
         }
 
         QString dec_path = QFileInfo(in_path).dir().absolutePath() + "-dec";
+
+        cout << "Extracting file: " << QFileInfo(in_path).fileName() << "\n";
+        cout.flush();
+
         unpack_file(in_path, dec_path);
     }
 }
 
 void unpack_file(const QString in_file, const QString dec_path)
 {
-    QString rel_path = QDir::toNativeSeparators(QFileInfo(in_file).dir().relativeFilePath(in_file));
-    QString out_path = dec_path + QDir::separator() + rel_path;
+    const QString rel_path = QDir::toNativeSeparators(QFileInfo(in_file).dir().relativeFilePath(in_file));
+    const QString out_path = dec_path + QDir::separator() + rel_path;
 
 
-    if (!QDir().mkpath(out_path))
+    if (!QDir(out_path).exists() && !QDir().mkpath(out_path))
     {
         cout << "Error: Failed to create \"" << out_path << "\" directory.\n";
         cout.flush();
@@ -91,8 +95,9 @@ void unpack_file(const QString in_file, const QString dec_path)
 
     QFile f(in_file);
     f.open(QFile::ReadOnly);
-    SpcFile spc = spc_from_data(f.readAll());
+    SpcFile spc = spc_from_bytes(f.readAll());
     spc.filename = in_file;
+    f.close();
 
 
     // Create a text file containing index data and other info for the extracted files,
@@ -103,7 +108,7 @@ void unpack_file(const QString in_file, const QString dec_path)
     info_file.open(QFile::WriteOnly);
     info_file.write(QString("file_count=" + QString::number(spc.subfiles.count()) + "\n").toUtf8());
 
-    for (SpcSubfile subfile : spc.subfiles)
+    for (const SpcSubfile subfile : spc.subfiles)
     {
         // Write subfile data
         switch (subfile.cmp_flag)
@@ -118,7 +123,7 @@ void unpack_file(const QString in_file, const QString dec_path)
         }
         case 0x02:  // Compressed
         {
-            QByteArray dec_data = spc_dec(subfile.data, subfile.dec_size);
+            const QByteArray dec_data = spc_dec(subfile.data, subfile.dec_size);
 
             if (dec_data.size() != subfile.dec_size)
             {
@@ -141,10 +146,8 @@ void unpack_file(const QString in_file, const QString dec_path)
 
             QFile ext_file(ext_file_name);
             ext_file.open(QFile::ReadOnly);
-            QByteArray ext_data = ext_file.readAll();
+            const QByteArray ext_data = srd_dec(ext_file.readAll());
             ext_file.close();
-
-            ext_data = srd_dec(ext_data);
 
             QFile out(out_path + QDir::separator() + subfile.filename);
             out.open(QFile::WriteOnly);
@@ -179,14 +182,11 @@ void unpack_file(const QString in_file, const QString dec_path)
         info_file.write(QString("filename=" + subfile.filename + "\n").toUtf8());
     }
     info_file.close();
-
-
-    f.close();
 }
 
-void repack(QString in_dir)
+void repack(const QString in_dir)
 {
-    QString cmp_dir = in_dir + "-cmp";
+    const QString cmp_dir = in_dir + "-cmp";
 
     QDirIterator it(in_dir, QStringList() << "*.spc", QDir::Dirs, QDirIterator::Subdirectories);
     QStringList spcNames;
@@ -198,13 +198,13 @@ void repack(QString in_dir)
     spcNames.sort();
     for (int i = 0; i < spcNames.count(); i++)
     {
-        QString spc_dir = spcNames.at(i);
-        QString out_file = QDir(in_dir).relativeFilePath(spc_dir);
+        const QString spc_dir = spcNames.at(i);
+        const QString out_file = QDir(in_dir).relativeFilePath(spc_dir);
 
 
         QFile info_file(spc_dir + ".info");
         info_file.open(QFile::ReadOnly | QIODevice::Text);
-        QStringList info_strings = QString(info_file.readAll()).replace('\r', "").split('\n', QString::SkipEmptyParts);
+        const QStringList info_strings = QString(info_file.readAll()).replace('\r', "").split('\n', QString::SkipEmptyParts);
         info_file.close();
 
         int file_count = info_strings.at(0).split('=').at(1).toInt();

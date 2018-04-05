@@ -4,7 +4,7 @@
 #include <QByteArray>
 #include <QString>
 
-UTILSSHARED_EXPORT QString bytes_to_str(const QByteArray &data, int &pos, const int len = -1, const bool utf16 = false);
+UTILSSHARED_EXPORT QString bytes_to_str(const QByteArray &data, int &pos, const int len = -1, const QString codec = "UTF-8");
 UTILSSHARED_EXPORT QByteArray str_to_bytes(const QString &string, const bool utf16 = false);
 UTILSSHARED_EXPORT QByteArray get_bytes(const QByteArray &data, int &pos, const int len = -1);
 

@@ -63,9 +63,9 @@ struct UTILSSHARED_EXPORT WrdFile
     bool external_strings;
 };
 
-UTILSSHARED_EXPORT WrdFile wrd_from_data(const QByteArray &data, QString filename);
-UTILSSHARED_EXPORT QByteArray wrd_to_data(const WrdFile &wrd);
-QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &data);
-QByteArray wrd_cmds_to_code(const QByteArray &wrd);
+UTILSSHARED_EXPORT WrdFile wrd_from_bytes(const QByteArray &bytes, QString filename);
+UTILSSHARED_EXPORT QByteArray wrd_to_bytes(const WrdFile &wrd);
+UTILSSHARED_EXPORT QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
+UTILSSHARED_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
 
 #endif // WRD_H
