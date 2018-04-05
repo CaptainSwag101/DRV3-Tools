@@ -104,5 +104,5 @@ void MainWindow::openFile(QString filepath)
 
     this->setWindowTitle("DAT Editor: " + QFileInfo(filepath).fileName());
 
-    reloadAllLists();
+    //reloadAllLists();
 }
