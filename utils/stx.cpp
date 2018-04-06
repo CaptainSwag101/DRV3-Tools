@@ -28,7 +28,7 @@ QStringList get_stx_strings(const QByteArray &bytes)
 
         pos = str_off;
 
-        QString str = bytes_to_str(bytes, pos, -1, "UTF-16");
+        QString str = bytes_to_str(bytes, pos, -1, "UTF-16LE");
         strings.append(str);
     }
 
@@ -85,7 +85,7 @@ QByteArray repack_stx_strings(QStringList strings)
         if (written.contains(strings[i]))
             continue;
 
-        QTextCodec *codec = QTextCodec::codecForName("UTF-16");
+        QTextCodec *codec = QTextCodec::codecForName("UTF-16LE");
         QTextEncoder *encoder = codec->makeEncoder(QTextCodec::IgnoreHeader);
         const QByteArray bytes = encoder->fromUnicode(strings[i]);
 

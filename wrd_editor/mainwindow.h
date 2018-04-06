@@ -2,21 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QComboBox>
 #include <QCloseEvent>
-#include <QDebug>
-#include <QDropEvent>
-#include <QFile>
-#include <QFileDialog>
-#include <QFutureWatcher>
-#include <QHeaderView>
-#include <QListWidget>
-#include <QMessageBox>
-#include <QProgressDialog>
-#include <QTableWidget>
-#include <QtConcurrent/QtConcurrent>
-#include "../utils/binarydata.h"
-#include "../utils/wrd.h"
+#include "wrd_ui_models.h"
 
 namespace Ui {
 class MainWindow;
@@ -37,6 +24,7 @@ private slots:
     void on_actionExit_triggered();
     void closeEvent(QCloseEvent *event);
     void on_comboBox_SelectLabel_currentIndexChanged(int index);
+    void on_editCompleted(const QString &str);
     void on_toolButton_CmdAdd_clicked();
     void on_toolButton_CmdDel_clicked();
     void on_toolButton_CmdUp_clicked();
@@ -55,7 +43,6 @@ private:
     void openFile(QString filepath);
     void reloadAllLists();
     void reloadLabelList();
-    void updateHexHeaders(QTableWidget *widget);
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;

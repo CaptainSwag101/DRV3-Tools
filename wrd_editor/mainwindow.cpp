@@ -1,12 +1,18 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <cmath>
+#include <QComboBox>
+#include <QDebug>
+#include <QDropEvent>
+#include <QFile>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QTableView>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->tableCode->setColumnWidth(1, 170);
+    ui->tableCode->setColumnWidth(1, 180);
 }
 
 MainWindow::~MainWindow()
@@ -33,6 +39,9 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
+    if (currentWrd.filename.isEmpty())
+        return;
+
     /*
     currentWrd.labels.clear();
     for (int i = 0; i < ui->comboBox_SelectLabel->count(); i++)
@@ -80,6 +89,9 @@ void MainWindow::on_actionSave_triggered()
 
 void MainWindow::on_actionSaveAs_triggered()
 {
+    if (currentWrd.filename.isEmpty())
+        return;
+
     QString newFilename = QFileDialog::getSaveFileName(this, "Save WRD file", QString(), "WRD files (*.wrd);;All files (*.*)");
     if (newFilename.isEmpty())
         return;
@@ -133,9 +145,15 @@ void MainWindow::openFile(QString filepath)
     this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
 
     reloadLabelList();
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
-    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
-    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
+    WrdCodeModel *code = new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex());
+    WrdStringsModel *strings = new WrdStringsModel(this, &currentWrd);
+    WrdFlagsModel *flags = new WrdFlagsModel(this, &currentWrd);
+    QObject::connect(code, &WrdCodeModel::editCompleted, this, &MainWindow::on_editCompleted);
+    QObject::connect(strings, &WrdStringsModel::editCompleted, this, &MainWindow::on_editCompleted);
+    QObject::connect(flags, &WrdFlagsModel::editCompleted, this, &MainWindow::on_editCompleted);
+    ui->tableCode->setModel(code);
+    ui->tableStrings->setModel(strings);
+    ui->tableFlags->setModel(flags);
 }
 
 void MainWindow::reloadLabelList()
@@ -160,72 +178,48 @@ void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 
 
 
+void MainWindow::on_editCompleted(const QString &str)
+{
+    unsavedChanges = true;
+}
+
 void MainWindow::on_toolButton_CmdAdd_clicked()
 {
-    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
     const int currentRow = ui->tableCode->currentIndex().row();
-    if (currentRow < -1 || currentRow >= currentWrd.code[currentLabel].count())
-        return;
-
-    WrdCmd cmd;
-    cmd.opcode = 0x47;
-    currentWrd.code[currentLabel].insert(currentRow, cmd);
-
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
+    ui->tableCode->model()->insertRow(currentRow);
     ui->tableCode->selectRow(currentRow);
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdDel_clicked()
 {
-    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
     const int currentRow = ui->tableCode->currentIndex().row();
-    if (currentRow < 0 || currentRow >= currentWrd.code[currentLabel].count())
-        return;
-
-    currentWrd.code[currentLabel].removeAt(currentRow);
-
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
-    if (currentRow >= currentWrd.code[currentLabel].count())
+    ui->tableCode->model()->removeRow(currentRow);
+    if (currentRow >= currentWrd.code[ui->comboBox_SelectLabel->currentIndex()].count())
         ui->tableCode->selectRow(currentRow - 1);
     else
         ui->tableCode->selectRow(currentRow);
-
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdUp_clicked()
 {
-    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
     const int currentRow = ui->tableCode->currentIndex().row();
-    if (currentRow < 1 || currentRow >= currentWrd.code[currentLabel].count())
+    if (currentRow - 1 < 0)
         return;
 
-    const WrdCmd cmd1 = currentWrd.code[currentLabel][currentRow];
-    const WrdCmd cmd2 = currentWrd.code[currentLabel][currentRow - 1];
-
-    currentWrd.code[currentLabel].replace(currentRow, cmd2);
-    currentWrd.code[currentLabel].replace(currentRow - 1, cmd1);
-
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
+    ui->tableCode->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow - 1);
     ui->tableCode->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_CmdDown_clicked()
 {
-    const int currentLabel = ui->comboBox_SelectLabel->currentIndex();
     const int currentRow = ui->tableCode->currentIndex().row();
-    if (currentRow < 0 || currentRow + 1 >= currentWrd.code[currentLabel].count())
+    if (currentRow + 1 >= currentWrd.code[ui->comboBox_SelectLabel->currentIndex()].count())
         return;
 
-    const WrdCmd cmd1 = currentWrd.code[currentLabel][currentRow];
-    const WrdCmd cmd2 = currentWrd.code[currentLabel][currentRow + 1];
-
-    currentWrd.code[currentLabel].replace(currentRow, cmd2);
-    currentWrd.code[currentLabel].replace(currentRow + 1, cmd1);
-
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
+    ui->tableCode->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableCode->selectRow(currentRow + 1);
     unsavedChanges = true;
 }
@@ -235,12 +229,7 @@ void MainWindow::on_toolButton_CmdDown_clicked()
 void MainWindow::on_toolButton_StringAdd_clicked()
 {
     const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow < -1 || currentRow >= currentWrd.strings.count())
-        return;
-
-    currentWrd.strings.insert(currentRow, QString());
-
-    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
+    ui->tableStrings->model()->insertRow(currentRow);
     ui->tableStrings->selectRow(currentRow);
     unsavedChanges = true;
 }
@@ -248,12 +237,7 @@ void MainWindow::on_toolButton_StringAdd_clicked()
 void MainWindow::on_toolButton_StringDel_clicked()
 {
     const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow < 0 || currentRow >= currentWrd.strings.count())
-        return;
-
-    currentWrd.strings.removeAt(currentRow);
-
-    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
+    ui->tableStrings->model()->removeRow(currentRow);
     if (currentRow >= currentWrd.strings.count())
         ui->tableStrings->selectRow(currentRow - 1);
     else
@@ -264,16 +248,10 @@ void MainWindow::on_toolButton_StringDel_clicked()
 void MainWindow::on_toolButton_StringUp_clicked()
 {
     const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow < 1 || currentRow >= currentWrd.strings.count())
+    if (currentRow - 1 < 0)
         return;
 
-    const QString str1 = currentWrd.strings[currentRow];
-    const QString str2 = currentWrd.strings[currentRow - 1];
-
-    currentWrd.strings.replace(currentRow, str2);
-    currentWrd.strings.replace(currentRow - 1, str1);
-
-    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
+    ui->tableStrings->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow - 1);
     ui->tableStrings->selectRow(currentRow - 1);
     unsavedChanges = true;
 }
@@ -281,16 +259,10 @@ void MainWindow::on_toolButton_StringUp_clicked()
 void MainWindow::on_toolButton_StringDown_clicked()
 {
     const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow < 0 || currentRow + 1 >= currentWrd.strings.count())
+    if (currentRow + 1 >= currentWrd.strings.count())
         return;
 
-    const QString str1 = currentWrd.strings[currentRow];
-    const QString str2 = currentWrd.strings[currentRow + 1];
-
-    currentWrd.strings.replace(currentRow, str2);
-    currentWrd.strings.replace(currentRow + 1, str1);
-
-    ui->tableStrings->setModel(new WrdStringsModel(this, &currentWrd));
+    ui->tableStrings->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableStrings->selectRow(currentRow + 1);
     unsavedChanges = true;
 }
@@ -300,74 +272,40 @@ void MainWindow::on_toolButton_StringDown_clicked()
 void MainWindow::on_toolButton_FlagAdd_clicked()
 {
     const int currentRow = ui->tableFlags->currentIndex().row();
-    if (currentRow < -1 || currentRow >= currentWrd.flags.count())
-        return;
-
-    currentWrd.flags.insert(currentRow, QString());
-
-    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
+    ui->tableFlags->model()->insertRow(currentRow);
     ui->tableFlags->selectRow(currentRow);
-
-    // We need to update the argument name previews now
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagDel_clicked()
 {
     const int currentRow = ui->tableFlags->currentIndex().row();
-    if (currentRow < 0 || currentRow >= currentWrd.flags.count())
-        return;
-
-    currentWrd.flags.removeAt(currentRow);
-
-    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
+    ui->tableFlags->model()->removeRow(currentRow);
     if (currentRow >= currentWrd.flags.count())
         ui->tableFlags->selectRow(currentRow - 1);
     else
         ui->tableFlags->selectRow(currentRow);
-
-    // We need to update the argument name previews now
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagUp_clicked()
 {
     const int currentRow = ui->tableFlags->currentIndex().row();
-    if (currentRow < 1 || currentRow >= currentWrd.flags.count())
+    if (currentRow - 1 < 0)
         return;
 
-    const QString flag1 = currentWrd.flags[currentRow];
-    const QString flag2 = currentWrd.flags[currentRow - 1];
-
-    currentWrd.flags.replace(currentRow, flag2);
-    currentWrd.flags.replace(currentRow - 1, flag1);
-
-    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
+    ui->tableFlags->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow - 1);
     ui->tableFlags->selectRow(currentRow - 1);
-
-    // We need to update the argument name previews now
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }
 
 void MainWindow::on_toolButton_FlagDown_clicked()
 {
     const int currentRow = ui->tableFlags->currentIndex().row();
-    if (currentRow < 0 || currentRow + 1 >= currentWrd.flags.count())
+    if (currentRow + 1 >= currentWrd.flags.count())
         return;
 
-    const QString flag1 = currentWrd.flags[currentRow];
-    const QString flag2 = currentWrd.flags[currentRow + 1];
-
-    currentWrd.flags.replace(currentRow, flag2);
-    currentWrd.flags.replace(currentRow + 1, flag1);
-
-    ui->tableFlags->setModel(new WrdFlagsModel(this, &currentWrd));
+    ui->tableFlags->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableFlags->selectRow(currentRow + 1);
-
-    // We need to update the argument name previews now
-    ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex()));
     unsavedChanges = true;
 }

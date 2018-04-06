@@ -4,8 +4,6 @@
 #include "utils_global.h"
 #include "binarydata.h"
 #include "stx.h"
-#include <QAbstractTableModel>
-#include <QtWidgets/QTableView>
 
 struct UTILSSHARED_EXPORT WrdCmd
 {
@@ -68,62 +66,5 @@ UTILSSHARED_EXPORT WrdFile wrd_from_bytes(const QByteArray &bytes, QString filen
 UTILSSHARED_EXPORT QByteArray wrd_to_bytes(const WrdFile &wrd);
 UTILSSHARED_EXPORT QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
 UTILSSHARED_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
-
-
-class UTILSSHARED_EXPORT WrdCodeModel : public QAbstractTableModel
-{
-    Q_OBJECT
-public:
-    WrdCodeModel(QObject *parent, WrdFile *file, int lbl);
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-
-private:
-    WrdFile *wrd_file;
-    int label;
-
-signals:
-        void editCompleted(const QString &str);
-};
-
-class UTILSSHARED_EXPORT WrdStringsModel : public QAbstractTableModel
-{
-    Q_OBJECT
-public:
-    WrdStringsModel(QObject *parent, WrdFile *file);
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-
-private:
-    WrdFile *wrd_file;
-
-signals:
-    void editCompleted(const QString &str);
-};
-
-class UTILSSHARED_EXPORT WrdFlagsModel : public QAbstractTableModel
-{
-    Q_OBJECT
-public:
-    WrdFlagsModel(QObject *parent, WrdFile *file);
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-
-private:
-    WrdFile *wrd_file;
-
-signals:
-    void editCompleted(const QString &str);
-};
 
 #endif // WRD_H

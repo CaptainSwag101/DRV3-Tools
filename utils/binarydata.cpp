@@ -4,7 +4,7 @@ QString bytes_to_str(const QByteArray &data, int &pos, const int len, const QStr
 {
     const int orig_pos = pos;
 
-    if (codec == "UTF-16")
+    if (codec.startsWith("UTF-16", Qt::CaseInsensitive))
     {
         QString result;
 
