@@ -203,7 +203,7 @@
       </widget>
       <widget class="QWidget" name="tabStrings">
        <attribute name="title">
-        <string>Strings</string>
+        <string>Labels/Strings</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
@@ -382,7 +382,7 @@
       </widget>
       <widget class="QWidget" name="tabUnkData">
        <attribute name="title">
-        <string>Unknown Data</string>
+        <string>References/Types</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -566,7 +566,7 @@
      <x>0</x>
      <y>0</y>
      <width>650</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

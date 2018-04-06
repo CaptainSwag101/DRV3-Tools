@@ -11,13 +11,55 @@ int DatStructModel::rowCount(const QModelIndex & /*parent*/) const
 }
 int DatStructModel::columnCount(const QModelIndex & /*parent*/) const
 {
-    return 2;
+    return (*dat_file).struct_info.count();
 }
 QVariant DatStructModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
+        const QString type = (*dat_file).struct_info.at(index.column()).second();
+        switch (type)
+        {
+        case "LABEL":
 
+            break;
+
+        case "REFER":
+
+            break;
+
+        case "u8":
+
+            break;
+
+        case "u16":
+
+            break;
+
+        case "u32":
+
+            break;
+
+        case "s8":
+
+            break;
+
+        case "s16":
+
+            break;
+
+        case "s32":
+
+            break;
+
+        case "f32":
+
+            break;
+
+        default:
+
+            break;
+        }
     }
 
     return QVariant();
@@ -27,15 +69,7 @@ QVariant DatStructModel::headerData(int section, Qt::Orientation orientation, in
     if (role == Qt::DisplayRole)
     {
         if (orientation == Qt::Horizontal) {
-            switch (section)
-            {
-            case 0:
-                return QString("Opcode");
-            case 1:
-                return QString("Args");
-            case 2:
-                return QString("Parsed Args (Read-Only)");
-            }
+            return (*dat_file).struct_info.at(section).first() + " " + (*dat_file).struct_info.at(section).second();
         }
     }
     return QVariant();
