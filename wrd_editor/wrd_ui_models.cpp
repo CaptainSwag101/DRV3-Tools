@@ -44,7 +44,7 @@ QVariant WrdCodeModel::data(const QModelIndex &index, int role) const
             argParsedString += cmd.name;
 
             if (cmd.args.count() > 0)
-                argParsedString += ": ";
+                argParsedString += " ";
 
             for (int a = 0; a < cmd.args.count(); a++)
             {
