@@ -25,7 +25,7 @@ static QList<WrdCmd> known_commands = {
     {0x07, "SPW", {}, {}},
     {0x08, "MOD", {}, {0, 0, 0, 0}},
     {0x09, "HUM", {}, {}},
-    {0x0A, "CHK", {}, {2}},
+    {0x0A, "CHK", {}, {0}},
     {0x0B, "KTD", {}, {0, 0}},
     {0x0C, "CLR", {}, {}},
     {0x0D, "RET", {}, {}},

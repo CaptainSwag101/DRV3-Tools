@@ -131,7 +131,7 @@ void MainWindow::on_toolButton_StructDel_clicked()
 {
     const int currentRow = ui->tableStructs->currentIndex().row();
     ui->tableStructs->model()->removeRow(currentRow);
-    if (currentRow >= currentDat.struct_data.count())
+    if (currentRow >= currentDat.data.count())
         ui->tableStructs->selectRow(currentRow - 1);
     else
         ui->tableStructs->selectRow(currentRow);
@@ -151,7 +151,7 @@ void MainWindow::on_toolButton_StructUp_clicked()
 void MainWindow::on_toolButton_StructDown_clicked()
 {
     const int currentRow = ui->tableStructs->currentIndex().row();
-    if (currentRow + 1 >= currentDat.struct_data.count())
+    if (currentRow + 1 >= currentDat.data.count())
         return;
     ui->tableStructs->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableStructs->selectRow(currentRow + 1);
@@ -172,7 +172,7 @@ void MainWindow::on_toolButton_StringDel_clicked()
 {
     const int currentRow = ui->tableStrings->currentIndex().row();
     ui->tableStrings->model()->removeRow(currentRow);
-    if (currentRow >= currentDat.strings.count())
+    if (currentRow >= currentDat.labels.count())
         ui->tableStrings->selectRow(currentRow - 1);
     else
         ui->tableStrings->selectRow(currentRow);
@@ -192,7 +192,7 @@ void MainWindow::on_toolButton_StringUp_clicked()
 void MainWindow::on_toolButton_StringDown_clicked()
 {
     const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow + 1 >= currentDat.strings.count())
+    if (currentRow + 1 >= currentDat.labels.count())
         return;
     ui->tableStrings->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableStrings->selectRow(currentRow + 1);
@@ -213,7 +213,7 @@ void MainWindow::on_toolButton_UnkDel_clicked()
 {
     const int currentRow = ui->tableUnkData->currentIndex().row();
     ui->tableUnkData->model()->removeRow(currentRow);
-    if (currentRow >= currentDat.unk_data.count())
+    if (currentRow >= currentDat.refs.count())
         ui->tableUnkData->selectRow(currentRow - 1);
     else
         ui->tableUnkData->selectRow(currentRow);
@@ -233,7 +233,7 @@ void MainWindow::on_toolButton_UnkUp_clicked()
 void MainWindow::on_toolButton_UnkDown_clicked()
 {
     const int currentRow = ui->tableUnkData->currentIndex().row();
-    if (currentRow + 1 >= currentDat.unk_data.count())
+    if (currentRow + 1 >= currentDat.refs.count())
         return;
     ui->tableUnkData->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableUnkData->selectRow(currentRow + 1);

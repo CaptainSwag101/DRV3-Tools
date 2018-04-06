@@ -7,7 +7,7 @@ DatStructModel::DatStructModel(QObject * /*parent*/, DatFile *file)
 }
 int DatStructModel::rowCount(const QModelIndex & /*parent*/) const
 {
-    return (*dat_file).struct_data.count();
+    return (*dat_file).data.count();
 }
 int DatStructModel::columnCount(const QModelIndex & /*parent*/) const
 {
@@ -61,7 +61,7 @@ bool DatStructModel::insertRows(int row, int count, const QModelIndex & /*parent
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).struct_data.insert(row + r, QByteArray());
+        (*dat_file).data.insert(row + r, QByteArray());
     }
 
     endInsertRows();
@@ -79,7 +79,7 @@ bool DatStructModel::removeRows(int row, int count, const QModelIndex & /*parent
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
-        (*dat_file).struct_data.removeAt(row);
+        (*dat_file).data.removeAt(row);
     }
 
     endRemoveRows();
@@ -95,7 +95,7 @@ bool DatStructModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRo
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).struct_data.move(sourceRow + r, destinationChild + r);
+        (*dat_file).data.move(sourceRow + r, destinationChild + r);
     }
 
     return true;
@@ -113,7 +113,7 @@ DatStringsModel::DatStringsModel(QObject * /*parent*/, DatFile *file)
 }
 int DatStringsModel::rowCount(const QModelIndex & /*parent*/) const
 {
-    return (*dat_file).strings.count();
+    return (*dat_file).labels.count();
 }
 int DatStringsModel::columnCount(const QModelIndex & /*parent*/) const
 {
@@ -130,7 +130,7 @@ QVariant DatStringsModel::data(const QModelIndex &index, int role) const
         }
         else
         {
-            return (*dat_file).strings.at(index.row());
+            return (*dat_file).labels.at(index.row());
         }
     }
 
@@ -142,7 +142,7 @@ bool DatStringsModel::setData(const QModelIndex &index, const QVariant &value, i
         return true;
 
     QString str = value.toString();
-    (*dat_file).strings[index.row()] = str;
+    (*dat_file).labels[index.row()] = str;
 
     return true;
 }
@@ -155,7 +155,7 @@ bool DatStringsModel::insertRows(int row, int count, const QModelIndex & /*paren
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).strings.insert(row + r, QString());
+        (*dat_file).labels.insert(row + r, QString());
     }
 
     endInsertRows();
@@ -172,7 +172,7 @@ bool DatStringsModel::removeRows(int row, int count, const QModelIndex & /*paren
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
-        (*dat_file).strings.removeAt(row);
+        (*dat_file).labels.removeAt(row);
     }
 
     endRemoveRows();
@@ -187,7 +187,7 @@ bool DatStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceR
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).strings.move(sourceRow + r, destinationChild + r);
+        (*dat_file).labels.move(sourceRow + r, destinationChild + r);
     }
 
     return true;
@@ -205,7 +205,7 @@ DatUnkDataModel::DatUnkDataModel(QObject * /*parent*/, DatFile *file)
 }
 int DatUnkDataModel::rowCount(const QModelIndex & /*parent*/) const
 {
-    return (*dat_file).unk_data.count();
+    return (*dat_file).refs.count();
 }
 int DatUnkDataModel::columnCount(const QModelIndex & /*parent*/) const
 {
@@ -223,9 +223,9 @@ QVariant DatUnkDataModel::data(const QModelIndex &index, int role) const
         else
         {
             QString result;
-            for (int i = 0; i < (*dat_file).unk_data.at(index.row()).length(); i++)
+            for (int i = 0; i < (*dat_file).refs.at(index.row()).length(); i++)
             {
-                result += QString::number((*dat_file).unk_data.at(index.row()).at(i), 16);
+                result += QString::number((*dat_file).refs.at(index.row()).at(i), 16);
             }
             return result;
         }
@@ -258,7 +258,7 @@ bool DatUnkDataModel::setData(const QModelIndex &index, const QVariant &value, i
 
         result.append(c);
     }
-    (*dat_file).unk_data[index.row()] = result;
+    (*dat_file).refs[index.row()] = result;
 
     return true;
 }
@@ -271,7 +271,7 @@ bool DatUnkDataModel::insertRows(int row, int count, const QModelIndex & /*paren
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).unk_data.insert(row + r, QByteArray());
+        (*dat_file).refs.insert(row + r, QByteArray());
     }
 
     endInsertRows();
@@ -289,7 +289,7 @@ bool DatUnkDataModel::removeRows(int row, int count, const QModelIndex & /*paren
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
-        (*dat_file).unk_data.removeAt(row);
+        (*dat_file).refs.removeAt(row);
     }
 
     endRemoveRows();
@@ -305,7 +305,7 @@ bool DatUnkDataModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceR
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).unk_data.move(sourceRow + r, destinationChild + r);
+        (*dat_file).refs.move(sourceRow + r, destinationChild + r);
     }
 
     return true;

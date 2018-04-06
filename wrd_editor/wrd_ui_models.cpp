@@ -6,17 +6,14 @@ WrdCodeModel::WrdCodeModel(QObject * /*parent*/, WrdFile *file, const int lbl)
     wrd_file = file;
     label = lbl;
 }
-
 int WrdCodeModel::rowCount(const QModelIndex & /*parent*/) const
 {
     return (*wrd_file).code.at(label).count();
 }
-
 int WrdCodeModel::columnCount(const QModelIndex & /*parent*/) const
 {
     return 3;
 }
-
 QVariant WrdCodeModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
@@ -43,28 +40,29 @@ QVariant WrdCodeModel::data(const QModelIndex &index, int role) const
             QString argParsedString;
             argParsedString += cmd.name;
 
-            if (cmd.args.count() > 0)
-                argParsedString += " ";
+            if (cmd.args.count() > 0 && !cmd.name.endsWith("="))
+                argParsedString += ":";
+
+            argParsedString += "    ";
 
             for (int a = 0; a < cmd.args.count(); a++)
             {
                 const ushort arg = cmd.args.at(a);
 
                 if (cmd.arg_types.at(a) == 0 && arg < (*wrd_file).flags.count())
-                    argParsedString += (*wrd_file).flags.at(arg) + " ";
+                    argParsedString += (*wrd_file).flags.at(arg) + "    ";
                 else if (cmd.arg_types.at(a) == 1 && arg < (*wrd_file).strings.count())
-                    argParsedString += (*wrd_file).strings.at(arg) + " ";
+                    argParsedString += (*wrd_file).strings.at(arg) + "    ";
                 else
-                    argParsedString += QString::number(arg) + " ";
+                    argParsedString += QString::number(arg) + "    ";
             }
 
-            return argParsedString.simplified();
+            return argParsedString.trimmed();
         }
     }
 
     return QVariant();
 }
-
 QVariant WrdCodeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole)
@@ -83,7 +81,6 @@ QVariant WrdCodeModel::headerData(int section, Qt::Orientation orientation, int 
     }
     return QVariant();
 }
-
 bool WrdCodeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role == Qt::EditRole)
@@ -167,7 +164,6 @@ bool WrdCodeModel::setData(const QModelIndex &index, const QVariant &value, int 
 
     return true;
 }
-
 bool WrdCodeModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
@@ -184,7 +180,6 @@ bool WrdCodeModel::insertRows(int row, int count, const QModelIndex & /*parent*/
     endInsertRows();
     return true;
 }
-
 bool WrdCodeModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
@@ -202,7 +197,6 @@ bool WrdCodeModel::removeRows(int row, int count, const QModelIndex & /*parent*/
     endRemoveRows();
     return true;
 }
-
 bool WrdCodeModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
     if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
@@ -217,7 +211,6 @@ bool WrdCodeModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow,
 
     return true;
 }
-
 Qt::ItemFlags WrdCodeModel::flags(const QModelIndex &index) const
 {
     if (index.column() == 2)
@@ -232,17 +225,14 @@ WrdStringsModel::WrdStringsModel(QObject * /*parent*/, WrdFile *file)
 {
     wrd_file = file;
 }
-
 int WrdStringsModel::rowCount(const QModelIndex & /*parent*/) const
 {
     return (*wrd_file).strings.count();
 }
-
 int WrdStringsModel::columnCount(const QModelIndex & /*parent*/) const
 {
     return 2;
 }
-
 QVariant WrdStringsModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
@@ -262,7 +252,6 @@ QVariant WrdStringsModel::data(const QModelIndex &index, int role) const
 
     return QVariant();
 }
-
 bool WrdStringsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (index.column() == 0)
@@ -275,7 +264,6 @@ bool WrdStringsModel::setData(const QModelIndex &index, const QVariant &value, i
     emit(editCompleted(value.toString()));
     return true;
 }
-
 bool WrdStringsModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
@@ -291,7 +279,6 @@ bool WrdStringsModel::insertRows(int row, int count, const QModelIndex & /*paren
     endInsertRows();
     return true;
 }
-
 bool WrdStringsModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
@@ -309,7 +296,6 @@ bool WrdStringsModel::removeRows(int row, int count, const QModelIndex & /*paren
     endRemoveRows();
     return true;
 }
-
 bool WrdStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
     if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
@@ -324,7 +310,6 @@ bool WrdStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceR
 
     return true;
 }
-
 Qt::ItemFlags WrdStringsModel::flags(const QModelIndex &index) const
 {
     if (index.column() == 0)
@@ -339,17 +324,14 @@ WrdFlagsModel::WrdFlagsModel(QObject * /*parent*/, WrdFile *file)
 {
     wrd_file = file;
 }
-
 int WrdFlagsModel::rowCount(const QModelIndex & /*parent*/) const
 {
     return (*wrd_file).flags.count();
 }
-
 int WrdFlagsModel::columnCount(const QModelIndex & /*parent*/) const
 {
     return 2;
 }
-
 QVariant WrdFlagsModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
@@ -367,7 +349,6 @@ QVariant WrdFlagsModel::data(const QModelIndex &index, int role) const
 
     return QVariant();
 }
-
 bool WrdFlagsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (index.column() == 0)
@@ -379,7 +360,6 @@ bool WrdFlagsModel::setData(const QModelIndex &index, const QVariant &value, int
     emit(editCompleted(value.toString()));
     return true;
 }
-
 bool WrdFlagsModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
@@ -395,7 +375,6 @@ bool WrdFlagsModel::insertRows(int row, int count, const QModelIndex & /*parent*
     endInsertRows();
     return true;
 }
-
 bool WrdFlagsModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
@@ -413,7 +392,6 @@ bool WrdFlagsModel::removeRows(int row, int count, const QModelIndex & /*parent*
     endRemoveRows();
     return true;
 }
-
 bool WrdFlagsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
     if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
@@ -428,7 +406,6 @@ bool WrdFlagsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow
 
     return true;
 }
-
 Qt::ItemFlags WrdFlagsModel::flags(const QModelIndex &index) const
 {
     if (index.column() == 0)

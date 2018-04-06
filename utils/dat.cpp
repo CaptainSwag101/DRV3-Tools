@@ -14,7 +14,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
         const QString var_name = bytes_to_str(bytes, pos);
         const QString var_type = bytes_to_str(bytes, pos);
         pos += 2;   // Skip the 2 "var terminator" bytes?
-        result.var_info.append(QPair<QString, QString>(var_name, var_type));
+        result.struct_info.append(QPair<QString, QString>(var_name, var_type));
     }
 
     pos += (0x10 - (pos % 0x10)) % 0x10;
@@ -22,7 +22,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
     for (int d = 0; d < struct_count; d++)
     {
         const QByteArray data = get_bytes(bytes, pos, struct_size);
-        result.struct_data.append(data);
+        result.data.append(data);
     }
 
     const ushort string_count = bytes_to_num<ushort>(bytes, pos);
@@ -31,7 +31,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
     for (int s = 0; s < string_count; s++)
     {
         const QString str = bytes_to_str(bytes, pos);
-        result.strings.append(str);
+        result.labels.append(str);
     }
 
     pos++;
@@ -50,7 +50,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
             c2 = bytes.at(pos++);
         }
 
-        result.unk_data.append(unk);
+        result.refs.append(unk);
     }
 
     return result;

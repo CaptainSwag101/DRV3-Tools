@@ -174,6 +174,7 @@ void MainWindow::reloadLabelList()
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
     ui->tableCode->setModel(new WrdCodeModel(this, &currentWrd, index));
+    ui->tableCode->scrollToTop();
 }
 
 

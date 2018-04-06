@@ -37,7 +37,7 @@
            <widget class="QTableView" name="tableCode">
             <property name="font">
              <font>
-              <family>Noto Mono</family>
+              <family>Noto Sans</family>
              </font>
             </property>
             <property name="inputMethodHints">
