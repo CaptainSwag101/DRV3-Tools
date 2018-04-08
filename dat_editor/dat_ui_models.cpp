@@ -1,4 +1,5 @@
 #include "dat_ui_models.h"
+#include <QDataStream>
 #include <QMessageBox>
 
 DatStructModel::DatStructModel(QObject * /*parent*/, DatFile *file)
@@ -11,54 +12,66 @@ int DatStructModel::rowCount(const QModelIndex & /*parent*/) const
 }
 int DatStructModel::columnCount(const QModelIndex & /*parent*/) const
 {
-    return (*dat_file).struct_info.count();
+    return (*dat_file).data_types.count();
 }
 QVariant DatStructModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
-        const QString type = (*dat_file).struct_info.at(index.column()).second();
-        switch (type)
+        const QList<QByteArray> data = (*dat_file).data.at(index.row());
+        const QString data_type = (*dat_file).data_types.at(index.column());
+        int pos = 0;
+
+        if (data_type == "LABEL" || data_type == "ASCII")
         {
-        case "LABEL":
-
-            break;
-
-        case "REFER":
-
-            break;
-
-        case "u8":
-
-            break;
-
-        case "u16":
-
-            break;
-
-        case "u32":
-
-            break;
-
-        case "s8":
-
-            break;
-
-        case "s16":
-
-            break;
-
-        case "s32":
-
-            break;
-
-        case "f32":
-
-            break;
-
-        default:
-
-            break;
+            const ushort label_index = bytes_to_num<ushort>(data.at(index.column()), pos);
+            if (label_index < (*dat_file).labels.count())
+                return (*dat_file).labels.at(label_index);
+            else
+                return QString::number(label_index);
+        }
+        else if (data_type == "REFER" || data_type == "UTF16")
+        {
+            const ushort refer_index = bytes_to_num<ushort>(data.at(index.column()), pos);
+            if (refer_index < (*dat_file).refs.count())
+                return (*dat_file).refs.at(refer_index);
+            else
+                return QString::number(refer_index);
+        }
+        else if (data_type.startsWith("u"))
+        {
+            if (data_type.right(2) == "16")
+            {
+                return QString::number(bytes_to_num<ushort>(data.at(index.column()), pos));
+            }
+            else if (data_type.right(2) == "32")
+            {
+                return QString::number(bytes_to_num<uint>(data.at(index.column()), pos));
+            }
+        }
+        else if (data_type.startsWith("s"))
+        {
+            if (data_type.right(2) == "16")
+            {
+                return QString::number((short)bytes_to_num<ushort>(data.at(index.column()), pos));
+            }
+            else if (data_type.right(2) == "32")
+            {
+                return QString::number((int)bytes_to_num<uint>(data.at(index.column()), pos));
+            }
+        }
+        else if (data_type.startsWith("f"))
+        {
+            if (data_type.right(2) == "32")
+            {
+                float num = data.at(index.column()).toFloat();
+                return QString::number(num);
+            }
+            else if (data_type.right(2) == "64")
+            {
+                double num = data.at(index.column()).toDouble();
+                return QString::number(num);
+            }
         }
     }
 
@@ -69,7 +82,7 @@ QVariant DatStructModel::headerData(int section, Qt::Orientation orientation, in
     if (role == Qt::DisplayRole)
     {
         if (orientation == Qt::Horizontal) {
-            return (*dat_file).struct_info.at(section).first() + " " + (*dat_file).struct_info.at(section).second();
+            return (*dat_file).data_names.at(section) + " " + (*dat_file).data_types.at(section);
         }
     }
     return QVariant();
@@ -95,7 +108,7 @@ bool DatStructModel::insertRows(int row, int count, const QModelIndex & /*parent
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).data.insert(row + r, QByteArray());
+        (*dat_file).data.insert(row + r, QList<QByteArray>());
     }
 
     endInsertRows();
@@ -259,7 +272,7 @@ QVariant DatUnkDataModel::data(const QModelIndex &index, int role) const
             QString result;
             for (int i = 0; i < (*dat_file).refs.at(index.row()).length(); i++)
             {
-                result += QString::number((*dat_file).refs.at(index.row()).at(i), 16);
+                result += (*dat_file).refs.at(index.row()).at(i);
             }
             return result;
         }

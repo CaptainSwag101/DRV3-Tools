@@ -7,10 +7,11 @@
 struct UTILSSHARED_EXPORT DatFile
 {
     QString filename;
-    QList<QPair<QString, QString>> struct_info; // var_name, var_type, 0x00 0x01 0x00 (0x01 = var count? terminator?)
-    QList<QByteArray> data;
+    QStringList data_names;
+    QStringList data_types; // var_name, var_type, 0x0100 (var count + null terminator?)
+    QList<QList<QByteArray>> data;
     QStringList labels;
-    QList<QByteArray> refs;
+    QStringList refs;
 };
 
 UTILSSHARED_EXPORT DatFile dat_from_bytes(const QByteArray &bytes);

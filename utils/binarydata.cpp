@@ -24,7 +24,7 @@ QString bytes_to_str(const QByteArray &data, int &pos, const int len, const QStr
     {
         QByteArray result;
 
-        while (len < 0 || (pos - orig_pos) < len)
+        while (pos < data.size() && (len < 0 || (pos - orig_pos) < len))
         {
             const char c = data.at(pos++);
 

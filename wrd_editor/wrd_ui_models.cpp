@@ -57,6 +57,7 @@ QVariant WrdCodeModel::data(const QModelIndex &index, int role) const
                     argParsedString += QString::number(arg) + "    ";
             }
 
+            argParsedString.replace("\n", "\\n");
             return argParsedString.trimmed();
         }
     }
