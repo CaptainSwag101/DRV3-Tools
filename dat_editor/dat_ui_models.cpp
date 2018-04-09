@@ -18,13 +18,14 @@ QVariant DatStructModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
+        const int column = index.column();
         const QList<QByteArray> data = (*dat_file).data.at(index.row());
         const QString data_type = (*dat_file).data_types.at(index.column());
-        int pos = 0;
 
+        int pos = 0;
         if (data_type == "LABEL" || data_type == "ASCII")
         {
-            const ushort label_index = bytes_to_num<ushort>(data.at(index.column()), pos);
+            const ushort label_index = num_from_bytes<ushort>(data.at(column), pos);
             if (label_index < (*dat_file).labels.count())
                 return (*dat_file).labels.at(label_index);
             else
@@ -32,7 +33,7 @@ QVariant DatStructModel::data(const QModelIndex &index, int role) const
         }
         else if (data_type == "REFER" || data_type == "UTF16")
         {
-            const ushort refer_index = bytes_to_num<ushort>(data.at(index.column()), pos);
+            const ushort refer_index = num_from_bytes<ushort>(data.at(column), pos);
             if (refer_index < (*dat_file).refs.count())
                 return (*dat_file).refs.at(refer_index);
             else
@@ -42,35 +43,33 @@ QVariant DatStructModel::data(const QModelIndex &index, int role) const
         {
             if (data_type.right(2) == "16")
             {
-                return QString::number(bytes_to_num<ushort>(data.at(index.column()), pos));
+                return QString::number(num_from_bytes<ushort>(data.at(column), pos));
             }
             else if (data_type.right(2) == "32")
             {
-                return QString::number(bytes_to_num<uint>(data.at(index.column()), pos));
+                return QString::number(num_from_bytes<uint>(data.at(column), pos));
             }
         }
         else if (data_type.startsWith("s"))
         {
             if (data_type.right(2) == "16")
             {
-                return QString::number((short)bytes_to_num<ushort>(data.at(index.column()), pos));
+                return QString::number(num_from_bytes<short>(data.at(column), pos));
             }
             else if (data_type.right(2) == "32")
             {
-                return QString::number((int)bytes_to_num<uint>(data.at(index.column()), pos));
+                return QString::number(num_from_bytes<int>(data.at(column), pos));
             }
         }
         else if (data_type.startsWith("f"))
         {
             if (data_type.right(2) == "32")
             {
-                float num = data.at(index.column()).toFloat();
-                return QString::number(num);
+                return QString::number(num_from_bytes<float>(data.at(column), pos));
             }
             else if (data_type.right(2) == "64")
             {
-                double num = data.at(index.column()).toDouble();
-                return QString::number(num);
+                return QString::number(num_from_bytes<double>(data.at(column), pos));
             }
         }
     }
@@ -246,19 +245,19 @@ Qt::ItemFlags DatStringsModel::flags(const QModelIndex &index) const
 
 
 
-DatUnkDataModel::DatUnkDataModel(QObject * /*parent*/, DatFile *file)
+DatRefsModel::DatRefsModel(QObject * /*parent*/, DatFile *file)
 {
     dat_file = file;
 }
-int DatUnkDataModel::rowCount(const QModelIndex & /*parent*/) const
+int DatRefsModel::rowCount(const QModelIndex & /*parent*/) const
 {
     return (*dat_file).refs.count();
 }
-int DatUnkDataModel::columnCount(const QModelIndex & /*parent*/) const
+int DatRefsModel::columnCount(const QModelIndex & /*parent*/) const
 {
     return 2;
 }
-QVariant DatUnkDataModel::data(const QModelIndex &index, int role) const
+QVariant DatRefsModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
@@ -280,7 +279,7 @@ QVariant DatUnkDataModel::data(const QModelIndex &index, int role) const
 
     return QVariant();
 }
-bool DatUnkDataModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool DatRefsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     QString valString = value.toString();
     QByteArray result;
@@ -309,7 +308,7 @@ bool DatUnkDataModel::setData(const QModelIndex &index, const QVariant &value, i
 
     return true;
 }
-bool DatUnkDataModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
+bool DatRefsModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
         return false;
@@ -325,7 +324,7 @@ bool DatUnkDataModel::insertRows(int row, int count, const QModelIndex & /*paren
     return true;
 }
 
-bool DatUnkDataModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
+bool DatRefsModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
         return false;
@@ -343,7 +342,7 @@ bool DatUnkDataModel::removeRows(int row, int count, const QModelIndex & /*paren
     return true;
 }
 
-bool DatUnkDataModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
+bool DatRefsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
     if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
         return false;
@@ -357,7 +356,7 @@ bool DatUnkDataModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceR
 
     return true;
 }
-Qt::ItemFlags DatUnkDataModel::flags(const QModelIndex &index) const
+Qt::ItemFlags DatRefsModel::flags(const QModelIndex &index) const
 {
     if (index.column() == 0)
         return QAbstractTableModel::flags(index) & ~Qt::ItemIsEditable;

@@ -5,14 +5,21 @@ DatFile dat_from_bytes(const QByteArray &bytes)
     DatFile result;
 
     int pos = 0;
-    const uint struct_count = bytes_to_num<uint>(bytes, pos);
-    const uint struct_size = bytes_to_num<uint>(bytes, pos);
-    const uint var_count = bytes_to_num<uint>(bytes, pos);
+    const int struct_count = num_from_bytes<int>(bytes, pos);
+    const int struct_size = num_from_bytes<int>(bytes, pos);
+    const int var_count = num_from_bytes<int>(bytes, pos);
+
+    if (struct_count <= 0 || struct_size <= 0 || var_count <= 0)
+    {
+        cout << "Error: Invalid DAT file.\n";
+        cout.flush();
+        throw 1;
+    }
 
     for (int v = 0; v < var_count; v++)
     {
-        const QString var_name = bytes_to_str(bytes, pos);
-        const QString var_type = bytes_to_str(bytes, pos);
+        const QString var_name = str_from_bytes(bytes, pos);
+        const QString var_type = str_from_bytes(bytes, pos);
         pos += 2;   // Skip the 2 "var terminator" bytes?
         result.data_names.append(var_name);
         result.data_types.append(var_type);
@@ -43,24 +50,22 @@ DatFile dat_from_bytes(const QByteArray &bytes)
         result.data.append(data);
     }
 
-    const ushort label_count = bytes_to_num<ushort>(bytes, pos);
-    const ushort refer_count = bytes_to_num<ushort>(bytes, pos);
+    const ushort label_count = num_from_bytes<ushort>(bytes, pos);
+    const ushort refer_count = num_from_bytes<ushort>(bytes, pos);
 
-    for (int s = 0; s < label_count; s++)
+    for (ushort s = 0; s < label_count; s++)
     {
-        const QString str = bytes_to_str(bytes, pos);
+        const QString str = str_from_bytes(bytes, pos);
         result.labels.append(str);
     }
 
-    if (pos < bytes.size() && bytes.at(pos) == 0)
-        pos++;
+    pos += (2 - (pos % 2)) % 2;
 
-    for (int u = 0; u < refer_count; u++)
+    for (ushort r = 0; r < refer_count; r++)
     {
         QByteArray unk;
 
-        uchar c1;
-        uchar c2;
+        uchar c1, c2;
         do
         {
             c1 = bytes.at(pos++);
@@ -71,7 +76,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
         } while (c1 != 0 || c2 != 0);
 
         int str_pos = 0;
-        result.refs.append(bytes_to_str(unk, str_pos, -1, "UTF-16"));
+        result.refs.append(str_from_bytes(unk, str_pos, -1, "UTF-16"));
     }
 
     return result;

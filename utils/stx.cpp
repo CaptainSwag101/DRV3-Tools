@@ -7,28 +7,28 @@ QStringList get_stx_strings(const QByteArray &bytes)
     int pos = 0;
     QStringList strings;
 
-    QString magic = bytes_to_str(bytes, pos, 4);
+    QString magic = str_from_bytes(bytes, pos, 4);
     if (magic != STX_MAGIC)
     {
         //cout << "Invalid STX file.\n";
         return strings;
     }
 
-    QString lang = bytes_to_str(bytes, pos, 4);      // "JPLL" in the JP and US versions
-    const uint unk1 = bytes_to_num<uint>(bytes, pos); // Table count?
-    const uint table_off  = bytes_to_num<uint>(bytes, pos);
-    const uint unk2 = bytes_to_num<uint>(bytes, pos);
-    const uint table_len = bytes_to_num<uint>(bytes, pos);
+    QString lang = str_from_bytes(bytes, pos, 4);      // "JPLL" in the JP and US versions
+    const uint unk1 = num_from_bytes<uint>(bytes, pos); // Table count?
+    const uint table_off  = num_from_bytes<uint>(bytes, pos);
+    const uint unk2 = num_from_bytes<uint>(bytes, pos);
+    const uint table_len = num_from_bytes<uint>(bytes, pos);
 
     for (uint i = 0; i < table_len; i++)
     {
         pos = table_off + (8 * i);
-        const uint str_id = bytes_to_num<uint>(bytes, pos);
-        const uint str_off = bytes_to_num<uint>(bytes, pos);
+        const uint str_id = num_from_bytes<uint>(bytes, pos);
+        const uint str_off = num_from_bytes<uint>(bytes, pos);
 
         pos = str_off;
 
-        QString str = bytes_to_str(bytes, pos, -1, "UTF-16LE");
+        QString str = str_from_bytes(bytes, pos, -1, "UTF-16LE");
         strings.append(str);
     }
 

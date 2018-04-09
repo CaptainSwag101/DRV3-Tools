@@ -114,7 +114,7 @@ void MainWindow::openFile(QString filepath)
 
     ui->tableStructs->setModel(new DatStructModel(this, &currentDat));
     ui->tableStrings->setModel(new DatStringsModel(this, &currentDat));
-    ui->tableUnkData->setModel(new DatUnkDataModel(this, &currentDat));
+    ui->tableUnkData->setModel(new DatRefsModel(this, &currentDat));
 }
 
 

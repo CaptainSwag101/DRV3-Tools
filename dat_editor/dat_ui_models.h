@@ -49,11 +49,11 @@ signals:
     void editCompleted(const QString &str);
 };
 
-class DatUnkDataModel : public QAbstractTableModel
+class DatRefsModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    DatUnkDataModel(QObject *parent, DatFile *file);
+    DatRefsModel(QObject *parent, DatFile *file);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

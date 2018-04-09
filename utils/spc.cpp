@@ -5,7 +5,7 @@ SpcFile spc_from_bytes(const QByteArray &bytes)
     SpcFile result;
 
     int pos = 0;
-    QString magic = bytes_to_str(bytes, pos, 4);
+    QString magic = str_from_bytes(bytes, pos, 4);
     if (magic == "$CMP")
     {
         return spc_from_bytes(srd_dec(bytes));
@@ -19,11 +19,11 @@ SpcFile spc_from_bytes(const QByteArray &bytes)
     }
 
     result.unk1 = get_bytes(bytes, pos, 0x24);
-    uint file_count = bytes_to_num<uint>(bytes, pos);
-    result.unk2 = bytes_to_num<uint>(bytes, pos);
+    uint file_count = num_from_bytes<uint>(bytes, pos);
+    result.unk2 = num_from_bytes<uint>(bytes, pos);
     pos += 0x10;    // padding?
 
-    QString table_magic = bytes_to_str(bytes, pos, 4);
+    QString table_magic = str_from_bytes(bytes, pos, 4);
     pos += 0x0C;
 
     if (table_magic != SPC_TABLE_MAGIC)
@@ -37,18 +37,18 @@ SpcFile spc_from_bytes(const QByteArray &bytes)
     {
         SpcSubfile subfile;
 
-        subfile.cmp_flag = bytes_to_num<ushort>(bytes, pos);
-        subfile.unk_flag = bytes_to_num<ushort>(bytes, pos);
-        subfile.cmp_size = bytes_to_num<uint>(bytes, pos);
-        subfile.dec_size = bytes_to_num<uint>(bytes, pos);
-        uint name_len = bytes_to_num<uint>(bytes, pos);
+        subfile.cmp_flag = num_from_bytes<ushort>(bytes, pos);
+        subfile.unk_flag = num_from_bytes<ushort>(bytes, pos);
+        subfile.cmp_size = num_from_bytes<uint>(bytes, pos);
+        subfile.dec_size = num_from_bytes<uint>(bytes, pos);
+        uint name_len = num_from_bytes<uint>(bytes, pos);
         pos += 0x10;    // Padding?
 
         // Everything's aligned to multiples of 0x10
         uint name_padding = (0x10 - (name_len + 1) % 0x10) % 0x10;
         uint data_padding = (0x10 - subfile.cmp_size % 0x10) % 0x10;
 
-        subfile.filename = bytes_to_str(bytes, pos, name_len);
+        subfile.filename = str_from_bytes(bytes, pos, name_len);
         // We don't want the null terminator byte, so pretend it's padding
         pos += name_padding + 1;
 
@@ -136,7 +136,7 @@ QByteArray spc_dec(const QByteArray &bytes, int dec_size)
             // xxxxxxyy yyyyyyyy
             // Count  -> x + 2 (max length of 65 bytes)
             // Offset -> y (from the beginning of a 1023-byte sliding window)
-            const ushort b = bytes_to_num<ushort>(bytes, pos);
+            const ushort b = num_from_bytes<ushort>(bytes, pos);
             const char count = (b >> 10) + 2;
             const short offset = b & 1023;
 
@@ -316,31 +316,31 @@ QByteArray srd_dec(const QByteArray &bytes)
     int pos = 0;
     QByteArray result;
 
-    if (bytes_to_str(bytes, pos, 4) != "$CMP")
+    if (str_from_bytes(bytes, pos, 4) != "$CMP")
     {
         result.append(bytes);
         return result;
     }
     pos = 0;
 
-    const int cmp_size = bytes_to_num<uint>(bytes, pos, true);
+    const int cmp_size = num_from_bytes<uint>(bytes, pos, true);
     pos += 8;
-    const int dec_size = bytes_to_num<uint>(bytes, pos, true);
-    const int cmp_size2 = bytes_to_num<uint>(bytes, pos, true);
+    const int dec_size = num_from_bytes<uint>(bytes, pos, true);
+    const int cmp_size2 = num_from_bytes<uint>(bytes, pos, true);
     pos += 4;
-    const int unk = bytes_to_num<uint>(bytes, pos, true);
+    const int unk = num_from_bytes<uint>(bytes, pos, true);
 
     result.reserve(dec_size);
 
     while (true)
     {
-        QString cmp_mode = bytes_to_str(bytes, pos, 4);
+        QString cmp_mode = str_from_bytes(bytes, pos, 4);
 
         if (!cmp_mode.startsWith("$CL") && cmp_mode != "$CR0")
             break;
 
-        const int chunk_dec_size = bytes_to_num<uint>(bytes, pos, true);
-        const int chunk_cmp_size = bytes_to_num<uint>(bytes, pos, true);
+        const int chunk_dec_size = num_from_bytes<uint>(bytes, pos, true);
+        const int chunk_cmp_size = num_from_bytes<uint>(bytes, pos, true);
         pos += 4;
 
         QByteArray chunk = get_bytes(bytes, pos, chunk_cmp_size - 0x10); // Read the rest of the chunk data

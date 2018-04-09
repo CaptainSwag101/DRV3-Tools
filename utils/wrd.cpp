@@ -9,20 +9,20 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     int pos = 0;
 
     result.filename = in_file;
-    ushort str_count = bytes_to_num<ushort>(bytes, pos);
-    ushort label_count = bytes_to_num<ushort>(bytes, pos);
-    ushort flag_count = bytes_to_num<ushort>(bytes, pos);
-    uint unk_count = bytes_to_num<ushort>(bytes, pos);
+    ushort str_count = num_from_bytes<ushort>(bytes, pos);
+    ushort label_count = num_from_bytes<ushort>(bytes, pos);
+    ushort flag_count = num_from_bytes<ushort>(bytes, pos);
+    uint unk_count = num_from_bytes<ushort>(bytes, pos);
 
     // padding?
     //uint unk = bytes_to_num<uint>(data, pos);
     pos += 4;
 
-    uint unk_ptr = bytes_to_num<uint>(bytes, pos);
-    uint label_offsets_ptr = bytes_to_num<uint>(bytes, pos);
-    uint label_names_ptr = bytes_to_num<uint>(bytes, pos);
-    uint flags_ptr = bytes_to_num<uint>(bytes, pos);
-    uint str_ptr = bytes_to_num<uint>(bytes, pos);
+    uint unk_ptr = num_from_bytes<uint>(bytes, pos);
+    uint label_offsets_ptr = num_from_bytes<uint>(bytes, pos);
+    uint label_names_ptr = num_from_bytes<uint>(bytes, pos);
+    uint flags_ptr = num_from_bytes<uint>(bytes, pos);
+    uint str_ptr = num_from_bytes<uint>(bytes, pos);
 
 
     // Read the name for each label.
@@ -30,7 +30,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     for (ushort i = 0; i < label_count; i++)
     {
         const uchar label_name_len = bytes.at(pos++) + 1;    // Include null terminator
-        QString label_name = bytes_to_str(bytes, pos, label_name_len);
+        QString label_name = str_from_bytes(bytes, pos, label_name_len);
         result.labels.append(label_name);
     }
 
@@ -45,7 +45,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
         QList<WrdCmd> label_cmds;
 
         pos = label_offsets_ptr + (label_num * 2);
-        const ushort label_offset = bytes_to_num<ushort>(bytes, pos);
+        const ushort label_offset = num_from_bytes<ushort>(bytes, pos);
         pos = header_end + label_offset;
 
         // We need at least 2 bytes for a command
@@ -80,7 +80,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
             // We need at least 2 bytes for each arg
             while (pos < unk_ptr - 1)
             {
-                const ushort arg = bytes_to_num<ushort>(bytes, pos, true);
+                const ushort arg = num_from_bytes<ushort>(bytes, pos, true);
 
                 if ((uchar)(arg >> 8) == 0x70)
                 {
@@ -106,7 +106,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     pos = unk_ptr;
     for (ushort i = 0; i < unk_count; i++)
     {
-        result.unk_data.append(bytes_to_num<uint>(bytes, pos, true));
+        result.unk_data.append(num_from_bytes<uint>(bytes, pos, true));
     }
 
 
@@ -115,7 +115,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     for (ushort i = 0; i < flag_count; i++)
     {
         uchar length = bytes.at(pos++) + 1;  // Include null terminator
-        QString value = bytes_to_str(bytes, pos, length);
+        QString value = str_from_bytes(bytes, pos, length);
         result.flags.append(value);
     }
 
@@ -132,7 +132,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
             if (str_len >= 0x80)
                 str_len += (bytes.at(pos++) - 1) * 0x80;
 
-            QString str = bytes_to_str(bytes, pos, -1, "UTF-16LE");
+            QString str = str_from_bytes(bytes, pos, -1, "UTF-16LE");
             result.strings.append(str);
         }
 

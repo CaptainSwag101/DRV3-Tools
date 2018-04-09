@@ -1,6 +1,6 @@
 #include "binarydata.h"
 
-QString bytes_to_str(const QByteArray &data, int &pos, const int len, const QString codec)
+QString str_from_bytes(const QByteArray &data, int &pos, const int len, const QString codec)
 {
     const int orig_pos = pos;
 
@@ -10,7 +10,7 @@ QString bytes_to_str(const QByteArray &data, int &pos, const int len, const QStr
 
         while (len < 0 || (pos - orig_pos) < len)
         {
-            const ushort c = bytes_to_num<ushort>(data, pos);
+            const ushort c = num_from_bytes<ushort>(data, pos);
 
             if (c == 0)
                 break;

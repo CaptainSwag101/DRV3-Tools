@@ -4,31 +4,36 @@
 #include <QByteArray>
 #include <QString>
 
-UTILSSHARED_EXPORT QString bytes_to_str(const QByteArray &data, int &pos, const int len = -1, const QString codec = "UTF-8");
+UTILSSHARED_EXPORT QString str_from_bytes(const QByteArray &data, int &pos, const int len = -1, const QString codec = "UTF-8");
 UTILSSHARED_EXPORT QByteArray str_to_bytes(const QString &string, const bool utf16 = false);
 UTILSSHARED_EXPORT QByteArray get_bytes(const QByteArray &data, int &pos, const int len = -1);
 
-template <typename T> UTILSSHARED_EXPORT inline T bytes_to_num(const QByteArray &data, int &pos, const bool big_endian = false)
+template <typename T> UTILSSHARED_EXPORT inline T num_from_bytes(const QByteArray &data, int &pos, const bool big_endian = false)
 {
     const int num_size = sizeof(T);
     T result = 0;
+    char *byte_array = new char[num_size - 1];
 
     if (big_endian)
     {
-        for (int i = 0; i != num_size; i++)
+        for (int i = 0; i < num_size; i++)
         {
-            result |= (data.at(pos + i) & 0xFF) << ((num_size - i - 1) * 8);
+            byte_array[i] = data.at(pos + num_size - i - 1);
         }
     }
     else
     {
-        for (int i = 0; i != num_size; i++)
+        for (int i = 0; i < num_size; i++)
         {
-            result |= (data.at(pos + i) & 0xFF) << (i * 8);
+            byte_array[i] = data.at(pos + i);
         }
     }
 
+    std::copy(reinterpret_cast<const char*>(&byte_array[0]),
+              reinterpret_cast<const char*>(&byte_array[num_size]),
+              reinterpret_cast<char*>(&result));
     pos += num_size;
+    delete byte_array;
     return result;
 }
 
