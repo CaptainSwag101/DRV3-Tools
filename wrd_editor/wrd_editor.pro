@@ -26,11 +26,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    wrd_ui_models.cpp
+        wrd_ui_models.cpp
 
 HEADERS += \
         mainwindow.h \
-    wrd_ui_models.h
+        wrd_ui_models.h
 
 FORMS += \
         mainwindow.ui

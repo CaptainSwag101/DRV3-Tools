@@ -8,7 +8,7 @@ UTILSSHARED_EXPORT QString str_from_bytes(const QByteArray &data, int &pos, cons
 UTILSSHARED_EXPORT QByteArray str_to_bytes(const QString &string, const bool utf16 = false);
 UTILSSHARED_EXPORT QByteArray get_bytes(const QByteArray &data, int &pos, const int len = -1);
 
-template <typename T> UTILSSHARED_EXPORT inline T num_from_bytes(const QByteArray &data, int &pos, const bool big_endian = false)
+template <typename T> T num_from_bytes(const QByteArray &data, int &pos, const bool big_endian = false)
 {
     const int num_size = sizeof(T);
     T result = 0;
@@ -37,7 +37,7 @@ template <typename T> UTILSSHARED_EXPORT inline T num_from_bytes(const QByteArra
     return result;
 }
 
-template <typename T> UTILSSHARED_EXPORT inline QByteArray num_to_bytes(T num, const bool big_endian = false)
+template <typename T> QByteArray num_to_bytes(T num, const bool big_endian = false)
 {
     const int num_size = sizeof(T);
 

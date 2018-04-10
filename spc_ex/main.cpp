@@ -5,7 +5,7 @@
 #include "../utils/spc.h"
 
 void unpack(const QString in_path);
-void unpack_file(const QString in_file, const QString dec_path);
+void unpack_file(const QString in_file, const QString in_path, const QString dec_path);
 void repack(const QString in_path);
 
 int main(int argc, char *argv[])
@@ -58,7 +58,7 @@ void unpack(const QString in_path)
             cout << "Extracting file " << (i + 1) << "/" << spcNames.size() << ": " << QFileInfo(spcNames.at(i)).fileName() << "\n";
             cout.flush();
 
-            unpack_file(spcNames.at(i), dec_path);
+            unpack_file(spcNames.at(i), in_path, dec_path);
         }
     }
     else
@@ -75,13 +75,13 @@ void unpack(const QString in_path)
         cout << "Extracting file: " << QFileInfo(in_path).fileName() << "\n";
         cout.flush();
 
-        unpack_file(in_path, dec_path);
+        unpack_file(in_path, in_path, dec_path);
     }
 }
 
-void unpack_file(const QString in_file, const QString dec_path)
+void unpack_file(const QString in_file, const QString in_path, const QString dec_path)
 {
-    const QString rel_path = QDir::toNativeSeparators(QFileInfo(in_file).dir().relativeFilePath(in_file));
+    const QString rel_path = QDir::toNativeSeparators(QDir(in_path).relativeFilePath(in_file));
     const QString out_path = dec_path + QDir::separator() + rel_path;
 
 
