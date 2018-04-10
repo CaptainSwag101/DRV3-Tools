@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils_global.h"
+#include <algorithm>
 #include <QByteArray>
 #include <QString>
 
@@ -12,52 +13,44 @@ template <typename T> T num_from_bytes(const QByteArray &data, int &pos, const b
 {
     const int num_size = sizeof(T);
     T result = 0;
-    char *byte_array = new char[num_size - 1];
+    QByteArray byte_array = data.mid(pos, num_size);
 
     if (big_endian)
     {
-        for (int i = 0; i < num_size; i++)
-        {
-            byte_array[i] = data.at(pos + num_size - i - 1);
-        }
+        std::reverse_copy(byte_array.begin(),
+                          byte_array.end(),
+                          reinterpret_cast<char*>(&result));
     }
     else
     {
-        for (int i = 0; i < num_size; i++)
-        {
-            byte_array[i] = data.at(pos + i);
-        }
+        std::copy(byte_array.begin(),
+                  byte_array.end(),
+                  reinterpret_cast<char*>(&result));
     }
 
-    std::copy(reinterpret_cast<const char*>(&byte_array[0]),
-              reinterpret_cast<const char*>(&byte_array[num_size]),
-              reinterpret_cast<char*>(&result));
     pos += num_size;
-    delete byte_array;
     return result;
 }
 
 template <typename T> QByteArray num_to_bytes(T num, const bool big_endian = false)
 {
     const int num_size = sizeof(T);
-
-    QByteArray result;
-    result.reserve(num_size);
+    char *result = new char[num_size];
+    const char *byte_array = reinterpret_cast<const char[num_size]>(&num);
 
     if (big_endian)
     {
-        for (int i = 0; i != num_size; i++)
-        {
-            result.prepend((char)(num >> (i * 8)));
-        }
+        std::reverse_copy(reinterpret_cast<const char*>(&byte_array[0]),
+                          reinterpret_cast<const char*>(&byte_array[num_size]),
+                          result);
     }
     else
     {
-        for (int i = 0; i != num_size; i++)
-        {
-            result.append((char)(num >> (i * 8)));
-        }
+        std::copy(reinterpret_cast<const char*>(&byte_array[0]),
+                  reinterpret_cast<const char*>(&byte_array[num_size]),
+                  result);
     }
 
-    return result;
+    //delete byte_array;
+    return QByteArray(result);
 }

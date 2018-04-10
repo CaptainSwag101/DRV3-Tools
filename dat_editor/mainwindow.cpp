@@ -13,7 +13,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->tableStructs->setColumnWidth(1, 170);
+    //ui->tableStructs->setColumnWidth(1, 170);
 }
 
 MainWindow::~MainWindow()
@@ -30,6 +30,7 @@ void MainWindow::on_actionOpen_triggered()
         return;
 
     openFile(newFilename);
+    currentDat.filename = newFilename;
 
     ui->centralWidget->setEnabled(true);
 

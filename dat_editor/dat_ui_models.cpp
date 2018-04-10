@@ -26,18 +26,18 @@ QVariant DatStructModel::data(const QModelIndex &index, int role) const
         if (data_type == "LABEL" || data_type == "ASCII")
         {
             const ushort label_index = num_from_bytes<ushort>(data.at(column), pos);
-            if (label_index < (*dat_file).labels.count())
+            if (label_index < (*dat_file).labels.count() && role == Qt::DisplayRole)
                 return (*dat_file).labels.at(label_index);
             else
-                return QString::number(label_index);
+                return QString::number(label_index, 16);
         }
         else if (data_type == "REFER" || data_type == "UTF16")
         {
             const ushort refer_index = num_from_bytes<ushort>(data.at(column), pos);
-            if (refer_index < (*dat_file).refs.count())
+            if (refer_index < (*dat_file).refs.count() && role == Qt::DisplayRole)
                 return (*dat_file).refs.at(refer_index);
             else
-                return QString::number(refer_index);
+                return QString::number(refer_index, 16);
         }
         else if (data_type.startsWith("u"))
         {
@@ -92,9 +92,136 @@ bool DatStructModel::setData(const QModelIndex &index, const QVariant &value, in
     {
         const int row = index.row();
         const int column = index.column();
+        const QString data_type = (*dat_file).data_types.at(column);
 
+        if (data_type == "LABEL" || data_type == "ASCII" || data_type == "REFER" || data_type == "UTF16")
+        {
+            bool ok;
+            const ushort val = value.toString().toUShort(&ok);
+            if (!ok)
+            {
+                QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                errorMsg.exec();
+                return false;
+            }
 
+            (*dat_file).data[row][column] = num_to_bytes(val);
+        }
+        else if (data_type.startsWith("u"))
+        {
+            if (data_type.right(2) == "16")
+            {
+                bool ok;
+                const ushort val = value.toString().toUShort(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+            else if (data_type.right(2) == "32")
+            {
+                bool ok;
+                const uint val = value.toString().toUInt(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+            else if (data_type.right(2) == "64")
+            {
+                bool ok;
+                const ulong val = value.toString().toUInt(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+        }
+        else if (data_type.startsWith("s"))
+        {
+            if (data_type.right(2) == "16")
+            {
+                bool ok;
+                const short val = value.toString().toUShort(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+            else if (data_type.right(2) == "32")
+            {
+                bool ok;
+                const int val = value.toString().toUInt(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+            else if (data_type.right(2) == "64")
+            {
+                bool ok;
+                const long val = value.toString().toUInt(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+        }
+        else if (data_type.startsWith("f"))
+        {
+            if (data_type.right(2) == "32")
+            {
+                bool ok;
+                const float val = value.toString().toFloat(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+            else if (data_type.right(2) == "64")
+            {
+                bool ok;
+                const double val = value.toString().toDouble(&ok);
+                if (!ok)
+                {
+                    QMessageBox errorMsg(QMessageBox::Warning, "Conversion Error", "Invalid number.", QMessageBox::Ok);
+                    errorMsg.exec();
+                    return false;
+                }
+
+                (*dat_file).data[row][column] = num_to_bytes(val);
+            }
+        }
     }
+    emit(editCompleted(value.toString()));
 
     return true;
 }
@@ -107,7 +234,20 @@ bool DatStructModel::insertRows(int row, int count, const QModelIndex & /*parent
 
     for (int r = 0; r < count; r++)
     {
-        (*dat_file).data.insert(row + r, QList<QByteArray>());
+        QList<QByteArray> blank;
+        for (const QString data_type : (*dat_file).data_types)
+        {
+            if (data_type == "LABEL" || data_type == "ASCII" || data_type == "REFER" || data_type == "UTF16")
+            {
+                blank.append(QByteArray(2, 0x00));
+            }
+            else if (data_type.startsWith("u") || data_type.startsWith("s") || data_type.startsWith("f"))
+            {
+                const int data_size = data_type.right(2).toInt() / 8;
+                blank.append(QByteArray(data_size, 0x00));
+            }
+        }
+        (*dat_file).data.insert(row + r, blank);
     }
 
     endInsertRows();
