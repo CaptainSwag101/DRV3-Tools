@@ -85,12 +85,9 @@ QByteArray repack_stx_strings(QStringList strings)
         if (written.contains(strings[i]))
             continue;
 
-        QTextCodec *codec = QTextCodec::codecForName("UTF-16LE");
-        QTextEncoder *encoder = codec->makeEncoder(QTextCodec::IgnoreHeader);
-        const QByteArray bytes = encoder->fromUnicode(strings[i]);
+        const QByteArray bytes = str_to_bytes(strings[i], true);
 
         result.append(bytes);
-        result.append(num_to_bytes((ushort)0x00));  // Null terminator
         written.append(strings[i]);
     }
     delete[] offsets;

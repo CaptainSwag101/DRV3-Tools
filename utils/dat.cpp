@@ -96,8 +96,8 @@ QByteArray dat_to_bytes(const DatFile &dat_file)
 
     for (int v = 0; v < dat_file.data_types.count(); v++)
     {
-        result.append(dat_file.data_names.at(v).toUtf8());
-        result.append(dat_file.data_types.at(v).toUtf8());
+        result.append(str_to_bytes(dat_file.data_names.at(v)));
+        result.append(str_to_bytes(dat_file.data_types.at(v)));
         result.append(num_to_bytes<uchar>(0x01));
         result.append(num_to_bytes<uchar>(0x00));
     }
@@ -112,19 +112,19 @@ QByteArray dat_to_bytes(const DatFile &dat_file)
         }
     }
 
-    result.append(num_to_bytes<uint>(dat_file.labels.count()));
-    result.append(num_to_bytes<uint>(dat_file.refs.count()));
+    result.append(num_to_bytes<ushort>(dat_file.labels.count()));
+    result.append(num_to_bytes<ushort>(dat_file.refs.count()));
 
     for (QString label : dat_file.labels)
     {
-        result.append(label.toUtf8());
+        result.append(str_to_bytes(label));
     }
 
     result.append((2 - (result.size() % 2)) % 2, 0x00);             // padding
 
     for (QString ref : dat_file.refs)
     {
-        result.append(ref);
+        result.append(str_to_bytes(ref, true));
     }
 
     return result;

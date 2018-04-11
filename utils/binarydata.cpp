@@ -49,7 +49,6 @@ QByteArray str_to_bytes(const QString &string, const bool utf16)
         {
             str_data.append(num_to_bytes(string.at(i).unicode()));
         }
-        result.append((uchar)str_data.size());
         result.append(str_data);
         result.append(num_to_bytes((ushort)0x00));   // Null terminator
     }
@@ -57,7 +56,6 @@ QByteArray str_to_bytes(const QString &string, const bool utf16)
     {
         QByteArray str_data;
         str_data = string.toUtf8();
-        result.append((uchar)str_data.size());
         result.append(str_data);
         result.append(num_to_bytes((uchar)0x00));    // Null terminator
     }

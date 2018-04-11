@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utils_global.h"
-#include <algorithm>
+#include <cmath>
 #include <QByteArray>
 #include <QString>
 
@@ -35,22 +35,25 @@ template <typename T> T num_from_bytes(const QByteArray &data, int &pos, const b
 template <typename T> QByteArray num_to_bytes(T num, const bool big_endian = false)
 {
     const int num_size = sizeof(T);
-    char *result = new char[num_size];
-    const char *byte_array = reinterpret_cast<const char[num_size]>(&num);
+    QByteArray result(num_size, 0x00);
+    const char *byte_array = reinterpret_cast<const char*>(&num);
+    const int arr_size = std::min((int)sizeof(byte_array), num_size);
 
     if (big_endian)
     {
-        std::reverse_copy(reinterpret_cast<const char*>(&byte_array[0]),
-                          reinterpret_cast<const char*>(&byte_array[num_size]),
-                          result);
+        for (int i = 0; i < arr_size; i++)
+        {
+            result[i] = byte_array[arr_size - i - 1];
+        }
     }
     else
     {
-        std::copy(reinterpret_cast<const char*>(&byte_array[0]),
-                  reinterpret_cast<const char*>(&byte_array[num_size]),
-                  result);
+        for (int i = 0; i < arr_size; i++)
+        {
+            result[i] = byte_array[i];
+        }
     }
 
     //delete byte_array;
-    return QByteArray(result);
+    return result;
 }

@@ -188,7 +188,9 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     QByteArray label_names_data;
     for (int i = 0; i < wrd_file.labels.count(); i++)
     {
-        label_names_data.append(str_to_bytes(wrd_file.labels.at(i)));
+        const QByteArray lbldata = str_to_bytes(wrd_file.labels.at(i));
+        label_names_data.append((uchar)(lbldata.size() - 1));
+        label_names_data.append(lbldata);
 
         code_offsets.append(num_to_bytes((ushort)code_data.size()));
 
@@ -213,7 +215,9 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     QByteArray flags_data;
     for (const QString flag : wrd_file.flags)
     {
-        flags_data.append(str_to_bytes(flag));
+        const QByteArray flagdata = str_to_bytes(flag);
+        flags_data.append((uchar)(flagdata.size() - 1));
+        flags_data.append(flagdata);
     }
 
 
@@ -244,6 +248,8 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     {
         for (const QString str : wrd_file.strings)
         {
+            const QByteArray strdata = str_to_bytes(str);
+            result.append((uchar)(strdata.size() - 1));
             result.append(str_to_bytes(str, true));
         }
     }
