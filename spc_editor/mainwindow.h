@@ -7,11 +7,12 @@
 #include <QDropEvent>
 #include <QFile>
 #include <QFileDialog>
+#include <QFutureWatcher>
 #include <QMessageBox>
-#include <QMimeData>
 #include <QProgressDialog>
+#include <QtConcurrent/QtConcurrent>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/spc.h"
 
 namespace Ui {
 class MainWindow;
@@ -34,13 +35,15 @@ private slots:
     void on_actionExtractSelected_triggered();
     void on_actionInjectFile_triggered();
     void closeEvent(QCloseEvent *event);
+    void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
 
 private:
     bool confirmUnsaved();
     void reloadSubfileList();
-    void extractFile(QString outDir, SpcSubfile subfile);
-    void injectFile(QString name, QByteArray fileData);
+    void openFile(QString filename);
+    void extractFile(QString outDir, const SpcSubfile &subfile);
+    void injectFile(QString name, const QByteArray &fileData);
 
     Ui::MainWindow *ui;
     SpcFile currentSpc;

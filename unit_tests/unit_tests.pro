@@ -1,14 +1,17 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2017-12-03T09:44:28
+# Project created by QtCreator 2018-03-02T11:18:55
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += testlib
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       -= gui
 
-TARGET = stx_editor
+TARGET = unit_tests
+CONFIG   += console
+CONFIG   -= app_bundle
+
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -24,14 +27,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp
+    unit_tests.cpp
 
-HEADERS += \
-        mainwindow.h
-
-FORMS += \
-        mainwindow.ui
+DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../utils/release/ -lutils
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../utils/debug/ -lutils
@@ -39,3 +37,7 @@ else:unix: LIBS += -L$$OUT_PWD/../utils/ -lutils
 
 INCLUDEPATH += $$PWD/../utils
 DEPENDPATH += $$PWD/../utils
+EPS += $$OUT_PWD/../utils/debug/utils.lib
+
+#QMAKE_POST_LINK += $$quote($(MKDIR) $$OUT_PWD/test_data)$$escape_expand(\n\t)
+QMAKE_POST_LINK += $$quote($(COPY_DIR) $$shell_path($$PWD/test_data) $$shell_path($$OUT_PWD/test_data))

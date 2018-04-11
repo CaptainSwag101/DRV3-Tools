@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2017-12-03T09:44:28
+# Project created by QtCreator 2018-03-02T10:35:11
 #
 #-------------------------------------------------
 
@@ -8,7 +8,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = stx_editor
+TARGET = wrd_editor
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -25,10 +25,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+        wrd_ui_models.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+        wrd_ui_models.h
 
 FORMS += \
         mainwindow.ui

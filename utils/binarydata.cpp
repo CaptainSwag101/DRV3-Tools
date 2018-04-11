@@ -1,146 +1,71 @@
 #include "binarydata.h"
 
-QByteArray from_u16(ushort n)
+QString str_from_bytes(const QByteArray &data, int &pos, const int len, const QString codec)
 {
-    QByteArray byteArray;
-    for (int i = 0; i != 2; ++i)
+    const int orig_pos = pos;
+
+    if (codec.startsWith("UTF-16", Qt::CaseInsensitive))
     {
-        byteArray.append((char)(n >> (i * 8)));
+        QString result;
+
+        while (len < 0 || (pos - orig_pos) < len)
+        {
+            const ushort c = num_from_bytes<ushort>(data, pos);
+
+            if (c == 0)
+                break;
+
+            result.append(QChar(c));
+        }
+
+        return result;
     }
-    return byteArray;
-}
-
-QByteArray from_u32(uint n)
-{
-    QByteArray byteArray;
-    for (int i = 0; i != 4; ++i)
+    else
     {
-        byteArray.append((char)(n >> (i * 8)));
+        QByteArray result;
+
+        while (pos < data.size() && (len < 0 || (pos - orig_pos) < len))
+        {
+            const char c = data.at(pos++);
+
+            if (c == 0)
+                break;
+
+            result.append(c);
+        }
+
+        return QString::fromUtf8(result);
     }
-    return byteArray;
 }
 
-BinaryData::BinaryData()
+QByteArray str_to_bytes(const QString &string, const bool utf16)
 {
-    this->Position = 0;
-}
+    QByteArray result;
 
-BinaryData::BinaryData(int reserve_size)
-{
-    this->Bytes.reserve(reserve_size);
-    this->Position = 0;
-}
-
-BinaryData::BinaryData(QByteArray bytes)
-{
-    this->Bytes = bytes;
-    this->Position = 0;
-}
-
-QByteArray BinaryData::get(int len)
-{
-    QByteArray result = this->Bytes.mid(this->Position, len);
-    this->Position += len;
-
-    return result;
-}
-
-QString BinaryData::get_str(int len, bool utf16)
-{
-    QString result;
-    result.reserve(len);    // Reserve memory for "len" amount of UTF-16 characters, just in case
-
-    int i = 0;
-    while (len < 0 || i < len)
+    if (utf16)
     {
-        QChar c;
-        if (utf16)
-            c = QChar(get_u16());
-        else
-            c = QChar(get_u8());
-
-        i++;
-
-        if (len < 0 && c == QChar(0))
-            break;
-
-        result.append(c);
+        QByteArray str_data;
+        for (int i = 0; i < string.size(); i++)
+        {
+            str_data.append(num_to_bytes(string.at(i).unicode()));
+        }
+        result.append(str_data);
+        result.append(num_to_bytes((ushort)0x00));   // Null terminator
+    }
+    else
+    {
+        QByteArray str_data;
+        str_data = string.toUtf8();
+        result.append(str_data);
+        result.append(num_to_bytes((uchar)0x00));    // Null terminator
     }
 
     return result;
 }
 
-char BinaryData::get_u8()
+QByteArray get_bytes(const QByteArray &data, int &pos, const int len)
 {
-    return this->Bytes.at(this->Position++);
-}
-
-ushort BinaryData::get_u16()
-{
-    ushort result = ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
-    this->Position += 2;
+    const QByteArray result = data.mid(pos, len);
+    pos += result.size();
     return result;
-}
-ushort BinaryData::get_u16be()
-{
-    ushort result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 8) + (this->Bytes.at(this->Position + 1) & 0xFF);
-    this->Position += 2;
-    return result;
-}
-
-uint BinaryData::get_u32()
-{
-    uint result = ((this->Bytes.at(this->Position + 3) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 8) + (this->Bytes.at(this->Position + 0) & 0xFF);
-    this->Position += 4;
-    return result;
-}
-uint BinaryData::get_u32be()
-{
-    uint result = ((this->Bytes.at(this->Position + 0) & 0xFF) << 24) + ((this->Bytes.at(this->Position + 1) & 0xFF) << 16) + ((this->Bytes.at(this->Position + 2) & 0xFF) << 8) + (this->Bytes.at(this->Position + 3) & 0xFF);
-    this->Position += 4;
-    return result;
-}
-
-int BinaryData::size()
-{
-    return this->Bytes.size();
-}
-
-QByteArray& BinaryData::append(char c)
-{
-    this->Position++;
-    return this->Bytes.append(c);
-}
-
-QByteArray& BinaryData::append(QByteArray a)
-{
-    this->Position += a.size();
-    return this->Bytes.append(a);
-}
-
-QByteArray& BinaryData::insert(int i, char c)
-{
-    this->Position++;
-    return this->Bytes.insert(i, c);
-}
-
-int BinaryData::lastIndexOf(QByteArray a, int start, int end) const
-{
-    if (a.size() == 0)
-        return -1;
-
-    if (end < start)
-        return -1;
-
-    int index = this->Bytes.lastIndexOf(a, end);
-
-    if (index < 0 || index < start)
-        return -1;
-
-    return index;
-}
-
-char BinaryData::at(int i) const
-{
-    return this->Bytes.at(i);
 }

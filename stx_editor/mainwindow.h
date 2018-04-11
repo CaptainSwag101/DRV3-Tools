@@ -7,10 +7,11 @@
 #include <QFileDialog>
 #include <QFontMetrics>
 #include <QMessageBox>
+#include <QStringLiteral>
 #include <QtWidgets>
 #include <QTextStream>
 #include "../utils/binarydata.h"
-#include "../utils/data_formats.h"
+#include "../utils/stx.h"
 
 namespace Ui {
 class MainWindow;
@@ -39,7 +40,7 @@ private:
     Ui::MainWindow *ui;
     QFileDialog openStx;
     QString currentFilename;
-    BinaryData currentStx;
+    QByteArray currentStx;
     QFrame *textBoxFrame;
     //QList<QPlainTextEdit *> textBoxes;
     bool unsavedChanges = false;

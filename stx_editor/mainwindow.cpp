@@ -5,11 +5,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
-    textBoxFrame = new QFrame(ui->scrollArea);
-    ui->scrollArea->setSizeAdjustPolicy(QScrollArea::AdjustToContents);
-    ui->scrollArea->setLayout(new QVBoxLayout());
-    ui->scrollArea->layout()->addWidget(textBoxFrame);
-    textBoxFrame->setLayout(new QVBoxLayout());
+    connect(ui->listWidget, &QListWidget::currentTextChanged, this, &MainWindow::on_textBox_textChanged);
 
     //openStx.setViewMode(QFileDialog::Detail);
     openStx.setNameFilter("STX files (*.stx)");
@@ -45,29 +41,16 @@ bool MainWindow::confirmUnsaved()
 
 void MainWindow::reloadStrings()
 {
+    ui->listWidget->clear();
+
     QStringList strings = get_stx_strings(currentStx);
-
-    // Repopulate the text edit boxes
-    for (QPlainTextEdit *old : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))
-    {
-        disconnect(old, &QPlainTextEdit::textChanged, this, &MainWindow::on_textBox_textChanged);
-        textBoxFrame->layout()->removeWidget(old);
-        delete old;
-    }
-
     for (QString str : strings)
     {
-        QPlainTextEdit *tb = new QPlainTextEdit(str);
-        tb->setFixedHeight(tb->fontMetrics().height() * 3);
-        connect(tb, &QPlainTextEdit::textChanged, this, &MainWindow::on_textBox_textChanged);
-
-        textBoxFrame->layout()->addWidget(tb);
+        str.replace("\n", "\\n");
+        QListWidgetItem *item = new QListWidgetItem(str);
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        ui->listWidget->addItem(item);
     }
-
-    //textBoxFrame->layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
-    ui->scrollArea->setWidget(textBoxFrame);
-    ui->scrollArea->setWidgetResizable(true);
-    ui->scrollArea->adjustSize();
 
     unsavedChanges = false;
 }
@@ -84,28 +67,28 @@ void MainWindow::on_actionOpen_triggered()
 
     QFile f(currentFilename);
     f.open(QFile::ReadOnly);
-    currentStx = BinaryData(f.readAll());
+    currentStx = f.readAll();
     f.close();
 
+    ui->listWidget->setEnabled(true);
     reloadStrings();
 }
 
 void MainWindow::on_actionSave_triggered()
 {
-    QMap<int, QString> stringMap;
-    int index = 0;
-    int table_len = 0;
-    for (QPlainTextEdit *tb : textBoxFrame->findChildren<QPlainTextEdit *>(QString(), Qt::FindDirectChildrenOnly))
+    QStringList strings;
+    for(int i = 0; i < ui->listWidget->count(); i++)
     {
-        stringMap[index] = tb->document()->toRawText();
-        index++;
-        table_len++;
+        QListWidgetItem *item = ui->listWidget->item(i);
+        QString text = item->text();
+        text.replace("\\n", "\n");
+        strings.append(text);
     }
 
-    currentStx = repack_stx_strings(table_len, stringMap);
+    currentStx = repack_stx_strings(strings);
     QFile f(currentFilename);
     f.open(QFile::WriteOnly);
-    f.write(currentStx.Bytes);
+    f.write(currentStx);
     f.close();
     unsavedChanges = false;
 }

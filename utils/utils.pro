@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2017-11-16T17:19:53
+# Project created by QtCreator 2018-03-12T16:49:52
 #
 #-------------------------------------------------
 
@@ -8,15 +8,8 @@ QT       -= gui
 
 TARGET = utils
 TEMPLATE = lib
-CONFIG += staticlib
 
-# Remove possible other optimization flags
-#QMAKE_CXXFLAGS_RELEASE -= -O
-#QMAKE_CXXFLAGS_RELEASE -= -O1
-#QMAKE_CXXFLAGS_RELEASE -= -O2
-
-# Add the desired -O3 if not present
-#QMAKE_CXXFLAGS_RELEASE *= -Ofast
+DEFINES += UTILS_LIBRARY
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -31,11 +24,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     binarydata.cpp \
-    data_formats.cpp
+    wrd.cpp \
+    stx.cpp \
+    spc.cpp \
+    dat.cpp
 
 HEADERS += \
+    utils_global.h \
     binarydata.h \
-    data_formats.h
+    wrd.h \
+    stx.h \
+    spc.h \
+    dat.h
+
 unix {
     target.path = /usr/lib
     INSTALLS += target
