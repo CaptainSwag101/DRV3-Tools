@@ -104,10 +104,12 @@ bool MainWindow::confirmUnsaved()
     return false;
 }
 
-void MainWindow::openFile(QString filepath)
+bool MainWindow::openFile(QString filepath)
 {
     QFile f(filepath);
-    f.open(QFile::ReadOnly);
+    if (!f.open(QFile::ReadOnly))
+        return false;
+
     currentDat = dat_from_bytes(f.readAll());
     f.close();
 
@@ -116,6 +118,7 @@ void MainWindow::openFile(QString filepath)
     ui->tableStructs->setModel(new DatStructModel(this, &currentDat));
     ui->tableStrings->setModel(new DatStringsModel(this, &currentDat));
     ui->tableUnkData->setModel(new DatRefsModel(this, &currentDat));
+    return true;
 }
 
 
@@ -239,4 +242,32 @@ void MainWindow::on_toolButton_UnkDown_clicked()
     ui->tableUnkData->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableUnkData->selectRow(currentRow + 1);
     unsavedChanges = true;
+}
+
+
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData *mimeData = event->mimeData();
+
+    if (mimeData->hasUrls())
+    {
+        QList<QUrl> urlList = mimeData->urls();
+
+        for (int i = 0; i < urlList.count(); i++)
+        {
+            QString filepath = urlList.at(i).toLocalFile();
+            if (openFile(filepath))
+            {
+                event->acceptProposedAction();
+                break;
+            }
+        }
+    }
 }

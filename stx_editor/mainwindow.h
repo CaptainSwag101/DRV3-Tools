@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QCloseEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFontMetrics>
@@ -35,7 +37,10 @@ private slots:
 
 private:
     bool confirmUnsaved();
+    bool openFile(QString newFilename = QString());
     void reloadStrings();
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
 
     Ui::MainWindow *ui;
     QFileDialog openStx;

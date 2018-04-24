@@ -344,7 +344,9 @@ void MainWindow::dropEvent(QDropEvent *event)
             else
             {
                 QFile f(filepath);
-                f.open(QFile::ReadOnly);
+                if (!f.open(QFile::ReadOnly))
+                    continue;
+
                 QString name = QFileInfo(f).fileName();
                 const QByteArray fileData = f.readAll();
                 f.close();

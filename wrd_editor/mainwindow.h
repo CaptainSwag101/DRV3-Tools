@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 #include <QCloseEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 #include "wrd_ui_models.h"
 
 namespace Ui {
@@ -40,9 +43,11 @@ private slots:
 
 private:
     bool confirmUnsaved();
-    void openFile(QString filepath);
+    bool openFile(QString newFilepath = QString());
     void reloadAllLists();
     void reloadLabelList();
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;

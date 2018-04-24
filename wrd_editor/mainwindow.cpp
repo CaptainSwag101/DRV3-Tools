@@ -3,10 +3,10 @@
 
 #include <QComboBox>
 #include <QDebug>
-#include <QDropEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QTableView>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -22,19 +22,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    if (!confirmUnsaved()) return;
-
-    QString newFilename = QFileDialog::getOpenFileName(this, "Open WRD file", QString(), "WRD files (*.wrd);;All files (*.*)");
-    if (newFilename.isEmpty())
-        return;
-
-    openFile(newFilename);
-
-    ui->centralWidget->setEnabled(true);
-
-    ui->tableCode->scrollToTop();
-    ui->tableStrings->scrollToTop();
-    ui->tableFlags->scrollToTop();
+    openFile();
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -135,14 +123,24 @@ bool MainWindow::confirmUnsaved()
     return false;
 }
 
-void MainWindow::openFile(QString filepath)
+bool MainWindow::openFile(QString newFilepath)
 {
-    QFile f(filepath);
-    f.open(QFile::ReadOnly);
-    currentWrd = wrd_from_bytes(f.readAll(), filepath);
+    if (!confirmUnsaved()) return false;
+
+    if (newFilepath.isEmpty())
+    {
+        QString newFilename = QFileDialog::getOpenFileName(this, "Open WRD file", QString(), "WRD files (*.wrd);;All files (*.*)");
+        if (newFilename.isEmpty()) return false;
+    }
+
+    QFile f(newFilepath);
+    if (!f.open(QFile::ReadOnly))
+        return false;
+
+    currentWrd = wrd_from_bytes(f.readAll(), newFilepath);
     f.close();
 
-    this->setWindowTitle("WRD Editor: " + QFileInfo(filepath).fileName());
+    this->setWindowTitle("WRD Editor: " + QFileInfo(newFilepath).fileName());
 
     reloadLabelList();
     WrdCodeModel *code = new WrdCodeModel(this, &currentWrd, ui->comboBox_SelectLabel->currentIndex());
@@ -154,6 +152,12 @@ void MainWindow::openFile(QString filepath)
     ui->tableCode->setModel(code);
     ui->tableStrings->setModel(strings);
     ui->tableFlags->setModel(flags);
+
+    ui->centralWidget->setEnabled(true);
+    ui->tableCode->scrollToTop();
+    ui->tableStrings->scrollToTop();
+    ui->tableFlags->scrollToTop();
+    return true;
 }
 
 void MainWindow::reloadLabelList()
@@ -309,4 +313,32 @@ void MainWindow::on_toolButton_FlagDown_clicked()
     ui->tableFlags->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
     ui->tableFlags->selectRow(currentRow + 1);
     unsavedChanges = true;
+}
+
+
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData *mimeData = event->mimeData();
+
+    if (mimeData->hasUrls())
+    {
+        QList<QUrl> urlList = mimeData->urls();
+
+        for (int i = 0; i < urlList.count(); i++)
+        {
+            QString filepath = urlList.at(i).toLocalFile();
+            if (openFile(filepath))
+            {
+                event->acceptProposedAction();
+                break;
+            }
+        }
+    }
 }

@@ -39,6 +39,32 @@ bool MainWindow::confirmUnsaved()
     return false;
 }
 
+bool MainWindow::openFile(QString newFilename)
+{
+    if (!confirmUnsaved()) return false;
+
+    if (newFilename.isEmpty())
+    {
+        openStx.setAcceptMode(QFileDialog::AcceptOpen);
+        openStx.setFileMode(QFileDialog::ExistingFile);
+        newFilename = openStx.getOpenFileName(this, "Open STX file", QString(), "STX files (*.stx)");
+        if (newFilename.isEmpty()) return false;
+    }
+
+    currentFilename = newFilename;
+
+    QFile f(currentFilename);
+    if(!f.open(QFile::ReadOnly))
+        return false;
+
+    currentStx = f.readAll();
+    f.close();
+
+    ui->listWidget->setEnabled(true);
+    reloadStrings();
+    return true;
+}
+
 void MainWindow::reloadStrings()
 {
     ui->listWidget->clear();
@@ -57,21 +83,7 @@ void MainWindow::reloadStrings()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    if (!confirmUnsaved()) return;
-
-    openStx.setAcceptMode(QFileDialog::AcceptOpen);
-    openStx.setFileMode(QFileDialog::ExistingFile);
-    QString newFilename = openStx.getOpenFileName(this, "Open STX file", QString(), "STX files (*.stx)");
-    if (newFilename.isEmpty()) return;
-    currentFilename = newFilename;
-
-    QFile f(currentFilename);
-    f.open(QFile::ReadOnly);
-    currentStx = f.readAll();
-    f.close();
-
-    ui->listWidget->setEnabled(true);
-    reloadStrings();
+    openFile();
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -120,4 +132,34 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::on_textBox_textChanged()
 {
     unsavedChanges = true;
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData *mimeData = event->mimeData();
+
+    if (mimeData->hasUrls())
+    {
+        QList<QUrl> urlList = mimeData->urls();
+
+        for (int i = 0; i < urlList.count(); i++)
+        {
+            QString filepath = urlList.at(i).toLocalFile();
+
+            if (currentFilename.isEmpty())
+            {
+                if (openFile(filepath))
+                {
+                    event->acceptProposedAction();
+                    break;
+                }
+            }
+        }
+    }
 }

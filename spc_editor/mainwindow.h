@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QFutureWatcher>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QProgressDialog>
 #include <QtConcurrent/QtConcurrent>
 #include "../utils/binarydata.h"
