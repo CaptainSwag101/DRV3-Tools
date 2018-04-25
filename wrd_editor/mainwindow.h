@@ -28,22 +28,15 @@ private slots:
     void closeEvent(QCloseEvent *event);
     void on_comboBox_SelectLabel_currentIndexChanged(int index);
     void on_editCompleted(const QString &str);
-    void on_toolButton_CmdAdd_clicked();
-    void on_toolButton_CmdDel_clicked();
-    void on_toolButton_CmdUp_clicked();
-    void on_toolButton_CmdDown_clicked();
-    void on_toolButton_StringAdd_clicked();
-    void on_toolButton_StringDel_clicked();
-    void on_toolButton_StringUp_clicked();
-    void on_toolButton_StringDown_clicked();
-    void on_toolButton_FlagAdd_clicked();
-    void on_toolButton_FlagDel_clicked();
-    void on_toolButton_FlagUp_clicked();
-    void on_toolButton_FlagDown_clicked();
+    void on_toolButton_Add_clicked();
+    void on_toolButton_Del_clicked();
+    void on_toolButton_Up_clicked();
+    void on_toolButton_Down_clicked();
 
 private:
     bool confirmUnsaved();
     bool openFile(QString newFilepath = QString());
+    bool saveFile(QString newFilepath = QString());
     void reloadAllLists();
     void reloadLabelList();
     void dragEnterEvent(QDragEnterEvent *event);

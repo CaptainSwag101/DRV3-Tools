@@ -37,7 +37,7 @@ private slots:
 
 private:
     bool confirmUnsaved();
-    bool openFile(QString newFilename = QString());
+    bool openFile(QString newFilepath = QString());
     void reloadStrings();
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);

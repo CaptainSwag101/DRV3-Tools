@@ -26,22 +26,16 @@ private slots:
     void on_actionSaveAs_triggered();
     void on_actionExit_triggered();
     void closeEvent(QCloseEvent *event);
-    void on_toolButton_StructAdd_clicked();
-    void on_toolButton_StructDel_clicked();
-    void on_toolButton_StructUp_clicked();
-    void on_toolButton_StructDown_clicked();
-    void on_toolButton_StringAdd_clicked();
-    void on_toolButton_StringDel_clicked();
-    void on_toolButton_StringUp_clicked();
-    void on_toolButton_StringDown_clicked();
-    void on_toolButton_UnkAdd_clicked();
-    void on_toolButton_UnkDel_clicked();
-    void on_toolButton_UnkUp_clicked();
-    void on_toolButton_UnkDown_clicked();
+    void on_editCompleted(const QString &str);
+    void on_toolButton_Add_clicked();
+    void on_toolButton_Del_clicked();
+    void on_toolButton_Up_clicked();
+    void on_toolButton_Down_clicked();
 
 private:
     bool confirmUnsaved();
-    bool openFile(QString filepath);
+    bool openFile(QString newFilepath = QString());
+    bool saveFile(QString newFilepath = QString());
     void reloadAllLists();
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);

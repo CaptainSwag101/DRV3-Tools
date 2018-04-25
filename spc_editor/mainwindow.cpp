@@ -205,17 +205,27 @@ void MainWindow::reloadSubfileList()
     ui->listWidget->repaint();
 }
 
-void MainWindow::openFile(QString filepath)
+bool MainWindow::openFile(QString newFilepath)
 {
-    QFile f(filepath);
-    f.open(QFile::ReadOnly);
+    if (!confirmUnsaved()) return false;
+
+    if (newFilepath.isEmpty())
+    {
+        newFilepath = QFileDialog::getOpenFileName(this, "Open SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
+    }
+    if (newFilepath.isEmpty()) return false;
+
+    QFile f(newFilepath);
+    if (!f.open(QFile::ReadOnly)) return false;
     currentSpc = spc_from_bytes(f.readAll());
     f.close();
 
-    currentSpc.filename = filepath;
-    this->setWindowTitle("SPC Editor: " + QFileInfo(filepath).fileName());
+    currentSpc.filename = newFilepath;
+    this->setWindowTitle("SPC Editor: " + QFileInfo(newFilepath).fileName());
     ui->listWidget->setEnabled(true);
     reloadSubfileList();
+
+    return true;
 }
 
 void MainWindow::extractFile(QString outDir, const SpcSubfile &subfile)

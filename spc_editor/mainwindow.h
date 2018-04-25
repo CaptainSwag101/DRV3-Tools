@@ -42,7 +42,7 @@ private slots:
 private:
     bool confirmUnsaved();
     void reloadSubfileList();
-    void openFile(QString filename);
+    bool openFile(QString newFilepath = QString());
     void extractFile(QString outDir, const SpcSubfile &subfile);
     void injectFile(QString name, const QByteArray &fileData);
 

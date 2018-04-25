@@ -39,27 +39,24 @@ bool MainWindow::confirmUnsaved()
     return false;
 }
 
-bool MainWindow::openFile(QString newFilename)
+bool MainWindow::openFile(QString newFilepath)
 {
     if (!confirmUnsaved()) return false;
 
-    if (newFilename.isEmpty())
+    if (newFilepath.isEmpty())
     {
-        openStx.setAcceptMode(QFileDialog::AcceptOpen);
-        openStx.setFileMode(QFileDialog::ExistingFile);
-        newFilename = openStx.getOpenFileName(this, "Open STX file", QString(), "STX files (*.stx)");
-        if (newFilename.isEmpty()) return false;
+        newFilepath = openStx.getOpenFileName(this, "Open STX file", QString(), "STX files (*.stx)");
     }
+    if (newFilepath.isEmpty()) return false;
 
-    currentFilename = newFilename;
-
-    QFile f(currentFilename);
+    QFile f(newFilepath);
     if(!f.open(QFile::ReadOnly))
         return false;
 
     currentStx = f.readAll();
     f.close();
 
+    currentFilename = newFilepath;
     ui->listWidget->setEnabled(true);
     reloadStrings();
     return true;

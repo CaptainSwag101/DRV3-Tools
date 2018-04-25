@@ -23,51 +23,17 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    if (!confirmUnsaved()) return;
-
-    QString newFilename = QFileDialog::getOpenFileName(this, "Open DAT file", QString(), "DAT files (*.dat);;All files (*.*)");
-    if (newFilename.isEmpty())
-        return;
-
-    openFile(newFilename);
-    currentDat.filename = newFilename;
-
-    ui->centralWidget->setEnabled(true);
-
-    ui->tableStructs->scrollToTop();
-    ui->tableStrings->scrollToTop();
-    ui->tableUnkData->scrollToTop();
+    openFile();
 }
 
 void MainWindow::on_actionSave_triggered()
 {
-    if (currentDat.filename.isEmpty())
-        return;
-
-    const QByteArray out_data = dat_to_bytes(currentDat);
-    QString out_file = currentDat.filename;
-    QFile f(out_file);
-    f.open(QFile::WriteOnly);
-    f.write(out_data);
-    f.close();
-
-
-
-    unsavedChanges = false;
+    saveFile(currentDat.filename);
 }
 
 void MainWindow::on_actionSaveAs_triggered()
 {
-    if (currentDat.filename.isEmpty())
-        return;
-
-    QString newFilename = QFileDialog::getSaveFileName(this, "Save DAT file", QString(), "DAT files (*.dat);;All files (*.*)");
-    if (newFilename.isEmpty())
-        return;
-
-    currentDat.filename = newFilename;
-    this->setWindowTitle("DAT Editor: " + QFileInfo(newFilename).fileName());
-    on_actionSave_triggered();
+    saveFile();
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -104,143 +70,105 @@ bool MainWindow::confirmUnsaved()
     return false;
 }
 
-bool MainWindow::openFile(QString filepath)
+bool MainWindow::openFile(QString newFilepath)
 {
-    QFile f(filepath);
-    if (!f.open(QFile::ReadOnly))
-        return false;
+    if (!confirmUnsaved()) return false;
+
+    if (newFilepath.isEmpty())
+    {
+        newFilepath = QFileDialog::getOpenFileName(this, "Open DAT file", QString(), "DAT files (*.dat);;All files (*.*)");
+    }
+    if (newFilepath.isEmpty()) return false;
+
+    QFile f(newFilepath);
+    if (!f.open(QFile::ReadOnly)) return false;
 
     currentDat = dat_from_bytes(f.readAll());
+    currentDat.filename = newFilepath;
     f.close();
 
-    this->setWindowTitle("DAT Editor: " + QFileInfo(filepath).fileName());
-
+    this->setWindowTitle("DAT Editor: " + QFileInfo(newFilepath).fileName());
     ui->tableStructs->setModel(new DatStructModel(this, &currentDat));
     ui->tableStrings->setModel(new DatStringsModel(this, &currentDat));
     ui->tableUnkData->setModel(new DatRefsModel(this, &currentDat));
+
+    ui->centralWidget->setEnabled(true);
+    ui->tableStructs->scrollToTop();
+    ui->tableStrings->scrollToTop();
+    ui->tableUnkData->scrollToTop();
+
+    return true;
+}
+
+bool MainWindow::saveFile(QString newFilepath)
+{
+    if (newFilepath.isEmpty())
+    {
+        newFilepath = QFileDialog::getSaveFileName(this, "Save DAT file", QString(), "DAT files (*.dat);;All files (*.*)");
+    }
+    if (newFilepath.isEmpty()) return false;
+
+    QFile f(newFilepath);
+    if (!f.open(QFile::WriteOnly)) return false;
+
+    const QByteArray out_data = dat_to_bytes(currentDat);
+    f.write(out_data);
+    f.close();
+
+    currentDat.filename = newFilepath;
+    this->setWindowTitle("DAT Editor: " + QFileInfo(newFilepath).fileName());
+
+    unsavedChanges = false;
     return true;
 }
 
 
 
-void MainWindow::on_toolButton_StructAdd_clicked()
+void MainWindow::on_editCompleted(const QString & /*str*/)
 {
-    const int currentRow = ui->tableStructs->currentIndex().row();
-    ui->tableStructs->model()->insertRow(currentRow);
-    ui->tableStructs->selectRow(currentRow);
     unsavedChanges = true;
 }
 
-void MainWindow::on_toolButton_StructDel_clicked()
+void MainWindow::on_toolButton_Add_clicked()
 {
-    const int currentRow = ui->tableStructs->currentIndex().row();
-    ui->tableStructs->model()->removeRow(currentRow);
-    if (currentRow >= currentDat.data.count())
-        ui->tableStructs->selectRow(currentRow - 1);
+    QTableView *table = ui->tabWidget->currentWidget()->findChild<QTableView *>(QString(), Qt::FindDirectChildrenOnly);
+    int row = table->currentIndex().row();
+    table->model()->insertRow(row + 1);
+    table->selectRow(row + 1);
+    unsavedChanges = true;
+}
+
+void MainWindow::on_toolButton_Del_clicked()
+{
+    QTableView *table = ui->tabWidget->currentWidget()->findChild<QTableView *>(QString(), Qt::FindDirectChildrenOnly);
+    int row = table->currentIndex().row();
+    table->model()->removeRow(row);
+    if (row - 1 >= 0)
+        table->selectRow(row - 1);
     else
-        ui->tableStructs->selectRow(currentRow);
+        table->selectRow(row);
     unsavedChanges = true;
 }
 
-void MainWindow::on_toolButton_StructUp_clicked()
+void MainWindow::on_toolButton_Up_clicked()
 {
-    const int currentRow = ui->tableStructs->currentIndex().row();
-    if (currentRow - 1 < 0)
+    QTableView *table = ui->tabWidget->currentWidget()->findChild<QTableView *>(QString(), Qt::FindDirectChildrenOnly);
+    int row = table->currentIndex().row();
+    if (row - 1 < 0)
         return;
-    ui->tableStructs->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow - 1);
-    ui->tableStructs->selectRow(currentRow - 1);
+    table->model()->moveRow(QModelIndex(), row, QModelIndex(), row - 1);
+    table->selectRow(row - 1);
     unsavedChanges = true;
 }
 
-void MainWindow::on_toolButton_StructDown_clicked()
+void MainWindow::on_toolButton_Down_clicked()
 {
-    const int currentRow = ui->tableStructs->currentIndex().row();
-    if (currentRow + 1 >= currentDat.data.count())
+    QTableView *table = ui->tabWidget->currentWidget()->findChild<QTableView *>(QString(), Qt::FindDirectChildrenOnly);
+    int row = table->currentIndex().row();
+    if (row + 1 >= table->model()->rowCount())
         return;
-    ui->tableStructs->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
-    ui->tableStructs->selectRow(currentRow + 1);
-    unsavedChanges = true;
-}
-
-
-
-void MainWindow::on_toolButton_StringAdd_clicked()
-{
-    const int currentRow = ui->tableStrings->currentIndex().row();
-    ui->tableStrings->model()->insertRow(currentRow);
-    ui->tableStrings->selectRow(currentRow);
-    unsavedChanges = true;
-}
-
-void MainWindow::on_toolButton_StringDel_clicked()
-{
-    const int currentRow = ui->tableStrings->currentIndex().row();
-    ui->tableStrings->model()->removeRow(currentRow);
-    if (currentRow >= currentDat.labels.count())
-        ui->tableStrings->selectRow(currentRow - 1);
-    else
-        ui->tableStrings->selectRow(currentRow);
-    unsavedChanges = true;
-}
-
-void MainWindow::on_toolButton_StringUp_clicked()
-{
-    const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow - 1 < 0)
-        return;
-    ui->tableStrings->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow - 1);
-    ui->tableStrings->selectRow(currentRow - 1);
-    unsavedChanges = true;
-}
-
-void MainWindow::on_toolButton_StringDown_clicked()
-{
-    const int currentRow = ui->tableStrings->currentIndex().row();
-    if (currentRow + 1 >= currentDat.labels.count())
-        return;
-    ui->tableStrings->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
-    ui->tableStrings->selectRow(currentRow + 1);
-    unsavedChanges = true;
-}
-
-
-
-void MainWindow::on_toolButton_UnkAdd_clicked()
-{
-    const int currentRow = ui->tableUnkData->currentIndex().row();
-    ui->tableUnkData->model()->insertRow(currentRow);
-    ui->tableUnkData->selectRow(currentRow);
-    unsavedChanges = true;
-}
-
-void MainWindow::on_toolButton_UnkDel_clicked()
-{
-    const int currentRow = ui->tableUnkData->currentIndex().row();
-    ui->tableUnkData->model()->removeRow(currentRow);
-    if (currentRow >= currentDat.refs.count())
-        ui->tableUnkData->selectRow(currentRow - 1);
-    else
-        ui->tableUnkData->selectRow(currentRow);
-    unsavedChanges = true;
-}
-
-void MainWindow::on_toolButton_UnkUp_clicked()
-{
-    const int currentRow = ui->tableUnkData->currentIndex().row();
-    if (currentRow - 1 < 0)
-        return;
-    ui->tableUnkData->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow - 1);
-    ui->tableUnkData->selectRow(currentRow - 1);
-    unsavedChanges = true;
-}
-
-void MainWindow::on_toolButton_UnkDown_clicked()
-{
-    const int currentRow = ui->tableUnkData->currentIndex().row();
-    if (currentRow + 1 >= currentDat.refs.count())
-        return;
-    ui->tableUnkData->model()->moveRow(QModelIndex(), currentRow, QModelIndex(), currentRow + 1);
-    ui->tableUnkData->selectRow(currentRow + 1);
+    table->model()->moveRow(QModelIndex(), row, QModelIndex(), row + 1);
+    table->selectRow(row + 1);
     unsavedChanges = true;
 }
 
