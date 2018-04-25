@@ -15,13 +15,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    if (!confirmUnsaved()) return;
-
-    QString newFilename = QFileDialog::getOpenFileName(this, "Open SPC file", QString(), "SPC files (*.spc);;All files (*.*)");
-    if (newFilename.isEmpty())
-        return;
-
-    openFile(newFilename);
+    openFile();
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -217,10 +211,11 @@ bool MainWindow::openFile(QString newFilepath)
 
     QFile f(newFilepath);
     if (!f.open(QFile::ReadOnly)) return false;
+
     currentSpc = spc_from_bytes(f.readAll());
+    currentSpc.filename = newFilepath;
     f.close();
 
-    currentSpc.filename = newFilepath;
     this->setWindowTitle("SPC Editor: " + QFileInfo(newFilepath).fileName());
     ui->listWidget->setEnabled(true);
     reloadSubfileList();

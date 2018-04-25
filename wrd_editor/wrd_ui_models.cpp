@@ -80,6 +80,7 @@ QVariant WrdCodeModel::headerData(int section, Qt::Orientation orientation, int 
             }
         }
     }
+
     return QVariant();
 }
 bool WrdCodeModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -171,14 +172,13 @@ bool WrdCodeModel::insertRows(int row, int count, const QModelIndex & /*parent*/
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         const WrdCmd cmd = {0xFF, "UNKNOWN_CMD", {}, {}};
         (*wrd_file).code[label].insert(row + r, cmd);
     }
-
     endInsertRows();
+
     return true;
 }
 bool WrdCodeModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
@@ -186,16 +186,15 @@ bool WrdCodeModel::removeRows(int row, int count, const QModelIndex & /*parent*/
     if (count < 1 || row < 0 || row + count > rowCount())
         return false;
 
+    // Keep removing at the same index, because the next item we want to delete
+    // always takes the place of the previous one.
     beginRemoveRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
-        // Keep removing at the same index, because the next item we want to delete
-        // always takes the place of the previous one.
         (*wrd_file).code[label].removeAt(row);
     }
-
     endRemoveRows();
+
     return true;
 }
 bool WrdCodeModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
@@ -204,11 +203,11 @@ bool WrdCodeModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow,
         return false;
 
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
-
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).code[label].move(sourceRow + r, destinationChild + r);
     }
+    endMoveRows();
 
     return true;
 }
@@ -271,13 +270,12 @@ bool WrdStringsModel::insertRows(int row, int count, const QModelIndex & /*paren
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).strings.insert(row + r, QString());
     }
-
     endInsertRows();
+
     return true;
 }
 bool WrdStringsModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
@@ -286,15 +284,14 @@ bool WrdStringsModel::removeRows(int row, int count, const QModelIndex & /*paren
         return false;
 
     beginRemoveRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
         (*wrd_file).strings.removeAt(row);
     }
-
     endRemoveRows();
+
     return true;
 }
 bool WrdStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
@@ -303,11 +300,11 @@ bool WrdStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceR
         return false;
 
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
-
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).strings.move(sourceRow + r, destinationChild + r);
     }
+    endMoveRows();
 
     return true;
 }
@@ -367,13 +364,12 @@ bool WrdFlagsModel::insertRows(int row, int count, const QModelIndex & /*parent*
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).flags.insert(row + r, QString());
     }
-
     endInsertRows();
+
     return true;
 }
 bool WrdFlagsModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
@@ -382,15 +378,14 @@ bool WrdFlagsModel::removeRows(int row, int count, const QModelIndex & /*parent*
         return false;
 
     beginRemoveRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
         (*wrd_file).flags.removeAt(row);
     }
-
     endRemoveRows();
+
     return true;
 }
 bool WrdFlagsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
@@ -399,11 +394,11 @@ bool WrdFlagsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow
         return false;
 
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
-
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).flags.move(sourceRow + r, destinationChild + r);
     }
+    endMoveRows();
 
     return true;
 }

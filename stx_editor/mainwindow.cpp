@@ -7,10 +7,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(ui->listWidget, &QListWidget::currentTextChanged, this, &MainWindow::on_textBox_textChanged);
 
-    //openStx.setViewMode(QFileDialog::Detail);
     openStx.setNameFilter("STX files (*.stx)");
-
-    //OpenStxFile();
 }
 
 MainWindow::~MainWindow()

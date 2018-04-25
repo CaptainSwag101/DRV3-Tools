@@ -231,7 +231,6 @@ bool DatStructModel::insertRows(int row, int count, const QModelIndex & /*parent
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         QList<QByteArray> blank;
@@ -249,8 +248,8 @@ bool DatStructModel::insertRows(int row, int count, const QModelIndex & /*parent
         }
         (*dat_file).data.insert(row + r, blank);
     }
-
     endInsertRows();
+
     return true;
 }
 
@@ -260,15 +259,14 @@ bool DatStructModel::removeRows(int row, int count, const QModelIndex & /*parent
         return false;
 
     beginRemoveRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
         (*dat_file).data.removeAt(row);
     }
-
     endRemoveRows();
+
     return true;
 }
 
@@ -278,11 +276,11 @@ bool DatStructModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRo
         return false;
 
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
-
     for (int r = 0; r < count; r++)
     {
         (*dat_file).data.move(sourceRow + r, destinationChild + r);
     }
+    endMoveRows();
 
     return true;
 }
@@ -338,13 +336,12 @@ bool DatStringsModel::insertRows(int row, int count, const QModelIndex & /*paren
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         (*dat_file).labels.insert(row + r, QString());
     }
-
     endInsertRows();
+
     return true;
 }
 bool DatStringsModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
@@ -353,15 +350,14 @@ bool DatStringsModel::removeRows(int row, int count, const QModelIndex & /*paren
         return false;
 
     beginRemoveRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
         (*dat_file).labels.removeAt(row);
     }
-
     endRemoveRows();
+
     return true;
 }
 bool DatStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
@@ -370,11 +366,11 @@ bool DatStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceR
         return false;
 
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
-
     for (int r = 0; r < count; r++)
     {
         (*dat_file).labels.move(sourceRow + r, destinationChild + r);
     }
+    endMoveRows();
 
     return true;
 }
@@ -454,13 +450,12 @@ bool DatRefsModel::insertRows(int row, int count, const QModelIndex & /*parent*/
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         (*dat_file).refs.insert(row + r, QByteArray());
     }
-
     endInsertRows();
+
     return true;
 }
 
@@ -470,15 +465,14 @@ bool DatRefsModel::removeRows(int row, int count, const QModelIndex & /*parent*/
         return false;
 
     beginRemoveRows(QModelIndex(), row, row + count);
-
     for (int r = 0; r < count; r++)
     {
         // Keep removing at the same index, because the next item we want to delete
         // always takes the place of the previous one.
         (*dat_file).refs.removeAt(row);
     }
-
     endRemoveRows();
+
     return true;
 }
 
@@ -488,11 +482,11 @@ bool DatRefsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow,
         return false;
 
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
-
     for (int r = 0; r < count; r++)
     {
         (*dat_file).refs.move(sourceRow + r, destinationChild + r);
     }
+    endMoveRows();
 
     return true;
 }
