@@ -69,3 +69,8 @@ QByteArray get_bytes(const QByteArray &data, int &pos, const int len)
     pos += result.size();
     return result;
 }
+
+QString num_to_hex(const ulong num, const uchar pad_len)
+{
+    return QString::number(num, 16).toUpper().rightJustified(pad_len, '0');
+}
