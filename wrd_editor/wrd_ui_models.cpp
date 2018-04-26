@@ -197,15 +197,23 @@ bool WrdCodeModel::removeRows(int row, int count, const QModelIndex & /*parent*/
 
     return true;
 }
-bool WrdCodeModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
+bool WrdCodeModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationRow)
 {
-    if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
+    if (sourceRow < 0 || destinationRow + count > rowCount() || count <= 0)
         return false;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
+    // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
+    // and it's inconsistent depending on whether you're moving forward or backward. Fix your shit, Qt!
+    int fixedDest;
+    if (destinationRow > sourceRow)
+        fixedDest = destinationRow + ((destinationRow - sourceRow) % 2);
+    else
+        fixedDest = destinationRow;
+
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
-        (*wrd_file).code[label].move(sourceRow + r, destinationChild + r);
+        (*wrd_file).code[label].move(sourceRow + r, destinationRow + r);
     }
     endMoveRows();
 
@@ -296,10 +304,18 @@ bool WrdStringsModel::removeRows(int row, int count, const QModelIndex & /*paren
 }
 bool WrdStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
-    if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
+    if (sourceRow < 0 || destinationChild + count > rowCount() || count <= 0)
         return false;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
+    // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
+    // and it's inconsistent depending on whether you're moving forward or backward. Fix your shit, Qt!
+    int fixedDest;
+    if (destinationChild > sourceRow)
+        fixedDest = destinationChild + ((destinationChild - sourceRow) % 2);
+    else
+        fixedDest = destinationChild;
+
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).strings.move(sourceRow + r, destinationChild + r);
@@ -390,10 +406,18 @@ bool WrdFlagsModel::removeRows(int row, int count, const QModelIndex & /*parent*
 }
 bool WrdFlagsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
-    if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
+    if (sourceRow < 0 || destinationChild + count > rowCount() || count <= 0)
         return false;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
+    // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
+    // and it's inconsistent depending on whether you're moving forward or backward. Fix your shit, Qt!
+    int fixedDest;
+    if (destinationChild > sourceRow)
+        fixedDest = destinationChild + ((destinationChild - sourceRow) % 2);
+    else
+        fixedDest = destinationChild;
+
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         (*wrd_file).flags.move(sourceRow + r, destinationChild + r);

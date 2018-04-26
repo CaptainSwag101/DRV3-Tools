@@ -76,8 +76,8 @@ bool MainWindow::openFile(QString newFilepath)
     if (newFilepath.isEmpty())
     {
         newFilepath = QFileDialog::getOpenFileName(this, "Open WRD file", QString(), "WRD files (*.wrd);;All files (*.*)");
-        if (newFilepath.isEmpty()) return false;
     }
+    if (newFilepath.isEmpty()) return false;
 
     QFile f(newFilepath);
     if (!f.open(QFile::ReadOnly)) return false;

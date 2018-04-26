@@ -272,10 +272,18 @@ bool DatStructModel::removeRows(int row, int count, const QModelIndex & /*parent
 
 bool DatStructModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
-    if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
+    if (sourceRow < 0 || destinationChild + count > rowCount() || count <= 0)
         return false;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
+    // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
+    // and it's inconsistent depending on whether you're moving forward or backward. Fix your shit, Qt!
+    int fixedDest;
+    if (destinationChild > sourceRow)
+        fixedDest = destinationChild + ((destinationChild - sourceRow) % 2);
+    else
+        fixedDest = destinationChild;
+
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         (*dat_file).data.move(sourceRow + r, destinationChild + r);
@@ -362,10 +370,18 @@ bool DatStringsModel::removeRows(int row, int count, const QModelIndex & /*paren
 }
 bool DatStringsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
-    if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
+    if (sourceRow < 0 || destinationChild + count > rowCount() || count <= 0)
         return false;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
+    // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
+    // and it's inconsistent depending on whether you're moving forward or backward. Fix your shit, Qt!
+    int fixedDest;
+    if (destinationChild > sourceRow)
+        fixedDest = destinationChild + ((destinationChild - sourceRow) % 2);
+    else
+        fixedDest = destinationChild;
+
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         (*dat_file).labels.move(sourceRow + r, destinationChild + r);
@@ -478,10 +494,18 @@ bool DatRefsModel::removeRows(int row, int count, const QModelIndex & /*parent*/
 
 bool DatRefsModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationChild)
 {
-    if (count < 1 || sourceRow < 0 || destinationChild + count > rowCount())
+    if (sourceRow < 0 || destinationChild + count > rowCount() || count <= 0)
         return false;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count, QModelIndex(), destinationChild);
+    // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
+    // and it's inconsistent depending on whether you're moving forward or backward. Fix your shit, Qt!
+    int fixedDest;
+    if (destinationChild > sourceRow)
+        fixedDest = destinationChild + ((destinationChild - sourceRow) % 2);
+    else
+        fixedDest = destinationChild;
+
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         (*dat_file).refs.move(sourceRow + r, destinationChild + r);
