@@ -98,6 +98,26 @@ bool MainWindow::openFile(QString newFilepath)
     ui->tableStrings->setModel(strings);
     ui->tableFlags->setModel(flags);
 
+    for (int i = 0; i < currentWrd.code.at(ui->comboBox_SelectLabel->currentIndex()).count(); i++)
+    {
+        const WrdCmd cmd = currentWrd.code.at(ui->comboBox_SelectLabel->currentIndex()).at(i);
+
+        if (cmd.arg_types.count() != cmd.args.count())
+        {
+            QMessageBox errorMsg(QMessageBox::Information,
+                                 "Unexpected Command Parameters",
+                                 "Opcode " + num_to_hex(cmd.opcode, 2) + " expected " + QString::number(cmd.arg_types.count()) + " args, but found " + QString::number(cmd.args.count()) + ".",
+                                 QMessageBox::Ok);
+            errorMsg.exec();
+
+            for (int j = cmd.arg_types.count(); j < cmd.args.count(); j++)
+            {
+                currentWrd.code[ui->comboBox_SelectLabel->currentIndex()][i].arg_types.append(0);
+            }
+        }
+
+    }
+
     ui->centralWidget->setEnabled(true);
     ui->tableCode->scrollToTop();
     ui->tableStrings->scrollToTop();

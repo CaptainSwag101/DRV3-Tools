@@ -91,9 +91,18 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
                 cmd.args.append(arg);
             }
 
-            if (cmd.arg_types.count() < cmd.args.count())
+            if (cmd.arg_types.count() != cmd.args.count())
+            {
+                cout << "Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
+                cout.flush();
+
+                /*
                 for (int i = cmd.arg_types.count(); i < cmd.args.count(); i++)
+                {
                     cmd.arg_types.append(0);
+                }
+                */
+            }
 
             label_cmds.append(cmd);
         }

@@ -83,7 +83,7 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
 
                 if (cmd.arg_types.at(a) == 0 && arg < (*wrd_file).flags.count())
                     argParsedString += (*wrd_file).flags.at(arg) + "    ";
-                else if (cmd.arg_types.at(a) == 1 && arg < (*wrd_file).strings.count())
+                else if (cmd.arg_types.at(a) == 2 && arg < (*wrd_file).strings.count())
                     argParsedString += (*wrd_file).strings.at(arg) + "    ";
                 else
                     argParsedString += QString::number(arg) + "    ";
@@ -129,19 +129,17 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
 
 QVariant WrdDataModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (data_mode == 0 && role == Qt::DisplayRole)
+    if (data_mode != 0 || orientation != Qt::Horizontal)
+        return QVariant();
+
+    switch (section)
     {
-        if (orientation == Qt::Horizontal) {
-            switch (section)
-            {
-            case 0:
-                return QString("Opcode");
-            case 1:
-                return QString("Args");
-            case 2:
-                return QString("Parsed Args (Read-Only)");
-            }
-        }
+    case 0:
+        return QString("Opcode");
+    case 1:
+        return QString("Args");
+    case 2:
+        return QString("Parsed Args (Read-Only)");
     }
 
     return QVariant();
@@ -193,9 +191,19 @@ bool WrdDataModel::setData(const QModelIndex &index, const QVariant &value, int 
                 }
             }
 
-            if ((*wrd_file).code[label][row].arg_types.count() < (*wrd_file).code[label][row].args.count())
+            if ((*wrd_file).code[label][row].arg_types.count() != (*wrd_file).code[label][row].args.count())
+            {
+                QMessageBox errorMsg(QMessageBox::Information,
+                                     "Unexpected Command Parameters",
+                                     "Opcode " + num_to_hex((*wrd_file).code[label][row].opcode, 2) + " expected " + QString::number((*wrd_file).code[label][row].arg_types.count()) + " args, but found " + QString::number((*wrd_file).code[label][row].args.count()) + ".",
+                                     QMessageBox::Ok);
+                errorMsg.exec();
+
                 for (int i = (*wrd_file).code[label][row].arg_types.count(); i < (*wrd_file).code[label][row].args.count(); i++)
+                {
                     (*wrd_file).code[label][row].arg_types.append(0);
+                }
+            }
         }
         // Args
         else if (col == 1)
