@@ -4,7 +4,7 @@ QString str_from_bytes(const QByteArray &data, int &pos, const int len, const QS
 {
     const int orig_pos = pos;
 
-    if (codec.startsWith("UTF-16", Qt::CaseInsensitive))
+    if (codec.startsWith("UTF16", Qt::CaseInsensitive))
     {
         QString result;
 
@@ -41,23 +41,18 @@ QString str_from_bytes(const QByteArray &data, int &pos, const int len, const QS
 QByteArray str_to_bytes(const QString &string, const bool utf16)
 {
     QByteArray result;
-
     if (utf16)
     {
-        QByteArray str_data;
         for (int i = 0; i < string.size(); i++)
         {
-            str_data.append(num_to_bytes(string.at(i).unicode()));
+            result.append(num_to_bytes(string.at(i).unicode()));
         }
-        result.append(str_data);
-        result.append(num_to_bytes((ushort)0x00));   // Null terminator
+        result.append(num_to_bytes((ushort)0x00));    // Null terminator
     }
     else
     {
-        QByteArray str_data;
-        str_data = string.toUtf8();
-        result.append(str_data);
-        result.append(num_to_bytes((uchar)0x00));    // Null terminator
+        result = string.toUtf8();
+        result.append(num_to_bytes((uchar)0x00));     // Null terminator
     }
 
     return result;

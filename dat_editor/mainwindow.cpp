@@ -13,7 +13,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //ui->tableStructs->setColumnWidth(1, 170);
+    //ui->tableData->setColumnWidth(1, 170);
 }
 
 MainWindow::~MainWindow()
@@ -88,14 +88,14 @@ bool MainWindow::openFile(QString newFilepath)
     f.close();
 
     this->setWindowTitle("DAT Editor: " + QFileInfo(newFilepath).fileName());
-    ui->tableStructs->setModel(new DatStructModel(this, &currentDat));
-    ui->tableStrings->setModel(new DatStringsModel(this, &currentDat));
-    ui->tableUnkData->setModel(new DatRefsModel(this, &currentDat));
+    ui->tableData->setModel(new DatUiModel(this, &currentDat, 0));
+    ui->tableStringsAscii->setModel(new DatUiModel(this, &currentDat, 1));
+    ui->tableStringsUtf16->setModel(new DatUiModel(this, &currentDat, 2));
 
     ui->centralWidget->setEnabled(true);
-    ui->tableStructs->scrollToTop();
-    ui->tableStrings->scrollToTop();
-    ui->tableUnkData->scrollToTop();
+    ui->tableData->scrollToTop();
+    ui->tableStringsAscii->scrollToTop();
+    ui->tableStringsUtf16->scrollToTop();
 
     return true;
 }

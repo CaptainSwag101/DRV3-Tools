@@ -28,7 +28,7 @@ QStringList get_stx_strings(const QByteArray &bytes)
 
         pos = str_off;
 
-        QString str = str_from_bytes(bytes, pos, -1, "UTF-16LE");
+        QString str = str_from_bytes(bytes, pos, -1, "UTF16LE");
         strings.append(str);
     }
 

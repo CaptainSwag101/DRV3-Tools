@@ -76,7 +76,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
         } while (c1 != 0 || c2 != 0);
 
         int str_pos = 0;
-        result.refs.append(str_from_bytes(unk, str_pos, -1, "UTF-16"));
+        result.refs.append(str_from_bytes(unk, str_pos, -1, "UTF16LE"));
     }
 
     return result;

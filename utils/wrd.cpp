@@ -132,7 +132,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
             if (str_len >= 0x80)
                 str_len += (bytes.at(pos++) - 1) * 0x80;
 
-            QString str = str_from_bytes(bytes, pos, -1, "UTF-16LE");
+            QString str = str_from_bytes(bytes, pos, -1, "UTF16LE");
             result.strings.append(str);
         }
 
