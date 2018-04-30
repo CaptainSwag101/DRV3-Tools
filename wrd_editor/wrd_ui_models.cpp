@@ -81,9 +81,9 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
             {
                 const ushort arg = cmd.args.at(a);
 
-                if (cmd.arg_types.at(a) == 0 && arg < (*wrd_file).flags.count())
+                if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 0 && arg < (*wrd_file).flags.count())
                     argParsedString += (*wrd_file).flags.at(arg) + "    ";
-                else if (cmd.arg_types.at(a) == 2 && arg < (*wrd_file).strings.count())
+                else if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 2 && arg < (*wrd_file).strings.count())
                     argParsedString += (*wrd_file).strings.at(arg) + "    ";
                 else
                     argParsedString += QString::number(arg) + "    ";
@@ -129,7 +129,7 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
 
 QVariant WrdDataModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (data_mode != 0 || orientation != Qt::Horizontal)
+    if (data_mode != 0 || role != Qt::DisplayRole || orientation != Qt::Horizontal)
         return QVariant();
 
     switch (section)
