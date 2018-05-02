@@ -89,19 +89,19 @@ bool MainWindow::openFile(QString newFilepath)
 
     reloadLabelList();
     WrdDataModel *code = new WrdDataModel(this, &currentWrd, 0, ui->comboBox_SelectLabel->currentIndex());
-    WrdDataModel *flags = new WrdDataModel(this, &currentWrd, 1);
+    WrdDataModel *params = new WrdDataModel(this, &currentWrd, 1);
     WrdDataModel *strings = new WrdDataModel(this, &currentWrd, 2);
     QObject::connect(code, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
+    QObject::connect(params, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
     QObject::connect(strings, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
-    QObject::connect(flags, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
     ui->tableCode->setModel(code);
+    ui->tableParams->setModel(params);
     ui->tableStrings->setModel(strings);
-    ui->tableFlags->setModel(flags);
 
     ui->centralWidget->setEnabled(true);
     ui->tableCode->scrollToTop();
+    ui->tableParams->scrollToTop();
     ui->tableStrings->scrollToTop();
-    ui->tableFlags->scrollToTop();
 
     // Manually trigger this to check for undocumented command params right away
     on_comboBox_SelectLabel_currentIndexChanged(0);
@@ -287,5 +287,105 @@ void MainWindow::dropEvent(QDropEvent *event)
                 break;
             }
         }
+    }
+}
+
+void MainWindow::on_actionUS_toggled(bool checked)
+{
+    if (checked == false)
+    {
+        // Make sure at least one checkbox is active at all times
+        if (!ui->actionJP->isChecked() && !ui->actionFR->isChecked()
+                && !ui->actionZH->isChecked() && !ui->actionCN->isChecked())
+        {
+            ui->actionUS->setChecked(true);
+        }
+    }
+    else
+    {
+        ui->actionJP->setChecked(false);
+        ui->actionFR->setChecked(false);
+        ui->actionZH->setChecked(false);
+        ui->actionCN->setChecked(false);
+    }
+}
+
+void MainWindow::on_actionJP_toggled(bool checked)
+{
+    if (checked == false)
+    {
+        // Make sure at least one checkbox is active at all times
+        if (!ui->actionUS->isChecked() && !ui->actionFR->isChecked()
+                && !ui->actionZH->isChecked() && !ui->actionCN->isChecked())
+        {
+            ui->actionJP->setChecked(true);
+        }
+    }
+    else
+    {
+        ui->actionUS->setChecked(false);
+        ui->actionFR->setChecked(false);
+        ui->actionZH->setChecked(false);
+        ui->actionCN->setChecked(false);
+    }
+}
+
+void MainWindow::on_actionFR_toggled(bool checked)
+{
+    if (checked == false)
+    {
+        // Make sure at least one checkbox is active at all times
+        if (!ui->actionJP->isChecked() && !ui->actionUS->isChecked()
+                && !ui->actionZH->isChecked() && !ui->actionCN->isChecked())
+        {
+            ui->actionFR->setChecked(true);
+        }
+    }
+    else
+    {
+        ui->actionJP->setChecked(false);
+        ui->actionUS->setChecked(false);
+        ui->actionZH->setChecked(false);
+        ui->actionCN->setChecked(false);
+    }
+}
+
+void MainWindow::on_actionZH_toggled(bool checked)
+{
+    if (checked == false)
+    {
+        // Make sure at least one checkbox is active at all times
+        if (!ui->actionJP->isChecked() && !ui->actionFR->isChecked()
+                && !ui->actionUS->isChecked() && !ui->actionCN->isChecked())
+        {
+            ui->actionZH->setChecked(true);
+        }
+    }
+    else
+    {
+        ui->actionJP->setChecked(false);
+        ui->actionFR->setChecked(false);
+        ui->actionUS->setChecked(false);
+        ui->actionCN->setChecked(false);
+    }
+}
+
+void MainWindow::on_actionCN_toggled(bool checked)
+{
+    if (checked == false)
+    {
+        // Make sure at least one checkbox is active at all times
+        if (!ui->actionJP->isChecked() && !ui->actionFR->isChecked()
+                && !ui->actionZH->isChecked() && !ui->actionUS->isChecked())
+        {
+            ui->actionCN->setChecked(true);
+        }
+    }
+    else
+    {
+        ui->actionJP->setChecked(false);
+        ui->actionFR->setChecked(false);
+        ui->actionZH->setChecked(false);
+        ui->actionUS->setChecked(false);
     }
 }

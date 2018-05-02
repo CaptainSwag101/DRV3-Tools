@@ -16,7 +16,7 @@ int WrdDataModel::rowCount(const QModelIndex & /*parent*/) const
         return (*wrd_file).code.at(label).count();
 
     case 1:
-        return (*wrd_file).flags.count();
+        return (*wrd_file).params.count();
 
     case 2:
         return (*wrd_file).strings.count();
@@ -81,8 +81,8 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
             {
                 const ushort arg = cmd.args.at(a);
 
-                if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 0 && arg < (*wrd_file).flags.count())
-                    argParsedString += (*wrd_file).flags.at(arg) + "    ";
+                if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 0 && arg < (*wrd_file).params.count())
+                    argParsedString += (*wrd_file).params.at(arg) + "    ";
                 else if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 2 && arg < (*wrd_file).strings.count())
                     argParsedString += (*wrd_file).strings.at(arg) + "    ";
                 else
@@ -103,7 +103,7 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
         }
         else
         {
-            return (*wrd_file).flags.at(row);
+            return (*wrd_file).params.at(row);
         }
         break;
     }
@@ -246,7 +246,7 @@ bool WrdDataModel::setData(const QModelIndex &index, const QVariant &value, int 
             return true;
 
         QString flag = value.toString();
-        (*wrd_file).flags[row] = flag;
+        (*wrd_file).params[row] = flag;
         break;
     }
     case 2:
@@ -282,7 +282,7 @@ bool WrdDataModel::insertRows(int row, int count, const QModelIndex & /*parent*/
             break;
         }
         case 1:
-            (*wrd_file).flags.insert(row + r, QString());
+            (*wrd_file).params.insert(row + r, QString());
             break;
 
         case 2:
@@ -312,7 +312,7 @@ bool WrdDataModel::removeRows(int row, int count, const QModelIndex & /*parent*/
             break;
 
         case 1:
-            (*wrd_file).flags.removeAt(row);
+            (*wrd_file).params.removeAt(row);
             break;
 
         case 2:
@@ -349,7 +349,7 @@ bool WrdDataModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow,
             break;
 
         case 1:
-            (*wrd_file).flags.move(sourceRow + r, destinationRow + r);
+            (*wrd_file).params.move(sourceRow + r, destinationRow + r);
             break;
 
         case 2:

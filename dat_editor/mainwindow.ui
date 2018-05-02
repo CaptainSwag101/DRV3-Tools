@@ -338,7 +338,7 @@
     <string>E&amp;xit</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+S</string>
+    <string>Ctrl+Q</string>
    </property>
   </action>
  </widget>

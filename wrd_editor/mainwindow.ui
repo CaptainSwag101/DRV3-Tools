@@ -70,13 +70,13 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabFlags">
+      <widget class="QWidget" name="tabParams">
        <attribute name="title">
-        <string>Flags</string>
+        <string>Parameters</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QTableView" name="tableFlags">
+         <widget class="QTableView" name="tableParams">
           <property name="sizeAdjustPolicy">
            <enum>QAbstractScrollArea::AdjustToContents</enum>
           </property>
@@ -311,14 +311,24 @@
     <addaction name="actionSaveAs"/>
     <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menuTools">
+   <widget class="QMenu" name="menuOptions">
     <property name="title">
-     <string>&amp;Tools</string>
+     <string>Options</string>
     </property>
-    <addaction name="actionExportStrings"/>
+    <widget class="QMenu" name="menuString_Region">
+     <property name="title">
+      <string>String &amp;Region</string>
+     </property>
+     <addaction name="actionUS"/>
+     <addaction name="actionJP"/>
+     <addaction name="actionFR"/>
+     <addaction name="actionZH"/>
+     <addaction name="actionCN"/>
+    </widget>
+    <addaction name="menuString_Region"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuTools"/>
+   <addaction name="menuOptions"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -349,12 +359,50 @@
     <string>E&amp;xit</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+S</string>
+    <string>Ctrl+Q</string>
    </property>
   </action>
-  <action name="actionExportStrings">
+  <action name="actionUS">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
-    <string>&amp;Export Strings...</string>
+    <string>US</string>
+   </property>
+  </action>
+  <action name="actionJP">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>JP</string>
+   </property>
+  </action>
+  <action name="actionFR">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>FR</string>
+   </property>
+  </action>
+  <action name="actionZH">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>ZH</string>
+   </property>
+  </action>
+  <action name="actionCN">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>CN</string>
    </property>
   </action>
  </widget>

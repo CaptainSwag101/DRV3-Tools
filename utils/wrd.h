@@ -97,7 +97,7 @@ struct UTILSSHARED_EXPORT WrdFile
 {
     QString filename;
     QStringList labels;
-    QStringList flags;
+    QStringList params;
     QStringList strings;
     QList<QList<WrdCmd>> code;
     QList<uint> unk_data;

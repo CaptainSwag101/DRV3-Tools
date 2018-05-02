@@ -32,6 +32,11 @@ private slots:
     void on_toolButton_Del_clicked();
     void on_toolButton_Up_clicked();
     void on_toolButton_Down_clicked();
+    void on_actionUS_toggled(bool checked);
+    void on_actionJP_toggled(bool checked);
+    void on_actionFR_toggled(bool checked);
+    void on_actionZH_toggled(bool checked);
+    void on_actionCN_toggled(bool checked);
 
 private:
     bool confirmUnsaved();

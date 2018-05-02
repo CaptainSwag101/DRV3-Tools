@@ -125,7 +125,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     {
         uchar length = bytes.at(pos++) + 1;  // Include null terminator
         QString value = str_from_bytes(bytes, pos, length);
-        result.flags.append(value);
+        result.params.append(value);
     }
 
 
@@ -188,7 +188,7 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
 
     result.append(num_to_bytes((ushort)wrd_file.strings.count()));
     result.append(num_to_bytes((ushort)wrd_file.labels.count()));
-    result.append(num_to_bytes((ushort)wrd_file.flags.count()));
+    result.append(num_to_bytes((ushort)wrd_file.params.count()));
     result.append(num_to_bytes((ushort)wrd_file.unk_data.count()));
     result.append(QByteArray(4, 0x00));
 
@@ -222,7 +222,7 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     }
 
     QByteArray flags_data;
-    for (const QString flag : wrd_file.flags)
+    for (const QString flag : wrd_file.params)
     {
         const QByteArray flagdata = str_to_bytes(flag);
         flags_data.append((uchar)(flagdata.size() - 1));
