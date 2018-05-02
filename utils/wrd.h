@@ -50,13 +50,13 @@ static QList<WrdCmd> known_commands = {
     {0x20, "FLA", {}, {}},
     {0x21, "LIG", {}, {0, 1, 0}},           // Lighting Parameters
     {0x22, "CHR", {}, {0, 0, 0, 0, 0}},     // Character Parameters
-    {0x23, "BGD", {}, {}},                  // Background Object Parameters
+    {0x23, "BGD", {}, {0, 0, 0, 0}},        // Background Parameters
     {0x24, "CUT", {}, {}},
     {0x25, "ADF", {}, {0, 0, 0, 0 ,0}},
     {0x26, "PAL", {}, {}},
     {0x27, "MAP", {}, {0, 0, 0}},           // Load Map
     {0x28, "OBJ", {}, {0, 0, 0}},           // Load Object
-    {0x29, "BUL", {}, {}},
+    {0x29, "BUL", {}, {0,0,0,0,0,0,0,0}},
     {0x2A, "CRF", {}, {}},
     {0x2B, "CAM", {}, {0, 0, 0, 0, 0}},     // Camera Parameters
     {0x2C, "KWM", {}, {0}},                 // Game/UI Mode
@@ -70,12 +70,12 @@ static QList<WrdCmd> known_commands = {
     {0x34, "FON", {}, {1, 1}},              // Set Font
     {0x35, "BGO", {}, {0, 0, 0, 0, 0}},     // Load Background Object
     {0x36, "LOG", {}, {}},                  // Edit Text Backlog?
-    {0x37, "SPT", {}, {}},
-    {0x38, "CDV", {}, {}},
+    {0x37, "SPT", {}, {0}},                 // Used in Class Trial? Always set to "non"?
+    {0x38, "CDV", {}, {0,0,0,0,0,0,0,0,0,0}},
     {0x39, "SZM", {}, {0, 0, 0, 0}},        // Size Modifier (Class Trial)
     {0x3A, "PVI", {}, {0}},                 // Class Trial Chapter? Pre-trial intermission?
     {0x3B, "EXP", {}, {0}},                 // Give Experience?
-    {0x3C, "MTA", {}, {}},
+    {0x3C, "MTA", {}, {0}},                 // Used in Class Trial. Usually set to "non"?
     {0x3D, "MVP", {}, {}},
     {0x3E, "POS", {}, {0, 0, 0, 0, 0}},     // Object/Exisal position
     {0x3F, "ICO", {}, {}},
@@ -88,7 +88,7 @@ static QList<WrdCmd> known_commands = {
     {0x46, "LOC", {}, {2}},                 // Display text string
     {0x47, "BTN", {}, {}},                  // Wait for button press
     {0x48, "ENT", {}, {}},
-    {0x49, "CED", {}, {}},                  // Check End? (Used after IFF commands?)
+    {0x49, "CED", {}, {}},                  // Check End (Used after IFF and IFW commands)
     {0x4A, "LBN", {}, {1}},                 // Local Branch Number (for branching case statements)
     {0x4B, "JMN", {}, {1}}                  // Jump to Local Branch (for branching case statements)
 };
