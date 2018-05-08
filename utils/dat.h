@@ -4,7 +4,7 @@
 #include "utils_global.h"
 #include "binarydata.h"
 
-struct UTILSSHARED_EXPORT DatFile
+struct UTILS_EXPORT DatFile
 {
     QString filename;
     QStringList data_names;
@@ -14,7 +14,7 @@ struct UTILSSHARED_EXPORT DatFile
     QStringList refs;
 };
 
-UTILSSHARED_EXPORT DatFile dat_from_bytes(const QByteArray &bytes);
-UTILSSHARED_EXPORT QByteArray dat_to_bytes(const DatFile &dat);
+UTILS_EXPORT DatFile dat_from_bytes(const QByteArray &bytes);
+UTILS_EXPORT QByteArray dat_to_bytes(const DatFile &dat);
 
 #endif // DAT_H

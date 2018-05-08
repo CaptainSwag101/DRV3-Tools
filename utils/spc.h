@@ -7,7 +7,7 @@
 const QString SPC_MAGIC = "CPS.";
 const QString SPC_TABLE_MAGIC = "Root";
 
-struct UTILSSHARED_EXPORT SpcSubfile
+struct UTILS_EXPORT SpcSubfile
 {
     QString filename;
     QByteArray data;
@@ -18,7 +18,7 @@ struct UTILSSHARED_EXPORT SpcSubfile
     int name_len;
 };
 
-struct UTILSSHARED_EXPORT SpcFile
+struct UTILS_EXPORT SpcFile
 {
     QString filename;
     QByteArray unk1;
@@ -26,11 +26,11 @@ struct UTILSSHARED_EXPORT SpcFile
     QList<SpcSubfile> subfiles;
 };
 
-UTILSSHARED_EXPORT SpcFile spc_from_bytes(const QByteArray &bytes);
-UTILSSHARED_EXPORT QByteArray spc_to_bytes(const SpcFile &spc);
-UTILSSHARED_EXPORT QByteArray spc_dec(const QByteArray &bytes, int dec_size = -1);
-UTILSSHARED_EXPORT QByteArray spc_cmp(const QByteArray &bytes);
-UTILSSHARED_EXPORT QByteArray srd_dec(const QByteArray &bytes);
-UTILSSHARED_EXPORT QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
+UTILS_EXPORT SpcFile spc_from_bytes(const QByteArray &bytes);
+UTILS_EXPORT QByteArray spc_to_bytes(const SpcFile &spc);
+UTILS_EXPORT QByteArray spc_dec(const QByteArray &bytes, int dec_size = -1);
+UTILS_EXPORT QByteArray spc_cmp(const QByteArray &bytes);
+UTILS_EXPORT QByteArray srd_dec(const QByteArray &bytes);
+UTILS_EXPORT QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode);
 
 #endif // SPC_H

@@ -5,7 +5,7 @@
 #include "binarydata.h"
 #include "stx.h"
 
-struct UTILSSHARED_EXPORT WrdCmd
+struct UTILS_EXPORT WrdCmd
 {
     uchar opcode;
     QString name;
@@ -28,7 +28,7 @@ static QList<WrdCmd> known_commands = {
     {0x0A, "CHK", {}, {0}},                 // Check?
     {0x0B, "KTD", {}, {0, 0}},              // Kotodama?
     {0x0C, "CLR", {}, {}},                  // Clear?
-    {0x0D, "RET", {}, {}},                  // Return? There's definitely a command later which as also definitely return, though...
+    {0x0D, "RET", {}, {}},                  // Return? There's another command later which is definitely return, though...
     {0x0E, "KNM", {}, {0, 0, 0, 0, 0}},     // Kinematics (camera movement)
     {0x0F, "CAP", {}, {}},                  // Camera Parameters?
     {0x10, "FIL", {}, {0, 0}},              // Load Script File & jump to label
@@ -51,37 +51,37 @@ static QList<WrdCmd> known_commands = {
     {0x21, "LIG", {}, {0, 1, 0}},           // Lighting Parameters
     {0x22, "CHR", {}, {0, 0, 0, 0, 0}},     // Character Parameters
     {0x23, "BGD", {}, {0, 0, 0, 0}},        // Background Parameters
-    {0x24, "CUT", {}, {}},
-    {0x25, "ADF", {}, {0, 0, 0, 0 ,0}},
+    {0x24, "CUT", {}, {0, 0}},              // Cutin (display image for things like Truth Bullets, etc.)
+    {0x25, "ADF", {}, {0, 0, 0, 0 ,0}},     // Character Vibration?
     {0x26, "PAL", {}, {}},
     {0x27, "MAP", {}, {0, 0, 0}},           // Load Map
     {0x28, "OBJ", {}, {0, 0, 0}},           // Load Object
     {0x29, "BUL", {}, {0,0,0,0,0,0,0,0}},
-    {0x2A, "CRF", {}, {}},
-    {0x2B, "CAM", {}, {0, 0, 0, 0, 0}},     // Camera Parameters
+    {0x2A, "CRF", {}, {0,0,0,0,0,0,0}},     // Cross Fade
+    {0x2B, "CAM", {}, {0, 0, 0, 0, 0}},     // Camera command
     {0x2C, "KWM", {}, {0}},                 // Game/UI Mode
     {0x2D, "ARE", {}, {0, 0, 0}},
-    {0x2E, "KEY", {}, {}},
-    {0x2F, "WIN", {}, {0, 0, 0, 0}},        // Window Parameters
+    {0x2E, "KEY", {}, {0, 0}},              // Enable/disable "key" items for unlocking areas
+    {0x2F, "WIN", {}, {0, 0, 0, 0}},        // Window parameters
     {0x30, "MSC", {}, {}},
     {0x31, "CSM", {}, {}},
     {0x32, "PST", {}, {0, 0, 1, 1, 1}},     // Post-Processing
-    {0x33, "KNS", {}, {0, 1, 1, 1, 1}},     // Kinematics Numeric Params
+    {0x33, "KNS", {}, {0, 1, 1, 1, 1}},     // Kinematics Numeric parameters?
     {0x34, "FON", {}, {1, 1}},              // Set Font
     {0x35, "BGO", {}, {0, 0, 0, 0, 0}},     // Load Background Object
     {0x36, "LOG", {}, {}},                  // Edit Text Backlog?
-    {0x37, "SPT", {}, {0}},                 // Used in Class Trial? Always set to "non"?
+    {0x37, "SPT", {}, {0}},                 // Used only in Class Trial? Always set to "non"?
     {0x38, "CDV", {}, {0,0,0,0,0,0,0,0,0,0}},
-    {0x39, "SZM", {}, {0, 0, 0, 0}},        // Size Modifier (Class Trial)
+    {0x39, "SZM", {}, {0, 0, 0, 0}},        // Size Modifier (Class Trial)?
     {0x3A, "PVI", {}, {0}},                 // Class Trial Chapter? Pre-trial intermission?
-    {0x3B, "EXP", {}, {0}},                 // Give Experience?
-    {0x3C, "MTA", {}, {0}},                 // Used in Class Trial. Usually set to "non"?
-    {0x3D, "MVP", {}, {}},
+    {0x3B, "EXP", {}, {0}},                 // Give EXP
+    {0x3C, "MTA", {}, {0}},                 // Used only in Class Trial? Usually set to "non"?
+    {0x3D, "MVP", {}, {0, 0, 0}},           // Move object to its designated position?
     {0x3E, "POS", {}, {0, 0, 0, 0, 0}},     // Object/Exisal position
-    {0x3F, "ICO", {}, {}},
+    {0x3F, "ICO", {}, {0,0,0,0}},           // Display a Program World character portrait
     {0x40, "EAI", {}, {0,0,0,0,0,0,0,0,0,0}},  // Exisal AI
-    {0x41, "COL", {}, {}},
-    {0x42, "CFP", {}, {}},
+    {0x41, "COL", {}, {0, 0, 0}},           // Set object collision
+    {0x42, "CFP", {}, {0,0,0,0,0,0,0,0,0}}, // Camera Follow Path? Seems to make the camera move in some way
     {0x43, "CLT=", {}, {0}},                // Text modifier command
     {0x44, "R=", {}, {}},
     {0x45, "PAD=", {}, {0}},                // Gamepad button symbol
@@ -93,7 +93,7 @@ static QList<WrdCmd> known_commands = {
     {0x4B, "JMN", {}, {1}}                  // Jump to Local Branch (for branching case statements)
 };
 
-struct UTILSSHARED_EXPORT WrdFile
+struct UTILS_EXPORT WrdFile
 {
     QString filename;
     QStringList labels;
@@ -104,9 +104,9 @@ struct UTILSSHARED_EXPORT WrdFile
     bool external_strings;
 };
 
-UTILSSHARED_EXPORT WrdFile wrd_from_bytes(const QByteArray &bytes, QString filename);
-UTILSSHARED_EXPORT QByteArray wrd_to_bytes(const WrdFile &wrd);
-UTILSSHARED_EXPORT QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
-UTILSSHARED_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
+UTILS_EXPORT WrdFile wrd_from_bytes(const QByteArray &bytes, QString filename);
+UTILS_EXPORT QByteArray wrd_to_bytes(const WrdFile &wrd);
+UTILS_EXPORT QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
+UTILS_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
 
 #endif // WRD_H

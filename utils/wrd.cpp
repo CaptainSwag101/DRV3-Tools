@@ -1,5 +1,6 @@
 #include "wrd.h"
 
+#include <QDebug>
 #include <QDir>
 #include <QFileInfo>
 
@@ -91,10 +92,11 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
                 cmd.args.append(arg);
             }
 
-            if (cmd.arg_types.count() != cmd.args.count())
+            if (cmd.arg_types.count() != cmd.args.count() && cmd.opcode != 0x01 && cmd.opcode != 0x03)  // IFF and IFW have variable-length params
             {
-                cout << "Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
-                cout.flush();
+                //cout << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
+                //cout.flush();
+                qDebug() << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
 
                 /*
                 for (int i = cmd.arg_types.count(); i < cmd.args.count(); i++)

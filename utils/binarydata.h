@@ -5,10 +5,10 @@
 #include <QByteArray>
 #include <QString>
 
-UTILSSHARED_EXPORT QString str_from_bytes(const QByteArray &data, int &pos, const int len = -1, const QString codec = "UTF8");
-UTILSSHARED_EXPORT QByteArray str_to_bytes(const QString &string, const bool utf16 = false);
-UTILSSHARED_EXPORT QByteArray get_bytes(const QByteArray &data, int &pos, const int len = -1);
-UTILSSHARED_EXPORT QString num_to_hex(const ulong num, const uchar pad_len);
+UTILS_EXPORT QString str_from_bytes(const QByteArray &data, int &pos, const int len = -1, const QString codec = "UTF8");
+UTILS_EXPORT QByteArray str_to_bytes(const QString &string, const bool utf16 = false);
+UTILS_EXPORT QByteArray get_bytes(const QByteArray &data, int &pos, const int len = -1);
+UTILS_EXPORT QString num_to_hex(const ulong num, const uchar pad_len);
 
 template <typename T> T num_from_bytes(const QByteArray &data, int &pos, const bool big_endian = false)
 {

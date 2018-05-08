@@ -5,15 +5,15 @@
 #include <QTextStream>
 
 #if defined(UTILS_LIBRARY)
-#  define UTILSSHARED_EXPORT Q_DECL_EXPORT
+#  define UTILS_EXPORT Q_DECL_EXPORT
 #else
-#  define UTILSSHARED_EXPORT Q_DECL_IMPORT
+#  define UTILS_EXPORT Q_DECL_IMPORT
 #endif
 
 static QTextStream cout(stdout);
 
 // From https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64BitsDiv
-UTILSSHARED_EXPORT inline uchar bit_reverse(uchar b)
+UTILS_EXPORT inline uchar bit_reverse(uchar b)
 {
     return (b * 0x0202020202 & 0x010884422010) % 1023;
 }
