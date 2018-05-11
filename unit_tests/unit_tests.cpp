@@ -76,11 +76,11 @@ void UnitTests::findWrdVersionChanges()
     QTextStream log(&logfile);
 
     QString script_dir = QDir::currentPath() + QDir::separator() + "wrd_script-dec";
-    QString default_subdir = "007";
+    QString default_subdir = "003";
 
     QHash<QString, QByteArray> script_data;
 
-    QDirIterator def(script_dir + QDir::separator() + default_subdir, QStringList() << "*.wrd", QDir::Files, QDirIterator::Subdirectories);
+    QDirIterator def(script_dir + QDir::separator() + default_subdir, QStringList() << "*.wrd" << "*.stx", QDir::Files, QDirIterator::Subdirectories);
     while (def.hasNext())
     {
         QFile f(def.next());
@@ -100,7 +100,7 @@ void UnitTests::findWrdVersionChanges()
         if (dir.fileName() == default_subdir)
             continue;
 
-        QDirIterator it(dir.filePath(), QStringList() << "*.wrd", QDir::Files, QDirIterator::Subdirectories);
+        QDirIterator it(dir.filePath(), QStringList() << "*.wrd" << "*.stx", QDir::Files, QDirIterator::Subdirectories);
         while (it.hasNext())
         {
             QFile f(it.next());
@@ -109,7 +109,7 @@ void UnitTests::findWrdVersionChanges()
             //qDebug() << it.filePath();
             QString rel_path = QDir(dir.filePath()).relativeFilePath(it.filePath());
             if (!script_data.contains(rel_path) || script_data[rel_path] != f.readAll())
-                log << "File " << dir.fileName() + '/' + rel_path << " differs from the file in folder " << default_subdir << ".\n";
+                log << "File " + dir.fileName() + '/' + rel_path + " differs from the file in folder " + default_subdir + ".\n";
                 //qDebug() << "File differs from the file in folder " << default_subdir << ".";
             f.close();
         }
