@@ -43,7 +43,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     const int header_end = 0x20;
     for (int label_num = 0; label_num < label_count; label_num++)
     {
-        QList<WrdCmd> label_cmds;
+        QVector<WrdCmd> label_cmds;
 
         pos = label_offsets_ptr + (label_num * 2);
         const ushort label_offset = num_from_bytes<ushort>(bytes, pos);
@@ -61,7 +61,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
             cmd.name = "UNKNOWN_CMD";
             cmd.opcode = op;
 
-            for (WrdCmd known_cmd : known_commands)
+            for (WrdCmd known_cmd : KNOWN_CMDS)
             {
                 if (op == known_cmd.opcode)
                 {
@@ -205,7 +205,7 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
 
         code_offsets.append(num_to_bytes((ushort)code_data.size()));
 
-        const QList<WrdCmd> cur_label_cmds = wrd_file.code.at(i);
+        const QVector<WrdCmd> cur_label_cmds = wrd_file.code.at(i);
         for (const WrdCmd cmd : cur_label_cmds)
         {
             code_data.append((uchar)0x70);

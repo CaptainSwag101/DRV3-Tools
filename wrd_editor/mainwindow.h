@@ -6,7 +6,7 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
-#include "wrd_ui_models.h"
+#include "wrd_ui_model.h"
 
 namespace Ui {
 class MainWindow;

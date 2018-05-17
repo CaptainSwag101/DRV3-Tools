@@ -9,7 +9,7 @@ struct UTILS_EXPORT DatFile
     QString filename;
     QStringList data_names;
     QStringList data_types; // var_name, var_type, 0x0100 (var count + null terminator?)
-    QList<QList<QByteArray>> data;
+    QVector<QVector<QByteArray>> data;
     QStringList labels;
     QStringList refs;
 };

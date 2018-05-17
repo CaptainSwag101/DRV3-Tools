@@ -88,12 +88,12 @@ bool MainWindow::openFile(QString newFilepath)
     this->setWindowTitle("WRD Editor: " + QFileInfo(newFilepath).fileName());
 
     reloadLabelList();
-    WrdDataModel *code = new WrdDataModel(this, &currentWrd, 0, ui->comboBox_SelectLabel->currentIndex());
-    WrdDataModel *params = new WrdDataModel(this, &currentWrd, 1);
-    WrdDataModel *strings = new WrdDataModel(this, &currentWrd, 2);
-    QObject::connect(code, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
-    QObject::connect(params, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
-    QObject::connect(strings, &WrdDataModel::editCompleted, this, &MainWindow::on_editCompleted);
+    WrdUiModel *code = new WrdUiModel(this, &currentWrd, 0, ui->comboBox_SelectLabel->currentIndex());
+    WrdUiModel *params = new WrdUiModel(this, &currentWrd, 1);
+    WrdUiModel *strings = new WrdUiModel(this, &currentWrd, 2);
+    QObject::connect(code, &WrdUiModel::editCompleted, this, &MainWindow::on_editCompleted);
+    QObject::connect(params, &WrdUiModel::editCompleted, this, &MainWindow::on_editCompleted);
+    QObject::connect(strings, &WrdUiModel::editCompleted, this, &MainWindow::on_editCompleted);
     ui->tableCode->setModel(code);
     ui->tableParams->setModel(params);
     ui->tableStrings->setModel(strings);
@@ -184,7 +184,7 @@ void MainWindow::reloadLabelList()
 
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
-    ui->tableCode->setModel(new WrdDataModel(this, &currentWrd, 0, index));
+    ui->tableCode->setModel(new WrdUiModel(this, &currentWrd, 0, index));
     ui->tableCode->scrollToTop();
 
     for (int i = 0; i < currentWrd.code.at(index).count(); i++)

@@ -192,8 +192,16 @@
           <height>26</height>
          </size>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>+</string>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextOnly</enum>
         </property>
        </widget>
       </item>
@@ -211,8 +219,16 @@
           <height>26</height>
          </size>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>-</string>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextOnly</enum>
         </property>
        </widget>
       </item>
@@ -299,7 +315,7 @@
      <x>0</x>
      <y>0</y>
      <width>650</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -313,7 +329,7 @@
    </widget>
    <widget class="QMenu" name="menuOptions">
     <property name="title">
-     <string>Options</string>
+     <string>Optio&amp;ns</string>
     </property>
     <widget class="QMenu" name="menuString_Region">
      <property name="title">
@@ -370,7 +386,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>US</string>
+    <string>&amp;US</string>
    </property>
   </action>
   <action name="actionJP">
@@ -378,7 +394,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>JP</string>
+    <string>&amp;JP</string>
    </property>
   </action>
   <action name="actionFR">
@@ -386,7 +402,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>FR</string>
+    <string>&amp;FR</string>
    </property>
   </action>
   <action name="actionZH">
@@ -394,7 +410,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>ZH</string>
+    <string>&amp;ZH</string>
    </property>
   </action>
   <action name="actionCN">
@@ -402,7 +418,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>CN</string>
+    <string>&amp;CN</string>
    </property>
   </action>
  </widget>

@@ -5,11 +5,11 @@
 #include <QtWidgets/QTableView>
 #include "../utils/wrd.h"
 
-class WrdDataModel : public QAbstractTableModel
+class WrdUiModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    WrdDataModel(QObject *parent, WrdFile *file, const int mode, const int lbl = 0);
+    WrdUiModel(QObject *parent, WrdFile *file, const int mode, const int lbl = 0);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

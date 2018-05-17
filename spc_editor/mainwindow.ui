@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
+    <width>555</width>
     <height>480</height>
    </rect>
   </property>
@@ -20,12 +20,9 @@
    <property name="acceptDrops">
     <bool>true</bool>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QListWidget" name="listWidget">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
+     <widget class="QTableView" name="tableView">
       <property name="acceptDrops">
        <bool>true</bool>
       </property>
@@ -40,6 +37,147 @@
       </property>
      </widget>
     </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_Add">
+        <property name="minimumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>+</string>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextOnly</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_Delete">
+        <property name="minimumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>-</string>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextOnly</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_Up">
+        <property name="minimumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="arrowType">
+         <enum>Qt::UpArrow</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_Down">
+        <property name="minimumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="arrowType">
+         <enum>Qt::DownArrow</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -47,8 +185,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>500</width>
-     <height>20</height>
+     <width>555</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

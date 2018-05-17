@@ -1,4 +1,4 @@
-#include "dat_ui_models.h"
+#include "dat_ui_model.h"
 #include <QDataStream>
 #include <QMessageBox>
 
@@ -75,7 +75,7 @@ QVariant DatUiModel::data(const QModelIndex &index, int role) const
     {
     case 0:
     {
-        const QList<QByteArray> data = (*dat_file).data.at(row);
+        const QVector<QByteArray> data = (*dat_file).data.at(row);
         const QString data_type = (*dat_file).data_types.at(col);
 
         int pos = 0;
@@ -237,7 +237,7 @@ bool DatUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
         {
         case 0:
         {
-            QList<QByteArray> blank;
+            QVector<QByteArray> blank;
             for (const QString data_type : (*dat_file).data_types)
             {
                 if (data_type == "LABEL" || data_type == "ASCII" || data_type == "REFER" || data_type == "UTF16")

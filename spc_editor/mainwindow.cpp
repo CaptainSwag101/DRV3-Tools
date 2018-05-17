@@ -5,7 +5,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
-    ui->listWidget->setAcceptDrops(true);
+    ui->tableView->setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
@@ -101,7 +101,7 @@ void MainWindow::on_actionExtractSelected_triggered()
         return;
     }
 
-    QModelIndexList selectedIndexes = ui->listWidget->selectionModel()->selectedIndexes();
+    QModelIndexList selectedIndexes = ui->tableView->selectionModel()->selectedIndexes();
 
     QProgressDialog progressDlg("Extracting file", QString(), 0, selectedIndexes.count() - 1, this);
     progressDlg.setWindowModality(Qt::WindowModal);
@@ -112,7 +112,7 @@ void MainWindow::on_actionExtractSelected_triggered()
     bool skipAll = false;
     for (int i = 0; i < selectedIndexes.count(); i++)
     {
-        int index = ui->listWidget->selectionModel()->selectedIndexes().at(i).row();
+        int index = ui->tableView->selectionModel()->selectedIndexes().at(i).row();
         const SpcSubfile subfile = currentSpc.subfiles.at(index);
 
         progressDlg.setLabelText("Extracting file " + QString::number(i + 1) + "/" + QString::number(selectedIndexes.count()) + ": " + subfile.filename);
@@ -194,9 +194,9 @@ void MainWindow::reloadSubfileList()
         items.append(subfile.filename);
     }
 
-    ui->listWidget->clear();
-    ui->listWidget->addItems(items);
-    ui->listWidget->repaint();
+    ui->tableView->clear();
+    ui->tableView->addItems(items);
+    ui->tableView->repaint();
 }
 
 bool MainWindow::openFile(QString newFilepath)
@@ -217,7 +217,7 @@ bool MainWindow::openFile(QString newFilepath)
     f.close();
 
     this->setWindowTitle("SPC Editor: " + QFileInfo(newFilepath).fileName());
-    ui->listWidget->setEnabled(true);
+    ui->tableView->setEnabled(true);
     reloadSubfileList();
 
     return true;

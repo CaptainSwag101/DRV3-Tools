@@ -7,7 +7,6 @@ QString str_from_bytes(const QByteArray &data, int &pos, const int len, const QS
     if (codec.startsWith("UTF16", Qt::CaseInsensitive))
     {
         QString result;
-
         while (len < 0 || (pos - orig_pos) < len)
         {
             const ushort c = num_from_bytes<ushort>(data, pos);

@@ -29,7 +29,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
 
     for (int d = 0; d < struct_count; d++)
     {
-        QList<QByteArray> data;
+        QVector<QByteArray> data;
         for (int v = 0; v < result.data_types.count(); v++)
         {
             const QString data_type = result.data_types.at(v);

@@ -8,7 +8,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTableView>
-#include "dat_ui_models.h"
+#include "dat_ui_model.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {

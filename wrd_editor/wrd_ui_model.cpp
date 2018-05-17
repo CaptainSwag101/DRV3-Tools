@@ -1,14 +1,14 @@
-#include "wrd_ui_models.h"
+#include "wrd_ui_model.h"
 #include <QMessageBox>
 
-WrdDataModel::WrdDataModel(QObject * /*parent*/, WrdFile *file, const int mode, const int lbl)
+WrdUiModel::WrdUiModel(QObject * /*parent*/, WrdFile *file, const int mode, const int lbl)
 {
     wrd_file = file;
     data_mode = mode;
     label = lbl;
 }
 
-int WrdDataModel::rowCount(const QModelIndex & /*parent*/) const
+int WrdUiModel::rowCount(const QModelIndex & /*parent*/) const
 {
     switch (data_mode)
     {
@@ -26,7 +26,7 @@ int WrdDataModel::rowCount(const QModelIndex & /*parent*/) const
     }
 }
 
-int WrdDataModel::columnCount(const QModelIndex & /*parent*/) const
+int WrdUiModel::columnCount(const QModelIndex & /*parent*/) const
 {
     switch (data_mode)
     {
@@ -42,7 +42,7 @@ int WrdDataModel::columnCount(const QModelIndex & /*parent*/) const
     }
 }
 
-QVariant WrdDataModel::data(const QModelIndex &index, int role) const
+QVariant WrdUiModel::data(const QModelIndex &index, int role) const
 {
     if (role != Qt::DisplayRole && role != Qt::EditRole)
         return QVariant();
@@ -127,7 +127,7 @@ QVariant WrdDataModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-QVariant WrdDataModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant WrdUiModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (data_mode != 0 || role != Qt::DisplayRole || orientation != Qt::Horizontal)
         return QVariant();
@@ -145,7 +145,7 @@ QVariant WrdDataModel::headerData(int section, Qt::Orientation orientation, int 
     return QVariant();
 }
 
-bool WrdDataModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool WrdUiModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role != Qt::EditRole)
         return false;
@@ -181,7 +181,7 @@ bool WrdDataModel::setData(const QModelIndex &index, const QVariant &value, int 
             (*wrd_file).code[label][row].name = "UNKNOWN_CMD";
             (*wrd_file).code[label][row].arg_types.clear();
 
-            for (const WrdCmd known_cmd : known_commands)
+            for (const WrdCmd known_cmd : KNOWN_CMDS)
             {
                 if (val == known_cmd.opcode)
                 {
@@ -209,7 +209,7 @@ bool WrdDataModel::setData(const QModelIndex &index, const QVariant &value, int 
         else if (col == 1)
         {
             const QString argText = value.toString();
-            QList<ushort> result;
+            QVector<ushort> result;
 
             for (int argNum = 0; argNum < argText.length(); argNum += 4)
             {
@@ -265,7 +265,7 @@ bool WrdDataModel::setData(const QModelIndex &index, const QVariant &value, int 
     return true;
 }
 
-bool WrdDataModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
+bool WrdUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
         return false;
@@ -295,7 +295,7 @@ bool WrdDataModel::insertRows(int row, int count, const QModelIndex & /*parent*/
     return true;
 }
 
-bool WrdDataModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
+bool WrdUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
     if (count < 1 || row < 0 || row + count > rowCount())
         return false;
@@ -326,7 +326,7 @@ bool WrdDataModel::removeRows(int row, int count, const QModelIndex & /*parent*/
     return true;
 }
 
-bool WrdDataModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationRow)
+bool WrdUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationRow)
 {
     if (sourceRow < 0 || destinationRow + count > rowCount() || count <= 0)
         return false;
@@ -362,7 +362,7 @@ bool WrdDataModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow,
     return true;
 }
 
-Qt::ItemFlags WrdDataModel::flags(const QModelIndex &index) const
+Qt::ItemFlags WrdUiModel::flags(const QModelIndex &index) const
 {
     switch (data_mode)
     {

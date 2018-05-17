@@ -9,12 +9,12 @@ struct UTILS_EXPORT WrdCmd
 {
     uchar opcode;
     QString name;
-    QList<ushort> args;
-    QList<uchar> arg_types;  // 0 = flag, 1 = raw number, 2 = string
+    QVector<ushort> args;
+    QVector<uchar> arg_types;   // 0 = flag, 1 = raw number, 2 = string
 };
 
 // Official command names found in game_resident/command_label.dat
-static QList<WrdCmd> known_commands = {
+const WrdCmd KNOWN_CMDS[] = {
     {0x00, "FLG", {}, {0, 0}},              // Set Flag
     {0x01, "IFF", {}, {0, 0, 0}},           // If Flag
     {0x02, "WAK", {}, {0, 0, 0}},           // Wake? Work? (Seems to be used to configure game engine parameters)
@@ -99,14 +99,14 @@ struct UTILS_EXPORT WrdFile
     QStringList labels;
     QStringList params;
     QStringList strings;
-    QList<QList<WrdCmd>> code;
-    QList<uint> unk_data;
+    QVector<QVector<WrdCmd>> code;
+    QVector<uint> unk_data;
     bool external_strings;
 };
 
 UTILS_EXPORT WrdFile wrd_from_bytes(const QByteArray &bytes, QString filename);
 UTILS_EXPORT QByteArray wrd_to_bytes(const WrdFile &wrd);
-UTILS_EXPORT QList<QList<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
-UTILS_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
+//UTILS_EXPORT QVector<QVector<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
+//UTILS_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
 
 #endif // WRD_H

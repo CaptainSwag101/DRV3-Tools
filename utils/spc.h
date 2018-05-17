@@ -23,7 +23,7 @@ struct UTILS_EXPORT SpcFile
     QString filename;
     QByteArray unk1;
     uint unk2;
-    QList<SpcSubfile> subfiles;
+    QVector<SpcSubfile> subfiles;
 };
 
 UTILS_EXPORT SpcFile spc_from_bytes(const QByteArray &bytes);

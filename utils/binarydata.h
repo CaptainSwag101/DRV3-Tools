@@ -3,6 +3,7 @@
 #include "utils_global.h"
 #include <cmath>
 #include <QByteArray>
+#include <QVector>
 #include <QString>
 
 UTILS_EXPORT QString str_from_bytes(const QByteArray &data, int &pos, const int len = -1, const QString codec = "UTF8");
