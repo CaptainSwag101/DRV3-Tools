@@ -14,6 +14,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include "../utils/binarydata.h"
 #include "../utils/spc.h"
+#include "spc_ui_model.h"
 
 namespace Ui {
 class MainWindow;

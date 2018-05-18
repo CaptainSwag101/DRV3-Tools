@@ -151,7 +151,7 @@ void MainWindow::on_actionInjectFile_triggered()
 {
     QFileDialog dialog;
     dialog.setFileMode(QFileDialog::ExistingFile);
-    QString injectName = dialog.getOpenFileName(this, "Select file to inject", QString(), "All files (*.*);;SPC files (*.spc);;STX files (*.stx);;SRD files (*.srd);;WRD files (*.wrd)");
+    QString injectName = dialog.getOpenFileName(this, "Select file to add", QString(), "All files (*.*);;SPC files (*.spc);;STX files (*.stx);;SRD files (*.srd);;WRD files (*.wrd)");
     if (injectName.isEmpty())
     {
         return;
@@ -188,15 +188,13 @@ bool MainWindow::confirmUnsaved()
 
 void MainWindow::reloadSubfileList()
 {
-    QStringList items;
-    for (const SpcSubfile subfile : currentSpc.subfiles)
-    {
-        items.append(subfile.filename);
-    }
+    QAbstractItemModel *old = ui->tableView->model();
 
-    ui->tableView->clear();
-    ui->tableView->addItems(items);
-    ui->tableView->repaint();
+    SpcUiModel *model = new SpcUiModel(this, &currentSpc);
+    ui->tableView->setModel(model);
+
+    delete old;
+    old = nullptr;
 }
 
 bool MainWindow::openFile(QString newFilepath)
@@ -315,7 +313,7 @@ void MainWindow::injectFile(QString name, const QByteArray &fileData)
         currentSpc.subfiles.append(injectFile);
 
     unsavedChanges = true;
-    reloadSubfileList();
+    //reloadSubfileList();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

@@ -1,5 +1,5 @@
-#ifndef DAT_UI_MODELS_H
-#define DAT_UI_MODELS_H
+#ifndef DAT_UI_MODEL_H
+#define DAT_UI_MODEL_H
 
 #include <QAbstractTableModel>
 #include <QtWidgets/QTableView>
@@ -28,4 +28,4 @@ signals:
         void editCompleted(const QString &str);
 };
 
-#endif // DAT_UI_MODELS_H
+#endif // DAT_UI_MODEL_H

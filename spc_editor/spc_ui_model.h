@@ -1,5 +1,5 @@
-#ifndef WRD_UI_MODELS_H
-#define WRD_UI_MODELS_H
+#ifndef SPC_UI_MODEL_H
+#define SPC_UI_MODEL_H
 
 #include <QAbstractTableModel>
 #include <QtWidgets/QTableView>
@@ -27,4 +27,4 @@ signals:
     void editCompleted(const QString &str);
 };
 
-#endif // WRD_UI_MODELS_H
+#endif // SPC_UI_MODEL_H

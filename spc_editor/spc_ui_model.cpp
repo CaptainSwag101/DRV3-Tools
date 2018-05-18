@@ -1,4 +1,5 @@
 #include "spc_ui_model.h"
+#include <QFileInfo>
 #include <QMessageBox>
 
 SpcUiModel::SpcUiModel(QObject * /*parent*/, SpcFile *file)
@@ -28,11 +29,11 @@ QVariant SpcUiModel::data(const QModelIndex &index, int role) const
 
     if (col == 0)
     {
-        return subfile.filename;
+        return QString::number(subfile.cmp_flag);
     }
     else
     {
-        return QString::number(subfile.cmp_flag);
+        return subfile.filename;
     }
 
     return QVariant();
@@ -40,15 +41,15 @@ QVariant SpcUiModel::data(const QModelIndex &index, int role) const
 
 QVariant SpcUiModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (data_mode != 0 || role != Qt::DisplayRole || orientation != Qt::Horizontal)
+    if (role != Qt::DisplayRole || orientation != Qt::Horizontal)
         return QVariant();
 
     switch (section)
     {
     case 0:
-        return QString("Filename");
-    case 1:
         return QString("Compression flag");
+    case 1:
+        return QString("Filename");
     }
 
     return QVariant();
@@ -62,88 +63,61 @@ bool SpcUiModel::setData(const QModelIndex &index, const QVariant &value, int ro
     const int row = index.row();
     const int col = index.column();
 
-    // Filename
+    // Compression flag
     if (col == 0)
     {
-        const QString opText = value.toString();
+        bool ok;
+        uchar flag = (uchar)value.toUInt(&ok);
+        if (!ok || flag < 1 || flag > 2)
+        {
+            QMessageBox errorMsg(QMessageBox::Warning, "Error", "Invalid value.", QMessageBox::Ok);
+            errorMsg.exec();
+            return false;
+        }
+
+        if (flag == 1 && (*spc_file).subfiles[row].cmp_flag != 1)
+        {
+            (*spc_file).subfiles[row].data = spc_dec((*spc_file).subfiles[row].data, (*spc_file).subfiles[row].dec_size);
+            (*spc_file).subfiles[row].dec_size = (*spc_file).subfiles[row].data.size();
+        }
+        else if (flag == 2 && (*spc_file).subfiles[row].cmp_flag != 2)
+        {
+            (*spc_file).subfiles[row].data = spc_cmp((*spc_file).subfiles[row].data);
+            (*spc_file).subfiles[row].cmp_size = (*spc_file).subfiles[row].data.size();
+        }
+
+        (*spc_file).subfiles[row].cmp_flag = flag;
+    }
+    // Filename
+    else
+    {
+        const QString filename = value.toString().trimmed();
 
         // TODO: Ensure the filename only contains valid characters for a file path?
-        if (opText.length() != 2)
+        if (filename.isEmpty())
         {
-            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Opcode length must be exactly 2 hexadecimal digits (1 byte).", QMessageBox::Ok);
+            QMessageBox errorMsg(QMessageBox::Warning, "Filename Error", "You must enter a filename.", QMessageBox::Ok);
             errorMsg.exec();
             return false;
         }
 
-        bool ok;
-        const uchar val = (uchar)opText.toUInt(&ok, 16);
-        if (!ok)
+        for (int i = 0; i < (*spc_file).subfiles.count(); i++)
         {
-            QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Invalid hexadecimal value.", QMessageBox::Ok);
-            errorMsg.exec();
-            return false;
-        }
-
-        (*spc_file).code[label][row].opcode = val;
-        (*spc_file).code[label][row].name = "UNKNOWN_CMD";
-        (*spc_file).code[label][row].arg_types.clear();
-
-        for (const WrdCmd known_cmd : KNOWN_CMDS)
-        {
-            if (val == known_cmd.opcode)
+            if (filename.compare((*spc_file).subfiles.at(i).filename, Qt::CaseInsensitive) == 0)
             {
-                (*spc_file).code[label][row].name = known_cmd.name;
-                (*spc_file).code[label][row].arg_types = known_cmd.arg_types;
+                QMessageBox::StandardButton reply = QMessageBox::question(nullptr, "Confirm overwrite",
+                          filename + " already exists in this location. Would you like to overwrite it?",
+                          QMessageBox::Yes|QMessageBox::No);
+
+                if (reply == QMessageBox::No)
+                    return false;
+
+                (*spc_file).subfiles[row].filename = (*spc_file).subfiles[i].filename;
+                (*spc_file).subfiles[i] = (*spc_file).subfiles[row];
+                (*spc_file).subfiles.removeAt(row);
                 break;
             }
         }
-
-        if ((*spc_file).code[label][row].arg_types.count() != (*spc_file).code[label][row].args.count())
-        {
-            QMessageBox errorMsg(QMessageBox::Information,
-                                 "Unexpected Command Parameters",
-                                 "Opcode " + num_to_hex((*spc_file).code[label][row].opcode, 2) + " expected " + QString::number((*spc_file).code[label][row].arg_types.count()) + " args, but found " + QString::number((*spc_file).code[label][row].args.count()) + ".",
-                                 QMessageBox::Ok);
-            errorMsg.exec();
-
-            for (int i = (*spc_file).code[label][row].arg_types.count(); i < (*spc_file).code[label][row].args.count(); i++)
-            {
-                (*spc_file).code[label][row].arg_types.append(0);
-            }
-        }
-    }
-    // Args
-    else if (col == 1)
-    {
-        const QString argText = value.toString();
-        QVector<ushort> result;
-
-        for (int argNum = 0; argNum < argText.length(); argNum += 4)
-        {
-            const QString splitText = argText.mid(argNum, 4);
-            if (splitText.length() != 4)
-            {
-                QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Argument length must be a multiple of 4 hexadecimal digits (2 bytes).", QMessageBox::Ok);
-                errorMsg.exec();
-                return false;
-            }
-
-            bool ok;
-            const ushort val = splitText.toUShort(&ok, 16);
-            if (!ok)
-            {
-                QMessageBox errorMsg(QMessageBox::Warning, "Hex Conversion Error", "Invalid hexadecimal value.", QMessageBox::Ok);
-                errorMsg.exec();
-                return false;
-            }
-            result.append(val);
-        }
-
-        (*spc_file).code[label][row].args = result;
-
-        if ((*spc_file).code[label][row].arg_types.count() < (*spc_file).code[label][row].args.count())
-            for (int i = (*spc_file).code[label][row].arg_types.count(); i < (*spc_file).code[label][row].args.count(); i++)
-                (*spc_file).code[label][row].arg_types.append(0);
     }
 
     emit(editCompleted(value.toString()));
@@ -158,22 +132,10 @@ bool SpcUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
     beginInsertRows(QModelIndex(), row, row + count);
     for (int r = 0; r < count; r++)
     {
-        switch (data_mode)
-        {
-        case 0:
-        {
-            const WrdCmd cmd = {0xFF, "UNKNOWN_CMD", {}, {}};
-            (*spc_file).code[label].insert(row + r, cmd);
-            break;
-        }
-        case 1:
-            (*spc_file).params.insert(row + r, QString());
-            break;
-
-        case 2:
-            (*spc_file).strings.insert(row + r, QString());
-            break;
-        }
+        // TODO: Open a file dialog so the user can choose a file to add/replace.
+        // FIXME: We don't actually need to do anything here, we will just
+        // handle adding a new file from the main window directly, using
+        // on_actionInjectFile_triggered();
     }
     endInsertRows();
 
@@ -185,26 +147,19 @@ bool SpcUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
     if (count < 1 || row < 0 || row + count > rowCount())
         return false;
 
+    QMessageBox::StandardButton reply = QMessageBox::question(nullptr, "Confirm delete",
+              "Are you sure you want to delete " + (*spc_file).subfiles[row].filename + "?",
+              QMessageBox::Yes|QMessageBox::No);
+
+    if (reply == QMessageBox::No)
+        return false;
+
     // Keep removing at the same index, because the next item we want to delete
     // always takes the place of the previous one.
     beginRemoveRows(QModelIndex(), row, row + count);
     for (int r = 0; r < count; r++)
     {
-        switch (data_mode)
-        {
-        case 0:
-            (*spc_file).code[label].removeAt(row);
-            break;
-
-        case 1:
-            (*spc_file).params.removeAt(row);
-            break;
-
-        case 2:
-            (*spc_file).strings.removeAt(row);
-            break;
-        }
-
+        (*spc_file).subfiles.removeAt(row);
     }
     endRemoveRows();
 
@@ -227,20 +182,8 @@ bool SpcUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, i
     beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
-        switch (data_mode)
-        {
-        case 0:
-            (*spc_file).code[label].move(sourceRow + r, destinationRow + r);
-            break;
-
-        case 1:
-            (*spc_file).params.move(sourceRow + r, destinationRow + r);
-            break;
-
-        case 2:
-            (*spc_file).strings.move(sourceRow + r, destinationRow + r);
-            break;
-        }
+        (*spc_file).subfiles.move(sourceRow + r, destinationRow + r);
+        break;
     }
     endMoveRows();
 
@@ -249,19 +192,5 @@ bool SpcUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, i
 
 Qt::ItemFlags SpcUiModel::flags(const QModelIndex &index) const
 {
-    switch (data_mode)
-    {
-    case 0:
-        if (index.column() == 2)
-            return QAbstractTableModel::flags(index) & ~Qt::ItemIsEditable;
-        break;
-
-    case 1:
-    case 2:
-        if (index.column() == 0)
-            return QAbstractTableModel::flags(index) & ~Qt::ItemIsEditable;
-        break;
-    }
-
     return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 }
