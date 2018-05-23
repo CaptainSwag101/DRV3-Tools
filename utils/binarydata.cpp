@@ -42,7 +42,7 @@ QByteArray str_to_bytes(const QString &string, const bool utf16)
     QByteArray result;
     if (utf16)
     {
-        for (int i = 0; i < string.size(); i++)
+        for (int i = 0; i < string.size(); ++i)
         {
             result.append(num_to_bytes(string.at(i).unicode()));
         }

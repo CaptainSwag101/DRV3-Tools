@@ -28,7 +28,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
 
     // Read the name for each label.
     pos = label_names_ptr;
-    for (ushort i = 0; i < label_count; i++)
+    for (ushort i = 0; i < label_count; ++i)
     {
         const uchar label_name_len = bytes.at(pos++) + 1;    // Include null terminator
         QString label_name = str_from_bytes(bytes, pos, label_name_len);
@@ -41,7 +41,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     // sequentially, and then split after every occurrence of 0x7014.
     // But let's do it the more complex way for now.
     const int header_end = 0x20;
-    for (int label_num = 0; label_num < label_count; label_num++)
+    for (int label_num = 0; label_num < label_count; ++label_num)
     {
         QVector<WrdCmd> label_cmds;
 
@@ -99,7 +99,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
                 qDebug() << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
 
                 /*
-                for (int i = cmd.arg_types.count(); i < cmd.args.count(); i++)
+                for (int i = cmd.arg_types.count(); i < cmd.args.count(); ++i)
                 {
                     cmd.arg_types.append(0);
                 }
@@ -115,7 +115,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
 
     // Read unknown data
     pos = unk_ptr;
-    for (ushort i = 0; i < unk_count; i++)
+    for (ushort i = 0; i < unk_count; ++i)
     {
         result.unk_data.append(num_from_bytes<uint>(bytes, pos, true));
     }
@@ -123,7 +123,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
 
     // Read command/argument names.
     pos = flags_ptr;
-    for (ushort i = 0; i < flag_count; i++)
+    for (ushort i = 0; i < flag_count; ++i)
     {
         uchar length = bytes.at(pos++) + 1;  // Include null terminator
         QString value = str_from_bytes(bytes, pos, length);
@@ -135,7 +135,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     if (str_ptr > 0)    // Text is stored internally.
     {
         pos = str_ptr;
-        for (ushort i = 0; i < str_count; i++)
+        for (ushort i = 0; i < str_count; ++i)
         {
             uint str_len = (uint)bytes.at(pos++);
 
@@ -197,7 +197,7 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     QByteArray code_data;
     QByteArray code_offsets;
     QByteArray label_names_data;
-    for (int i = 0; i < wrd_file.labels.count(); i++)
+    for (int i = 0; i < wrd_file.labels.count(); ++i)
     {
         const QByteArray lbldata = str_to_bytes(wrd_file.labels.at(i));
         label_names_data.append((uchar)(lbldata.size() - 1));

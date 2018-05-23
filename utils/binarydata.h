@@ -43,14 +43,14 @@ template <typename T> QByteArray num_to_bytes(T num, const bool big_endian = fal
 
     if (big_endian)
     {
-        for (int i = 0; i < arr_size; i++)
+        for (int i = 0; i < arr_size; ++i)
         {
             result[i] = byte_array[arr_size - i - 1];
         }
     }
     else
     {
-        for (int i = 0; i < arr_size; i++)
+        for (int i = 0; i < arr_size; ++i)
         {
             result[i] = byte_array[i];
         }

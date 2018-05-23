@@ -16,7 +16,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
         throw 1;
     }
 
-    for (int v = 0; v < var_count; v++)
+    for (int v = 0; v < var_count; ++v)
     {
         const QString var_name = str_from_bytes(bytes, pos);
         const QString var_type = str_from_bytes(bytes, pos);
@@ -27,10 +27,10 @@ DatFile dat_from_bytes(const QByteArray &bytes)
 
     pos += (0x10 - (pos % 0x10)) % 0x10;
 
-    for (int d = 0; d < struct_count; d++)
+    for (int d = 0; d < struct_count; ++d)
     {
         QVector<QByteArray> data;
-        for (int v = 0; v < result.data_types.count(); v++)
+        for (int v = 0; v < result.data_types.count(); ++v)
         {
             const QString data_type = result.data_types.at(v);
             QByteArray var;
@@ -53,7 +53,7 @@ DatFile dat_from_bytes(const QByteArray &bytes)
     const ushort label_count = num_from_bytes<ushort>(bytes, pos);
     const ushort refer_count = num_from_bytes<ushort>(bytes, pos);
 
-    for (ushort s = 0; s < label_count; s++)
+    for (ushort s = 0; s < label_count; ++s)
     {
         const QString str = str_from_bytes(bytes, pos);
         result.labels.append(str);
@@ -87,14 +87,14 @@ QByteArray dat_to_bytes(const DatFile &dat_file)
     QByteArray result;
 
     int struct_size = 0;
-    for (int s = 0; s < dat_file.data.at(0).count(); s++)
+    for (int s = 0; s < dat_file.data.at(0).count(); ++s)
         struct_size += dat_file.data.at(0).at(s).size();
 
     result.append(num_to_bytes<uint>(dat_file.data.count()));       // struct_count
     result.append(num_to_bytes<uint>(struct_size));                 // struct_size
     result.append(num_to_bytes<uint>(dat_file.data_types.count())); // var_count
 
-    for (int v = 0; v < dat_file.data_types.count(); v++)
+    for (int v = 0; v < dat_file.data_types.count(); ++v)
     {
         result.append(str_to_bytes(dat_file.data_names.at(v)));
         result.append(str_to_bytes(dat_file.data_types.at(v)));
@@ -104,9 +104,9 @@ QByteArray dat_to_bytes(const DatFile &dat_file)
 
     result.append((0x10 - (result.size() % 0x10)) % 0x10, 0x00);    // padding
 
-    for (int d = 0; d < dat_file.data.count(); d++)
+    for (int d = 0; d < dat_file.data.count(); ++d)
     {
-        for (int v = 0; v < dat_file.data_types.count(); v++)
+        for (int v = 0; v < dat_file.data_types.count(); ++v)
         {
             result.append(dat_file.data.at(d).at(v));
         }

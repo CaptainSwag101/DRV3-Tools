@@ -193,7 +193,7 @@ void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 
         if (cmd.arg_types.count() != cmd.args.count())
         {
-            if (cmd.opcode != 0x01) // IFF command can have a variable number of parameters
+            if (cmd.opcode != 0x01 && cmd.opcode != 0x03) // IFF/IFW command can have a variable number of parameters
             {
                 QMessageBox errorMsg(QMessageBox::Information,
                                      "Unexpected Command Parameters",

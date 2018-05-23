@@ -27,7 +27,8 @@ SOURCES += \
     wrd.cpp \
     stx.cpp \
     spc.cpp \
-    dat.cpp
+    dat.cpp \
+    srd.cpp
 
 HEADERS += \
     utils_global.h \
@@ -35,7 +36,8 @@ HEADERS += \
     wrd.h \
     stx.h \
     spc.h \
-    dat.h
+    dat.h \
+    srd.h
 
 unix {
     target.path = /usr/lib

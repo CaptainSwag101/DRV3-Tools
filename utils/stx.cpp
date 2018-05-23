@@ -20,7 +20,7 @@ QStringList get_stx_strings(const QByteArray &bytes)
     const uint unk2 = num_from_bytes<uint>(bytes, pos);
     const uint table_len = num_from_bytes<uint>(bytes, pos);
 
-    for (uint i = 0; i < table_len; i++)
+    for (uint i = 0; i < table_len; ++i)
     {
         pos = table_off + (8 * i);
         const uint str_id = num_from_bytes<uint>(bytes, pos);
@@ -49,7 +49,7 @@ QByteArray repack_stx_strings(QStringList strings)
 
     int *offsets = new int[table_len];
     int highest_index = 0;
-    for (int i = 0; i < table_len; i++)
+    for (int i = 0; i < table_len; ++i)
     {
         result.append((table_off + (i * 8)) - (result.size()), (char)0x00); // padding
 
@@ -80,7 +80,7 @@ QByteArray repack_stx_strings(QStringList strings)
     }
 
     QStringList written;
-    for (int i = 0; i < table_len; i++)
+    for (int i = 0; i < table_len; ++i)
     {
         if (written.contains(strings[i]))
             continue;

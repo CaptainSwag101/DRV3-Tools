@@ -33,7 +33,7 @@ SpcFile spc_from_bytes(const QByteArray &bytes)
         throw 2;
     }
 
-    for (uint i = 0; i < file_count; i++)
+    for (uint i = 0; i < file_count; ++i)
     {
         SpcSubfile subfile;
 
@@ -140,7 +140,7 @@ QByteArray spc_dec(const QByteArray &bytes, int dec_size)
             const char count = (b >> 10) + 2;
             const short offset = b & 1023;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; ++i)
             {
                 const int reverse_index = result.size() - 1024 + offset;
                 result.append(result.at(reverse_index));
@@ -397,7 +397,7 @@ QByteArray srd_dec_chunk(const QByteArray &chunk, QString cmp_mode)
             const int count = (b & mask) >> 1;
             const int offset = ((b >> shift) << 8) | chunk.at(pos++);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; ++i)
             {
                 const int reverse_index = result.size() - offset;
                 result.append(result.at(reverse_index));
