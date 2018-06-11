@@ -12,17 +12,17 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     result.filename = in_file;
     ushort str_count = num_from_bytes<ushort>(bytes, pos);
     ushort label_count = num_from_bytes<ushort>(bytes, pos);
-    ushort flag_count = num_from_bytes<ushort>(bytes, pos);
-    uint unk_count = num_from_bytes<ushort>(bytes, pos);
+    ushort param_count = num_from_bytes<ushort>(bytes, pos);
+    ushort sublabel_count = num_from_bytes<ushort>(bytes, pos);
 
     // padding?
     //uint unk = bytes_to_num<uint>(data, pos);
     pos += 4;
 
-    uint unk_ptr = num_from_bytes<uint>(bytes, pos);
+    uint sublabel_offsets_ptr = num_from_bytes<uint>(bytes, pos);
     uint label_offsets_ptr = num_from_bytes<uint>(bytes, pos);
     uint label_names_ptr = num_from_bytes<uint>(bytes, pos);
-    uint flags_ptr = num_from_bytes<uint>(bytes, pos);
+    uint params_ptr = num_from_bytes<uint>(bytes, pos);
     uint str_ptr = num_from_bytes<uint>(bytes, pos);
 
 
@@ -50,7 +50,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
         pos = header_end + label_offset;
 
         // We need at least 2 bytes for a command
-        while (pos + 1 < unk_ptr)
+        while (pos + 1 < sublabel_offsets_ptr)
         {
             const uchar b = bytes.at(pos++);
             if (b != 0x70)
@@ -79,7 +79,7 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
             }
 
             // We need at least 2 bytes for each arg
-            while (pos < unk_ptr - 1)
+            while (pos < sublabel_offsets_ptr - 1)
             {
                 const ushort arg = num_from_bytes<ushort>(bytes, pos, true);
 
@@ -113,17 +113,23 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     }
 
 
-    // Read unknown data
-    pos = unk_ptr;
-    for (ushort i = 0; i < unk_count; ++i)
+    // Read sublabel offsets
+    // NOTE: We don't actually need to do this, since we don't use this data for anything
+    // and it just gets re-calculated when we save the file anyway.
+    /*
+    pos = sublabel_offsets_ptr;
+    for (ushort i = 0; i < sublabel_count; ++i)
     {
-        result.unk_data.append(num_from_bytes<uint>(bytes, pos, true));
+        // sublabel number
+        pos += 2;
+        result.sublabel_offsets.append(num_from_bytes<ushort>(bytes, pos));
     }
+    */
 
 
     // Read command/argument names.
-    pos = flags_ptr;
-    for (ushort i = 0; i < flag_count; ++i)
+    pos = params_ptr;
+    for (ushort i = 0; i < param_count; ++i)
     {
         uchar length = bytes.at(pos++) + 1;  // Include null terminator
         QString value = str_from_bytes(bytes, pos, length);
@@ -191,12 +197,13 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     result.append(num_to_bytes((ushort)wrd_file.strings.count()));
     result.append(num_to_bytes((ushort)wrd_file.labels.count()));
     result.append(num_to_bytes((ushort)wrd_file.params.count()));
-    result.append(num_to_bytes((ushort)wrd_file.unk_data.count()));
+    //result.append(num_to_bytes((ushort)wrd_file.sublabel_offsets.count()));
     result.append(QByteArray(4, 0x00));
 
     QByteArray code_data;
     QByteArray code_offsets;
     QByteArray label_names_data;
+    QVector<ushort> sublabel_offsets;
     for (int i = 0; i < wrd_file.labels.count(); ++i)
     {
         const QByteArray lbldata = str_to_bytes(wrd_file.labels.at(i));
@@ -208,6 +215,14 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
         const QVector<WrdCmd> cur_label_cmds = wrd_file.code.at(i);
         for (const WrdCmd cmd : cur_label_cmds)
         {
+            // Re-calculate sublabel offsets
+            if (cmd.opcode == 0x4A) // "LBN"
+            {
+                // The current data size value is also equal to
+                // the current opcode's location.
+                sublabel_offsets.append(code_data.size());
+            }
+
             code_data.append((uchar)0x70);
             code_data.append(cmd.opcode);
             for (const ushort arg : cmd.args)
@@ -217,10 +232,12 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
         }
     }
 
-    QByteArray unk_data_bytes;
-    for (const uint unk : wrd_file.unk_data)
+    result.append(num_to_bytes((ushort)sublabel_offsets.count()));
+    QByteArray sublabel_offsets_bytes;
+    for (int i = 0; i < sublabel_offsets.count(); ++i)
     {
-        unk_data_bytes.append(num_to_bytes(unk, true));
+        sublabel_offsets_bytes.append(num_to_bytes<ushort>(i));                 // sublabel number
+        sublabel_offsets_bytes.append(num_to_bytes(sublabel_offsets.at(i)));    // sublabel offset
     }
 
     QByteArray flags_data;
@@ -233,9 +250,9 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
 
 
     const uint header_end = 0x20;
-    const uint unk_ptr = header_end + code_data.size();
-    result.append(num_to_bytes(unk_ptr));               // unk_ptr
-    const uint code_offsets_ptr = unk_ptr + unk_data_bytes.size();
+    const uint sublabel_offsets_ptr = header_end + code_data.size();
+    result.append(num_to_bytes(sublabel_offsets_ptr));  // sublabel_offsets_ptr
+    const uint code_offsets_ptr = sublabel_offsets_ptr + sublabel_offsets_bytes.size();
     result.append(num_to_bytes(code_offsets_ptr));      // code_offsets_ptr
     const uint label_names_ptr = code_offsets_ptr + code_offsets.size();
     result.append(num_to_bytes(label_names_ptr));       // label_names_ptr
@@ -251,7 +268,7 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
 
     // Now that the offsets/ptrs to the data have been calculated, append the actual data
     result.append(code_data);
-    result.append(unk_data_bytes);
+    result.append(sublabel_offsets_bytes);
     result.append(code_offsets);
     result.append(label_names_data);
     result.append(flags_data);

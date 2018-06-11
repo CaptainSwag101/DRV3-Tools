@@ -100,7 +100,7 @@ struct UTILS_EXPORT WrdFile
     QStringList params;
     QStringList strings;
     QVector<QVector<WrdCmd>> code;
-    QVector<uint> unk_data;
+    //QVector<ushort> sublabel_offsets;
     bool external_strings;
 };
 
