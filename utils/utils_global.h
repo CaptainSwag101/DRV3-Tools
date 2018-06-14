@@ -1,6 +1,7 @@
 #ifndef UTILS_GLOBAL_H
 #define UTILS_GLOBAL_H
 
+#include <QDebug>
 #include <QtCore/qglobal.h>
 #include <QTextStream>
 

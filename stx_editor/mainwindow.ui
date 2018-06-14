@@ -10,6 +10,9 @@
     <height>600</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>STX Editor</string>
   </property>
@@ -19,6 +22,9 @@
      <widget class="QListWidget" name="listWidget">
       <property name="enabled">
        <bool>false</bool>
+      </property>
+      <property name="acceptDrops">
+       <bool>true</bool>
       </property>
       <property name="inputMethodHints">
        <set>Qt::ImhMultiLine</set>

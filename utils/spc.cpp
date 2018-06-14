@@ -161,12 +161,115 @@ QByteArray spc_dec(const QByteArray &bytes, int dec_size)
 // If we did find a duplicate sequence, and it is adjacent to the readahead area,
 // see how many bytes of that sequence can be repeated until we encounter
 // a non-duplicate byte or reach the end of the readahead area.
-QByteArray spc_cmp(const QByteArray &bytes)
+QByteArray spc_cmp_new(const QByteArray &dec_data)
 {
-    const int data_len = bytes.size();
+    const int DEC_SIZE = dec_data.size();
+    const int SEQUENCES_PER_BLOCK = 8;    // Number of uncompressed sequences to be compressed in each block.
+    const int CMP_POS_BITS = 10;        // Length in bits of the "dictionary position" for a compressed sequence.
+    const int CMP_LEN_BITS = 6;         // Length in bits of the "sequence length" for a compressed sequence.
+    const int CMP_SEQ_SIZE = (CMP_POS_BITS + CMP_LEN_BITS) / 8;     // Size in bytes of a compressed sequence.
+    const int MAX_BLOCK_SIZE = SEQUENCES_PER_BLOCK * CMP_SEQ_SIZE;    // The final size of the block may be smaller than this, but not bigger.
 
-    QByteArray result;
-    result.reserve(data_len);
+    QByteArray cmp_data;
+    cmp_data.reserve(DEC_SIZE);
+    QByteArray block;
+    block.reserve(MAX_BLOCK_SIZE);
+
+    int pos = 0;
+    int flag = 0;
+    char cur_flag_bit = 0;
+
+    // This repeats until we've stored the final compressed block,
+    // after we reach the end of the uncompressed data.
+    while (true)
+    {
+        // At the end of each 8-byte block (or the end of the uncompressed data),
+        // append the flag and compressed block to the compressed data.
+        if (cur_flag_bit == SEQUENCES_PER_BLOCK || pos >= DEC_SIZE)
+        {
+            flag = bit_reverse(flag);
+            cmp_data.append(flag);
+            cmp_data.append(block);
+
+            block.clear();
+            block.reserve(MAX_BLOCK_SIZE);
+
+            flag = 0;
+            cur_flag_bit = 0;
+        }
+
+        if (pos >= DEC_SIZE)
+            break;
+
+
+
+        const int lookahead_len = std::min(DEC_SIZE - pos, (int)std::pow(2, CMP_LEN_BITS) + 1);
+        const QByteArray lookahead = dec_data.mid(pos, lookahead_len);
+        const int searchback_len = std::min(pos, (int)std::pow(2, CMP_POS_BITS) - 1);
+        // NOTE: When pos == 0, the
+        const QByteArray window = dec_data.mid((pos - 1) - (searchback_len - 1), searchback_len + lookahead_len);
+
+        // Find the largest matching sequence in the window.
+        int s = -1;
+        int l = 1;
+        QByteArray seq;
+        seq.reserve((int)std::pow(2, CMP_LEN_BITS) + 1);
+        seq.append(lookahead.at(0));
+        for (l; l < lookahead_len; ++l)
+        {
+            const int last_s = s;
+            if (searchback_len < 1)
+                break;
+
+            s = window.lastIndexOf(seq, searchback_len - 1);    // For some reason this sometimes returns -1 even when it's successful?
+
+            if (s == -1)
+            {
+                if (l > 1)
+                {
+                    --l;
+                    seq.chop(1);
+                }
+                s = last_s;
+                break;
+            }
+
+            seq.append(lookahead.at(l));
+        }
+
+        // if (seq.size() >= CMP_SEQ_SIZE)
+        if (l >= CMP_SEQ_SIZE && s != -1)
+        {
+            // We found a duplicate sequence
+            ushort repeat_data = 0;
+            repeat_data |= (int)std::pow(2, CMP_POS_BITS) - searchback_len + s;
+            repeat_data |= (l - CMP_SEQ_SIZE) << CMP_POS_BITS;
+            block.append(num_to_bytes<ushort>(repeat_data));
+        }
+        else
+        {
+            // We found a new raw byte
+            flag |= (1 << cur_flag_bit);
+            block.append(seq);
+        }
+
+
+        ++cur_flag_bit;
+        // Seek forward to the end of the duplicated sequence,
+        // in case it continued into the lookahead buffer.
+        pos += l;
+    }
+
+    return cmp_data;
+}
+
+
+QByteArray spc_cmp(const QByteArray &dec_data)
+{
+    const int data_len = dec_data.size();
+
+    QByteArray cmp_data;
+    cmp_data.reserve(data_len);
     QByteArray block;
     block.reserve(16);
 
@@ -181,8 +284,8 @@ QByteArray spc_cmp(const QByteArray &bytes)
         if (cur_flag_bit > 7 || pos >= data_len)
         {
             flag = bit_reverse(flag);
-            result.append(flag);
-            result.append(block);
+            cmp_data.append(flag);
+            cmp_data.append(block);
             block.clear();
             block.reserve(16);   // Max possible size per compressed block: 16 bytes
 
@@ -201,8 +304,8 @@ QByteArray spc_cmp(const QByteArray &bytes)
         int found_index = -1;
         //int longest_dupe_len = 1;
 
-        // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos"
-        const QByteArray window = bytes.mid(window_end - window_len, window_len);
+        // Use "data.mid()" instead of "get_bytes(data)" so we don't auto-increment "pos".
+        const QByteArray window = dec_data.mid(window_end - window_len, window_len);
 
         QByteArray seq;
         seq.reserve(readahead_len);
@@ -210,9 +313,9 @@ QByteArray spc_cmp(const QByteArray &bytes)
 
         while (pos < data_len && seq.size() < readahead_len && seq.size() <= window_len)
         {
-            seq.append(bytes.at(pos++));
+            seq.append(dec_data.at(pos++));
 
-            // We need to do this -1 here because QByteArrays are \000 terminated
+            // We need to do this "-1" here because QByteArrays are \000 terminated.
             const int new_index = window.lastIndexOf(seq, window_len - 1);
 
             // If the current sequence is not a duplicate,
@@ -232,7 +335,7 @@ QByteArray spc_cmp(const QByteArray &bytes)
             {
                 while (pos < data_len && new_index + seq.size() < window_len && seq.size() < readahead_len)
                 {
-                    char c = bytes.at(pos++);
+                    char c = dec_data.at(pos++);
                     int check_index = new_index + seq.size();
                     if (window.at(check_index) == c)
                     {
@@ -257,7 +360,7 @@ QByteArray spc_cmp(const QByteArray &bytes)
                 while (seq.size() < readahead_len && pos < data_len)
                 {
                     const int dupe_index = (pos - window_end) % orig_seq_size;
-                    const char c = bytes.at(pos++);
+                    const char c = dec_data.at(pos++);
                     // Check if the next byte exists in the previous
                     // repeated segment of our sequence.
                     if (c == seq.at(dupe_index))
@@ -308,7 +411,7 @@ QByteArray spc_cmp(const QByteArray &bytes)
         cur_flag_bit++;
     }
 
-    return result;
+    return cmp_data;
 }
 
 QByteArray srd_dec(const QByteArray &bytes)

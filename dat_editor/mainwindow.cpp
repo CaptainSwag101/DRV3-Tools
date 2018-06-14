@@ -8,6 +8,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTableView>
+#include <QTextCodec>
 #include "dat_ui_model.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -198,4 +199,71 @@ void MainWindow::dropEvent(QDropEvent *event)
             }
         }
     }
+}
+
+void MainWindow::on_actionImportCsv_triggered()
+{
+    /*
+    if (!confirmUnsaved()) return;
+
+    if (newFilepath.isEmpty())
+    {
+        newFilepath = QFileDialog::getOpenFileName(this, "Open CSV file", QString(), "CSV files (*.csv);;All files (*.*)");
+    }
+    if (newFilepath.isEmpty()) return;
+
+    QFile f(newFilepath);
+    if (!f.open(QFile::ReadOnly)) return;
+
+    f.close();
+
+    //this->setWindowTitle("DAT Editor: " + QFileInfo(newFilepath).fileName());
+    ui->tableData->setModel(new DatUiModel(this, &currentDat, 0));
+    ui->tableStringsAscii->setModel(new DatUiModel(this, &currentDat, 1));
+    ui->tableStringsUtf16->setModel(new DatUiModel(this, &currentDat, 2));
+
+    ui->centralWidget->setEnabled(true);
+    ui->tableData->scrollToTop();
+    ui->tableStringsAscii->scrollToTop();
+    ui->tableStringsUtf16->scrollToTop();
+    */
+}
+
+void MainWindow::on_actionExportCsv_triggered()
+{
+    QString csvFilename = currentDat.filename;
+    csvFilename.replace(".dat", ".csv", Qt::CaseInsensitive);
+
+    csvFilename = QFileDialog::getSaveFileName(this, "Export CSV file", csvFilename, "CSV files (*.csv);;All files (*.*)");
+    if (csvFilename.isEmpty()) return;
+
+    QFile f(csvFilename);
+    if (!f.open(QFile::WriteOnly)) return;
+
+    QTextStream text(&f);
+    text.setCodec(QTextCodec::codecForName("UTF-8"));
+
+    QAbstractItemModel *model = ui->tableData->model();
+    for (int row = -1; row < model->rowCount(); ++row)
+    {
+        for (int col = 0; col < model->columnCount(); ++col)
+        {
+            // Write header names first
+            if (row == -1)
+            {
+                text << currentDat.data_names.at(col) + " " + currentDat.data_types.at(col);
+            }
+            else
+            {
+                text << model->index(row, col).data().toString();
+            }
+
+            text << ",";
+        }
+
+        text << "\n";
+    }
+    text.flush();
+    f.flush();
+    f.close();
 }

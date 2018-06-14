@@ -10,6 +10,9 @@
     <height>450</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>DAT Editor</string>
   </property>
@@ -17,9 +20,15 @@
    <property name="enabled">
     <bool>false</bool>
    </property>
+   <property name="acceptDrops">
+    <bool>true</bool>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="acceptDrops">
+       <bool>true</bool>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -54,7 +63,7 @@
            <bool>false</bool>
           </property>
           <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>150</number>
+           <number>200</number>
           </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
@@ -315,7 +324,7 @@
      <x>0</x>
      <y>0</y>
      <width>650</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -327,7 +336,15 @@
     <addaction name="actionSaveAs"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <addaction name="actionImportCsv"/>
+    <addaction name="actionExportCsv"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -359,6 +376,19 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionImportCsv">
+   <property name="text">
+    <string>&amp;Import from CSV...</string>
+   </property>
+   <property name="toolTip">
+    <string>ImportCsv</string>
+   </property>
+  </action>
+  <action name="actionExportCsv">
+   <property name="text">
+    <string>&amp;Export as CSV...</string>
    </property>
   </action>
  </widget>

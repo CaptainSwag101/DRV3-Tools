@@ -47,6 +47,7 @@ private:
     void extractFile(QString outDir, const SpcSubfile &subfile);
     void injectFile(QString name, const QByteArray &fileData);
 
+
     Ui::MainWindow *ui;
     SpcFile currentSpc;
     bool unsavedChanges = false;

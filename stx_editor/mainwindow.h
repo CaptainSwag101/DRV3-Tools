@@ -34,13 +34,14 @@ private slots:
     void on_actionExit_triggered();
     void closeEvent(QCloseEvent *event);
     void on_textBox_textChanged();
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
 
 private:
     bool confirmUnsaved();
     bool openFile(QString newFilepath = QString());
     void reloadStrings();
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dropEvent(QDropEvent *event);
+
 
     Ui::MainWindow *ui;
     QFileDialog openStx;

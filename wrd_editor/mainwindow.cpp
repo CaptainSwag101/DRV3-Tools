@@ -12,7 +12,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->tableCode->setColumnWidth(1, 180);
+    //ui->tableCode->setColumnWidth(1, 180);
 }
 
 MainWindow::~MainWindow()

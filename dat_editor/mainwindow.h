@@ -31,14 +31,17 @@ private slots:
     void on_toolButton_Del_clicked();
     void on_toolButton_Up_clicked();
     void on_toolButton_Down_clicked();
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
+    void on_actionImportCsv_triggered();
+    void on_actionExportCsv_triggered();
 
 private:
     bool confirmUnsaved();
     bool openFile(QString newFilepath = QString());
     bool saveFile(QString newFilepath = QString());
     void reloadAllLists();
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dropEvent(QDropEvent *event);
+
 
     Ui::MainWindow *ui;
     DatFile currentDat;

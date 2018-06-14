@@ -4,8 +4,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    ui->tableView->setAcceptDrops(true);
+    //ui->tableView->setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()

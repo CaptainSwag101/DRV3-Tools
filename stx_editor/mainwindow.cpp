@@ -27,10 +27,12 @@ bool MainWindow::confirmUnsaved()
     if (reply == QMessageBox::Yes)
     {
         on_actionSave_triggered();
+        unsavedChanges = false;
         return true;
     }
     else if (reply == QMessageBox::No)
     {
+        unsavedChanges = false;
         return true;
     }
     return false;

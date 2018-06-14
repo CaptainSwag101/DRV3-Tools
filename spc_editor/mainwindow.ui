@@ -23,6 +23,9 @@
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QTableView" name="tableView">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="acceptDrops">
        <bool>true</bool>
       </property>

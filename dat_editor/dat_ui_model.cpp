@@ -141,7 +141,7 @@ QVariant DatUiModel::data(const QModelIndex &index, int role) const
 
 QVariant DatUiModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (data_mode != 0 || orientation != Qt::Horizontal)
+    if (data_mode != 0 || role != Qt::DisplayRole || orientation != Qt::Horizontal)
         return QVariant();
 
     return (*dat_file).data_names.at(section) + " " + (*dat_file).data_types.at(section);

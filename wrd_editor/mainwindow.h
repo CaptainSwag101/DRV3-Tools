@@ -37,6 +37,8 @@ private slots:
     void on_actionFR_toggled(bool checked);
     void on_actionZH_toggled(bool checked);
     void on_actionCN_toggled(bool checked);
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
 
 private:
     bool confirmUnsaved();
@@ -44,8 +46,7 @@ private:
     bool saveFile(QString newFilepath = QString());
     void reloadAllLists();
     void reloadLabelList();
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dropEvent(QDropEvent *event);
+
 
     Ui::MainWindow *ui;
     WrdFile currentWrd;
