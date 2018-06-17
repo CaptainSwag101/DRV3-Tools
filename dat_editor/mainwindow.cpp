@@ -203,30 +203,102 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::on_actionImportCsv_triggered()
 {
-    /*
     if (!confirmUnsaved()) return;
 
-    if (newFilepath.isEmpty())
-    {
-        newFilepath = QFileDialog::getOpenFileName(this, "Open CSV file", QString(), "CSV files (*.csv);;All files (*.*)");
-    }
-    if (newFilepath.isEmpty()) return;
+    QString csvFilename = QFileDialog::getOpenFileName(this, "Open CSV file", QString(), "CSV files (*.csv);;All files (*.*)");
 
-    QFile f(newFilepath);
+    if (csvFilename.isEmpty()) return;
+
+    QFile f(csvFilename);
     if (!f.open(QFile::ReadOnly)) return;
+
+    DatFile newDat;
+    QTextStream text(&f);
+    text.setCodec(QTextCodec::codecForName("UTF-8"));
+    for (int row = -1; !text.atEnd(); ++row)
+    {
+        QStringList items = text.readLine().split(',', QString::SkipEmptyParts);
+        QVector<QByteArray> dataLine;
+
+        for (int col = 0; col < items.count(); ++col)
+        {
+            // First line is the headers (data names & types)
+            if (row == -1)
+            {
+                const QStringList split = items.at(col).split(' ', QString::SkipEmptyParts);
+                newDat.data_names.append(split.at(0));
+                newDat.data_types.append(split.at(1));
+                continue;
+            }
+
+            const QString type = currentDat.data_types.at(col);
+
+            bool ok;
+            QByteArray val;
+            if (type == "LABEL" || type == "ASCII" || type == "REFER" || type == "UTF16")
+            {
+                val = num_to_bytes(items.at(col).toUShort(&ok));
+            }
+            else if (type.startsWith("u"))
+            {
+                if (type.right(2) == "16")
+                    val = num_to_bytes(items.at(col).toUShort(&ok));
+                else if (type.right(2) == "32")
+                    val = num_to_bytes(items.at(col).toUInt(&ok));
+                else if (type.right(2) == "64")
+                    val = num_to_bytes(items.at(col).toULongLong(&ok));
+            }
+            else if (type.startsWith("s"))
+            {
+                if (type.right(2) == "16")
+                    val = num_to_bytes(items.at(col).toShort(&ok));
+                else if (type.right(2) == "32")
+                    val = num_to_bytes(items.at(col).toInt(&ok));
+                else if (type.right(2) == "64")
+                    val = num_to_bytes(items.at(col).toLongLong(&ok));
+            }
+            else if (type.startsWith("f"))
+            {
+                if (type.right(2) == "32")
+                    val = num_to_bytes(items.at(col).toFloat(&ok));
+                else if (type.right(2) == "64")
+                    val = num_to_bytes(items.at(col).toDouble(&ok));
+            }
+
+            if (!ok)
+            {
+                QMessageBox errorMsg(QMessageBox::Warning,
+                                     "Conversion Error",
+                                     "Expected a number at line " + QString::number(row + 1) + ", item " + QString::number(col) + ", but got \"" + items.at(col) + "\". Import has been aborted.",
+                                     QMessageBox::Ok);
+                f.close();
+                errorMsg.exec();
+                return;
+            }
+
+            dataLine.append(val);
+        }
+
+        if (row == -1)
+            continue;
+
+        newDat.data.append(dataLine);
+    }
 
     f.close();
 
-    //this->setWindowTitle("DAT Editor: " + QFileInfo(newFilepath).fileName());
+    currentDat = newDat;
+
+    this->setWindowTitle("DAT Editor: {unnamed file}");
+    ui->centralWidget->setEnabled(false);
     ui->tableData->setModel(new DatUiModel(this, &currentDat, 0));
     ui->tableStringsAscii->setModel(new DatUiModel(this, &currentDat, 1));
     ui->tableStringsUtf16->setModel(new DatUiModel(this, &currentDat, 2));
-
     ui->centralWidget->setEnabled(true);
+
     ui->tableData->scrollToTop();
     ui->tableStringsAscii->scrollToTop();
     ui->tableStringsUtf16->scrollToTop();
-    */
 }
 
 void MainWindow::on_actionExportCsv_triggered()
@@ -243,19 +315,51 @@ void MainWindow::on_actionExportCsv_triggered()
     QTextStream text(&f);
     text.setCodec(QTextCodec::codecForName("UTF-8"));
 
-    QAbstractItemModel *model = ui->tableData->model();
-    for (int row = -1; row < model->rowCount(); ++row)
+    for (int row = -1; row < currentDat.data.count(); ++row)
     {
-        for (int col = 0; col < model->columnCount(); ++col)
+        for (int col = 0; col < currentDat.data_types.count(); ++col)
         {
-            // Write header names first
+            // Write data names & types first
             if (row == -1)
             {
                 text << currentDat.data_names.at(col) + " " + currentDat.data_types.at(col);
+                text << ",";
+                continue;
             }
-            else
+
+
+            const QByteArray data = currentDat.data.at(row).at(col);
+            const QString data_type = currentDat.data_types.at(col);
+
+            int pos = 0;
+            if (data_type == "LABEL" || data_type == "ASCII")
             {
-                text << model->index(row, col).data().toString();
+                text << QString::number(num_from_bytes<ushort>(data, pos));
+            }
+            else if (data_type == "REFER" || data_type == "UTF16")
+            {
+                text << QString::number(num_from_bytes<ushort>(data, pos));
+            }
+            else if (data_type.startsWith("u"))
+            {
+                if (data_type.right(2) == "16")
+                    text << QString::number(num_from_bytes<ushort>(data, pos));
+                else if (data_type.right(2) == "32")
+                    text << QString::number(num_from_bytes<uint>(data, pos));
+            }
+            else if (data_type.startsWith("s"))
+            {
+                if (data_type.right(2) == "16")
+                    text << QString::number(num_from_bytes<short>(data, pos));
+                else if (data_type.right(2) == "32")
+                    text << QString::number(num_from_bytes<int>(data, pos));
+            }
+            else if (data_type.startsWith("f"))
+            {
+                if (data_type.right(2) == "32")
+                    text << QString::number(num_from_bytes<float>(data, pos));
+                else if (data_type.right(2) == "64")
+                    text << QString::number(num_from_bytes<double>(data, pos));
             }
 
             text << ",";

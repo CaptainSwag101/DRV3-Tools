@@ -18,7 +18,7 @@ const WrdCmd KNOWN_CMDS[] = {
     {0x00, "FLG", {}, {0, 0}},              // Set Flag
     {0x01, "IFF", {}, {0, 0, 0}},           // If Flag
     {0x02, "WAK", {}, {0, 0, 0}},           // Wake? Work? (Seems to be used to configure game engine parameters)
-    {0x03, "IFW", {}, {0, 0, 1}},           // If WAK?
+    {0x03, "IFW", {}, {0, 0, 1}},           // If WAK
     {0x04, "SWI", {}, {0}},                 // Begin switch statement
     {0x05, "CAS", {}, {1}},                 // Switch Case
     {0x06, "MPF", {}, {0, 0, 0}},           // Map Flag?
