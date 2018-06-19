@@ -126,10 +126,10 @@ bool SpcUiModel::setData(const QModelIndex &index, const QVariant &value, int ro
 
 bool SpcUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
-    if (count < 1 || row < 0 || row + count > rowCount())
+    if (count < 1 || row < 0 || row + (count - 1) >= rowCount())
         return false;
 
-    beginInsertRows(QModelIndex(), row, row + count);
+    beginInsertRows(QModelIndex(), row, row + (count - 1));
     for (int r = 0; r < count; r++)
     {
         // TODO: Open a file dialog so the user can choose a file to add/replace.
@@ -144,7 +144,7 @@ bool SpcUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 
 bool SpcUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
-    if (count < 1 || row < 0 || row + count > rowCount())
+    if (count < 1 || row < 0 || row + (count - 1) >= rowCount())
         return false;
 
     QMessageBox::StandardButton reply = QMessageBox::question(nullptr, "Confirm delete",
@@ -156,7 +156,7 @@ bool SpcUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 
     // Keep removing at the same index, because the next item we want to delete
     // always takes the place of the previous one.
-    beginRemoveRows(QModelIndex(), row, row + count);
+    beginRemoveRows(QModelIndex(), row, row + (count - 1));
     for (int r = 0; r < count; r++)
     {
         (*spc_file).subfiles.removeAt(row);
@@ -168,7 +168,7 @@ bool SpcUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 
 bool SpcUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationRow)
 {
-    if (sourceRow < 0 || destinationRow + count > rowCount() || count <= 0)
+    if (count < 1 || sourceRow < 0 || destinationRow + (count - 1) >= rowCount())
         return false;
 
     // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
@@ -179,7 +179,7 @@ bool SpcUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, i
     else
         fixedDest = destinationRow;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + (count - 1), QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         (*spc_file).subfiles.move(sourceRow + r, destinationRow + r);

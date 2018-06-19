@@ -267,10 +267,10 @@ bool WrdUiModel::setData(const QModelIndex &index, const QVariant &value, int ro
 
 bool WrdUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 {
-    if (count < 1 || row < 0 || row + count > rowCount())
+    if (count < 1 || row < 0 || row + (count - 1) >= rowCount())
         return false;
 
-    beginInsertRows(QModelIndex(), row, row + count);
+    beginInsertRows(QModelIndex(), row, row + (count - 1));
     for (int r = 0; r < count; r++)
     {
         switch (data_mode)
@@ -297,12 +297,12 @@ bool WrdUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
 
 bool WrdUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 {
-    if (count < 1 || row < 0 || row + count > rowCount())
+    if (count < 1 || row < 0 || row + (count - 1) >= rowCount())
         return false;
 
     // Keep removing at the same index, because the next item we want to delete
     // always takes the place of the previous one.
-    beginRemoveRows(QModelIndex(), row, row + count);
+    beginRemoveRows(QModelIndex(), row, row + (count - 1));
     for (int r = 0; r < count; r++)
     {
         switch (data_mode)
@@ -328,7 +328,7 @@ bool WrdUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
 
 bool WrdUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, int count, const QModelIndex & /*destinationParent*/, int destinationRow)
 {
-    if (sourceRow < 0 || destinationRow + count > rowCount() || count <= 0)
+    if (count < 1 || sourceRow < 0 || destinationRow + (count - 1) >= rowCount())
         return false;
 
     // The way that beginMoveRows() needs the destination value set is incredibly fucking stupid,
@@ -339,7 +339,7 @@ bool WrdUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, i
     else
         fixedDest = destinationRow;
 
-    beginMoveRows(QModelIndex(), sourceRow, sourceRow + count - 1, QModelIndex(), fixedDest);
+    beginMoveRows(QModelIndex(), sourceRow, sourceRow + (count - 1), QModelIndex(), fixedDest);
     for (int r = 0; r < count; r++)
     {
         switch (data_mode)
