@@ -10,7 +10,7 @@ struct UTILS_EXPORT WrdCmd
     uchar opcode;
     QString name;
     QVector<ushort> args;
-    QVector<uchar> arg_types;   // 0 = flag, 1 = raw number, 2 = string
+    QVector<uchar> arg_types;   // 0 = flag, 1 = raw number, 2 = string, 3 = label name
 };
 
 // Official command names found in game_resident/command_label.dat
@@ -35,7 +35,7 @@ const WrdCmd KNOWN_CMDS[] = {
     {0x11, "END", {}, {}},                  // End of script or switch case
     {0x12, "SUB", {}, {0, 0}},              // Jump to subroutine
     {0x13, "RTN", {}, {}},                  // Return (called inside subroutine)
-    {0x14, "LAB", {}, {1}},                 // Label number
+    {0x14, "LAB", {}, {3}},                 // Label number
     {0x15, "JMP", {}, {0}},                 // Jump to label
     {0x16, "MOV", {}, {0, 0}},              // Movie
     {0x17, "FLS", {}, {0, 0, 0, 0}},        // Flash

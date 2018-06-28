@@ -80,10 +80,12 @@ QVariant WrdUiModel::data(const QModelIndex &index, int role) const
             {
                 const ushort arg = cmd.args.at(a);
 
-                if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 0 && arg < (*wrd_file).params.count())
+                if (cmd.arg_types.at(a) == 0 && a < cmd.arg_types.count() && arg < (*wrd_file).params.count())
                     argParsedString += (*wrd_file).params.at(arg) + "    ";
-                else if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 2 && arg < (*wrd_file).strings.count())
+                else if (cmd.arg_types.at(a) == 2 && a < cmd.arg_types.count() && arg < (*wrd_file).strings.count())
                     argParsedString += "\"" + (*wrd_file).strings.at(arg) + "\"    ";
+                else if (cmd.arg_types.at(a) == 3 && a < cmd.arg_types.count() && arg < (*wrd_file).labels.count())
+                    argParsedString += "\"" + (*wrd_file).labels.at(arg) + "\"    ";
                 else
                     argParsedString += QString::number(arg) + "    ";
             }

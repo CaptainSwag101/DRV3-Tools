@@ -202,7 +202,7 @@ QByteArray spc_cmp(const QByteArray &dec_data)
         const int lookahead_len = std::min(dec_size - pos, 65);
         const QByteArray lookahead = dec_data.mid(pos, lookahead_len);
         const int searchback_len = std::min(pos, 1024);
-        const QByteArray window = dec_data.mid(pos - searchback_len, searchback_len + (lookahead_len - 2));
+        const QByteArray window = dec_data.mid(pos - searchback_len, searchback_len + (lookahead_len - 1));
 
         // Find the largest matching sequence in the window.
         int s = -1;
@@ -213,10 +213,10 @@ QByteArray spc_cmp(const QByteArray &dec_data)
         for (l; l <= lookahead_len; ++l)
         {
             const int last_s = s;
-            if (searchback_len < 2)
+            if (searchback_len < 1)
                 break;
 
-            s = window.lastIndexOf(seq, searchback_len - 2);    // For some reason this sometimes returns -1 even when it's successful?
+            s = window.lastIndexOf(seq, searchback_len - 1);
 
             if (s == -1)
             {
