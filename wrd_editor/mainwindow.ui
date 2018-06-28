@@ -34,12 +34,9 @@
       </property>
       <widget class="QWidget" name="tabCode">
        <attribute name="title">
-        <string>Code/Labels</string>
+        <string>Code</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_8">
-        <item>
-         <widget class="QComboBox" name="comboBox_SelectLabel"/>
-        </item>
         <item>
          <widget class="QTableView" name="tableCode">
           <property name="inputMethodHints">

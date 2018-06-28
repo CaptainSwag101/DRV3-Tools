@@ -99,14 +99,14 @@ struct UTILS_EXPORT WrdFile
     QStringList labels;
     QStringList params;
     QStringList strings;
-    QVector<QVector<WrdCmd>> code;
+    QVector<WrdCmd> code;
     //QVector<ushort> sublabel_offsets;
     bool external_strings;
 };
 
 UTILS_EXPORT WrdFile wrd_from_bytes(const QByteArray &bytes, QString filename);
 UTILS_EXPORT QByteArray wrd_to_bytes(const WrdFile &wrd);
-//UTILS_EXPORT QVector<QVector<WrdCmd>> wrd_code_to_cmds(const QByteArray &bytes);
+//UTILS_EXPORT QVector<WrdCmd> wrd_code_to_cmds(const QByteArray &bytes);
 //UTILS_EXPORT QByteArray wrd_cmds_to_code(const QByteArray &wrd);
 
 #endif // WRD_H

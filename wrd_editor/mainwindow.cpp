@@ -13,6 +13,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     //ui->tableCode->setColumnWidth(1, 180);
+
+    QStringList args = QApplication::arguments();
+    if (args.count() <= 1)
+        return;
+
+    for (int i = 1; i < args.count(); ++i)
+    {
+        if (QFileInfo(args[i]).exists() && args[i].endsWith(".wrd", Qt::CaseInsensitive))
+        {
+            openFile(args[i]);
+            break;
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -87,8 +100,8 @@ bool MainWindow::openFile(QString newFilepath)
 
     this->setWindowTitle("WRD Editor: " + QFileInfo(newFilepath).fileName());
 
-    reloadLabelList();
-    WrdUiModel *code = new WrdUiModel(this, &currentWrd, 0, ui->comboBox_SelectLabel->currentIndex());
+    //reloadLabelList();
+    WrdUiModel *code = new WrdUiModel(this, &currentWrd, 0);
     WrdUiModel *params = new WrdUiModel(this, &currentWrd, 1);
     WrdUiModel *strings = new WrdUiModel(this, &currentWrd, 2);
     QObject::connect(code, &WrdUiModel::editCompleted, this, &MainWindow::on_editCompleted);
@@ -104,7 +117,7 @@ bool MainWindow::openFile(QString newFilepath)
     ui->tableStrings->scrollToTop();
 
     // Manually trigger this to check for undocumented command params right away
-    on_comboBox_SelectLabel_currentIndexChanged(0);
+    //on_comboBox_SelectLabel_currentIndexChanged(0);
     return true;
 }
 
@@ -167,6 +180,7 @@ bool MainWindow::saveFile(QString newFilepath)
     return true;
 }
 
+/*
 void MainWindow::reloadLabelList()
 {
     ui->comboBox_SelectLabel->blockSignals(true);
@@ -181,7 +195,9 @@ void MainWindow::reloadLabelList()
     ui->tableCode->blockSignals(false);
     ui->comboBox_SelectLabel->blockSignals(false);
 }
+*/
 
+/*
 void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
 {
     ui->tableCode->setModel(new WrdUiModel(this, &currentWrd, 0, index));
@@ -209,6 +225,7 @@ void MainWindow::on_comboBox_SelectLabel_currentIndexChanged(int index)
         }
     }
 }
+*/
 
 
 

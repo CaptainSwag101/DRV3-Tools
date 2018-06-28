@@ -41,75 +41,59 @@ WrdFile wrd_from_bytes(const QByteArray &bytes, QString in_file)
     // sequentially, and then split after every occurrence of 0x7014.
     // But let's do it the more complex way for now.
     const int header_end = 0x20;
-    for (int label_num = 0; label_num < label_count; ++label_num)
+    pos = header_end;
+
+    // We need at least 2 bytes for a command
+    while (pos + 1 < label_offsets_ptr)
     {
-        QVector<WrdCmd> label_cmds;
+        const uchar b = bytes.at(pos++);
+        if (b != 0x70)
+            continue;
 
-        pos = label_offsets_ptr + (label_num * 2);
-        const ushort label_offset = num_from_bytes<ushort>(bytes, pos);
-        pos = header_end + label_offset;
+        const uchar op = bytes.at(pos++);
+        WrdCmd cmd;
+        cmd.name = "UNKNOWN_CMD";
+        cmd.opcode = op;
 
-        // We need at least 2 bytes for a command
-        while (pos + 1 < sublabel_offsets_ptr)
+        for (WrdCmd known_cmd : KNOWN_CMDS)
         {
-            const uchar b = bytes.at(pos++);
-            if (b != 0x70)
-                continue;
-
-            const uchar op = bytes.at(pos++);
-            WrdCmd cmd;
-            cmd.name = "UNKNOWN_CMD";
-            cmd.opcode = op;
-
-            for (WrdCmd known_cmd : KNOWN_CMDS)
+            if (op == known_cmd.opcode)
             {
-                if (op == known_cmd.opcode)
-                {
-                    cmd.name = known_cmd.name;
-                    cmd.arg_types = known_cmd.arg_types;
-                    break;
-                }
+                cmd.name = known_cmd.name;
+                cmd.arg_types = known_cmd.arg_types;
+                break;
             }
+        }
 
-            // If we've reached the end of the script/label
-            if (op == 0x14 && label_cmds.count() > 0)
+        // We need at least 2 bytes for each arg
+        while (pos < sublabel_offsets_ptr - 1)
+        {
+            const ushort arg = num_from_bytes<ushort>(bytes, pos, true);
+
+            if ((uchar)(arg >> 8) == 0x70)
             {
                 pos -= 2;
                 break;
             }
 
-            // We need at least 2 bytes for each arg
-            while (pos < sublabel_offsets_ptr - 1)
-            {
-                const ushort arg = num_from_bytes<ushort>(bytes, pos, true);
-
-                if ((uchar)(arg >> 8) == 0x70)
-                {
-                    pos -= 2;
-                    break;
-                }
-
-                cmd.args.append(arg);
-            }
-
-            if (cmd.arg_types.count() != cmd.args.count() && cmd.opcode != 0x01 && cmd.opcode != 0x03)  // IFF and IFW have variable-length params
-            {
-                //cout << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
-                //cout.flush();
-                qDebug() << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
-
-                /*
-                for (int i = cmd.arg_types.count(); i < cmd.args.count(); ++i)
-                {
-                    cmd.arg_types.append(0);
-                }
-                */
-            }
-
-            label_cmds.append(cmd);
+            cmd.args.append(arg);
         }
-        result.code.append(label_cmds);
-        label_cmds.clear();
+
+        if (cmd.arg_types.count() != cmd.args.count() && cmd.opcode != 0x01 && cmd.opcode != 0x03)  // IFF and IFW have variable-length params
+        {
+            //cout << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
+            //cout.flush();
+            qDebug() << in_file << ": Opcode " << num_to_hex(cmd.opcode, 2) << " expected " << cmd.arg_types.count() << " args, but found " << cmd.args.count() << ".";
+
+            /*
+            for (int i = cmd.arg_types.count(); i < cmd.args.count(); ++i)
+            {
+                cmd.arg_types.append(0);
+            }
+            */
+        }
+
+        result.code.append(cmd);
     }
 
 
@@ -211,24 +195,23 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
         label_names_data.append(lbldata);
 
         code_offsets.append(num_to_bytes((ushort)code_data.size()));
+    }
 
-        const QVector<WrdCmd> cur_label_cmds = wrd_file.code.at(i);
-        for (const WrdCmd cmd : cur_label_cmds)
+    for (const WrdCmd cmd : wrd_file.code)
+    {
+        // Re-calculate sublabel offsets
+        if (cmd.opcode == 0x4A) // "LBN"
         {
-            // Re-calculate sublabel offsets
-            if (cmd.opcode == 0x4A) // "LBN"
-            {
-                // The current data size value is also equal to
-                // the current opcode's location.
-                sublabel_offsets.append(code_data.size());
-            }
+            // The current data size value is also equal to
+            // the current opcode's location.
+            sublabel_offsets.append(code_data.size());
+        }
 
-            code_data.append((uchar)0x70);
-            code_data.append(cmd.opcode);
-            for (const ushort arg : cmd.args)
-            {
-                code_data.append(num_to_bytes(arg, true));
-            }
+        code_data.append((uchar)0x70);
+        code_data.append(cmd.opcode);
+        for (const ushort arg : cmd.args)
+        {
+            code_data.append(num_to_bytes(arg, true));
         }
     }
 

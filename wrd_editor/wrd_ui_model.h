@@ -9,7 +9,7 @@ class WrdUiModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    WrdUiModel(QObject *parent, WrdFile *file, const int mode, const int lbl = 0);
+    WrdUiModel(QObject *parent, WrdFile *file, const int mode);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -23,7 +23,6 @@ public:
 private:
     WrdFile *wrd_file;
     int data_mode;  // 0 = code, 1 = params, 2 = strings
-    int label;
 
 signals:
     void editCompleted(const QString &str);

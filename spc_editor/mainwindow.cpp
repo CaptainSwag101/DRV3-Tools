@@ -5,6 +5,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     //ui->tableView->setAcceptDrops(true);
+
+    QStringList args = QApplication::arguments();
+    if (args.count() <= 1)
+        return;
+
+    for (int i = 1; i < args.count(); ++i)
+    {
+        if (QFileInfo(args[i]).exists() && args[i].endsWith(".spc", Qt::CaseInsensitive))
+        {
+            openFile(args[i]);
+            break;
+        }
+    }
 }
 
 MainWindow::~MainWindow()

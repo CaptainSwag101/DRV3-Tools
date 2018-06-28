@@ -1,11 +1,10 @@
 #include "wrd_ui_model.h"
 #include <QMessageBox>
 
-WrdUiModel::WrdUiModel(QObject * /*parent*/, WrdFile *file, const int mode, const int lbl)
+WrdUiModel::WrdUiModel(QObject * /*parent*/, WrdFile *file, const int mode)
 {
     wrd_file = file;
     data_mode = mode;
-    label = lbl;
 }
 
 int WrdUiModel::rowCount(const QModelIndex & /*parent*/) const
@@ -13,7 +12,7 @@ int WrdUiModel::rowCount(const QModelIndex & /*parent*/) const
     switch (data_mode)
     {
     case 0:
-        return (*wrd_file).code.at(label).count();
+        return (*wrd_file).code.count();
 
     case 1:
         return (*wrd_file).params.count();
@@ -54,20 +53,20 @@ QVariant WrdUiModel::data(const QModelIndex &index, int role) const
     {
     case 0:
     {
-        const WrdCmd cmd = (*wrd_file).code[label].at(row);
+        const WrdCmd cmd = (*wrd_file).code.at(row);
 
-        if (col == 0)
+        if (col == 0)       // Opcode
         {
             return num_to_hex(cmd.opcode, 2);
         }
-        else if (col == 1)
+        else if (col == 1)  // Parameter data
         {
             QString argHexString;
             for (ushort arg : cmd.args)
                 argHexString += num_to_hex(arg, 4);
             return argHexString.simplified();
         }
-        else
+        else                // Parsed parameters
         {
             QString argParsedString;
             argParsedString += cmd.name;
@@ -84,7 +83,7 @@ QVariant WrdUiModel::data(const QModelIndex &index, int role) const
                 if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 0 && arg < (*wrd_file).params.count())
                     argParsedString += (*wrd_file).params.at(arg) + "    ";
                 else if (a < cmd.arg_types.count() && cmd.arg_types.at(a) == 2 && arg < (*wrd_file).strings.count())
-                    argParsedString += (*wrd_file).strings.at(arg) + "    ";
+                    argParsedString += "\"" + (*wrd_file).strings.at(arg) + "\"    ";
                 else
                     argParsedString += QString::number(arg) + "    ";
             }
@@ -177,31 +176,31 @@ bool WrdUiModel::setData(const QModelIndex &index, const QVariant &value, int ro
                 return false;
             }
 
-            (*wrd_file).code[label][row].opcode = val;
-            (*wrd_file).code[label][row].name = "UNKNOWN_CMD";
-            (*wrd_file).code[label][row].arg_types.clear();
+            (*wrd_file).code[row].opcode = val;
+            (*wrd_file).code[row].name = "UNKNOWN_CMD";
+            (*wrd_file).code[row].arg_types.clear();
 
             for (const WrdCmd known_cmd : KNOWN_CMDS)
             {
                 if (val == known_cmd.opcode)
                 {
-                    (*wrd_file).code[label][row].name = known_cmd.name;
-                    (*wrd_file).code[label][row].arg_types = known_cmd.arg_types;
+                    (*wrd_file).code[row].name = known_cmd.name;
+                    (*wrd_file).code[row].arg_types = known_cmd.arg_types;
                     break;
                 }
             }
 
-            if ((*wrd_file).code[label][row].arg_types.count() != (*wrd_file).code[label][row].args.count())
+            if ((*wrd_file).code[row].arg_types.count() != (*wrd_file).code[row].args.count())
             {
                 QMessageBox errorMsg(QMessageBox::Information,
                                      "Unexpected Command Parameters",
-                                     "Opcode " + num_to_hex((*wrd_file).code[label][row].opcode, 2) + " expected " + QString::number((*wrd_file).code[label][row].arg_types.count()) + " args, but found " + QString::number((*wrd_file).code[label][row].args.count()) + ".",
+                                     "Opcode " + num_to_hex((*wrd_file).code[row].opcode, 2) + " expected " + QString::number((*wrd_file).code[row].arg_types.count()) + " args, but found " + QString::number((*wrd_file).code[row].args.count()) + ".",
                                      QMessageBox::Ok);
                 errorMsg.exec();
 
-                for (int i = (*wrd_file).code[label][row].arg_types.count(); i < (*wrd_file).code[label][row].args.count(); i++)
+                for (int i = (*wrd_file).code[row].arg_types.count(); i < (*wrd_file).code[row].args.count(); i++)
                 {
-                    (*wrd_file).code[label][row].arg_types.append(0);
+                    (*wrd_file).code[row].arg_types.append(0);
                 }
             }
         }
@@ -232,11 +231,11 @@ bool WrdUiModel::setData(const QModelIndex &index, const QVariant &value, int ro
                 result.append(val);
             }
 
-            (*wrd_file).code[label][row].args = result;
+            (*wrd_file).code[row].args = result;
 
-            if ((*wrd_file).code[label][row].arg_types.count() < (*wrd_file).code[label][row].args.count())
-                for (int i = (*wrd_file).code[label][row].arg_types.count(); i < (*wrd_file).code[label][row].args.count(); i++)
-                    (*wrd_file).code[label][row].arg_types.append(0);
+            if ((*wrd_file).code[row].arg_types.count() < (*wrd_file).code[row].args.count())
+                for (int i = (*wrd_file).code[row].arg_types.count(); i < (*wrd_file).code[row].args.count(); i++)
+                    (*wrd_file).code[row].arg_types.append(0);
         }
         break;
     }
@@ -278,7 +277,7 @@ bool WrdUiModel::insertRows(int row, int count, const QModelIndex & /*parent*/)
         case 0:
         {
             const WrdCmd cmd = {0xFF, "UNKNOWN_CMD", {}, {}};
-            (*wrd_file).code[label].insert(row + r, cmd);
+            (*wrd_file).code.insert(row + r, cmd);
             break;
         }
         case 1:
@@ -308,7 +307,7 @@ bool WrdUiModel::removeRows(int row, int count, const QModelIndex & /*parent*/)
         switch (data_mode)
         {
         case 0:
-            (*wrd_file).code[label].removeAt(row);
+            (*wrd_file).code.removeAt(row);
             break;
 
         case 1:
@@ -345,7 +344,7 @@ bool WrdUiModel::moveRows(const QModelIndex & /*sourceParent*/, int sourceRow, i
         switch (data_mode)
         {
         case 0:
-            (*wrd_file).code[label].move(sourceRow + r, destinationRow + r);
+            (*wrd_file).code.move(sourceRow + r, destinationRow + r);
             break;
 
         case 1:
