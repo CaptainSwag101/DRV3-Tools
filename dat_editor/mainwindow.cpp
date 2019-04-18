@@ -345,7 +345,7 @@ void MainWindow::on_actionExportCsv_triggered()
             const QString data_type = currentDat.data_types.at(col);
 
             int pos = 0;
-            if (data_type == "LABEL" || data_type == "ASCII")
+            if (data_type == "LABEL" || data_type == "ASCII" || data_type == "REFER")
             {
                 const ushort label_index = num_from_bytes<ushort>(data, pos);
                 if (label_index < currentDat.labels.count())
@@ -353,9 +353,13 @@ void MainWindow::on_actionExportCsv_triggered()
                 else
                     text << QString::number(label_index, 16);
             }
-            else if (data_type == "REFER" || data_type == "UTF16")
+            else if (data_type == "UTF16")
             {
-                text << QString::number(num_from_bytes<ushort>(data, pos));
+                const ushort string_index = num_from_bytes<ushort>(data, pos);
+                if (string_index < currentDat.refs.count())
+                    text << currentDat.refs.at(string_index);
+                else
+                    text << QString::number(string_index, 16);
             }
             else if (data_type.startsWith("u"))
             {

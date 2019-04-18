@@ -14,22 +14,6 @@ int DatUiModel::rowCount(const QModelIndex & /*parent*/) const
     {
     case 0:
     {
-        break;
-    }
-    case 1:
-    {
-        break;
-    }
-    case 2:
-    {
-        break;
-    }
-    }
-
-    switch (data_mode)
-    {
-    case 0:
-    {
         return (*dat_file).data.count();
     }
     case 1:
@@ -79,7 +63,7 @@ QVariant DatUiModel::data(const QModelIndex &index, int role) const
         const QString data_type = (*dat_file).data_types.at(col);
 
         int pos = 0;
-        if (data_type == "LABEL" || data_type == "ASCII")
+        if (data_type == "LABEL" || data_type == "ASCII" || data_type == "REFER")
         {
             const ushort label_index = num_from_bytes<ushort>(data.at(col), pos);
             if (label_index < (*dat_file).labels.count() && role == Qt::DisplayRole)
@@ -87,13 +71,13 @@ QVariant DatUiModel::data(const QModelIndex &index, int role) const
             else
                 return QString::number(label_index, 16);
         }
-        else if (data_type == "REFER" || data_type == "UTF16")
+        else if (data_type == "UTF16")
         {
-            const ushort refer_index = num_from_bytes<ushort>(data.at(col), pos);
-            if (refer_index < (*dat_file).refs.count() && role == Qt::DisplayRole)
-                return (*dat_file).refs.at(refer_index);
+            const ushort string_index = num_from_bytes<ushort>(data.at(col), pos);
+            if (string_index < (*dat_file).refs.count() && role == Qt::DisplayRole)
+                return (*dat_file).refs.at(string_index);
             else
-                return QString::number(refer_index, 16);
+                return QString::number(string_index, 16);
         }
         else if (data_type.startsWith("u"))
         {
