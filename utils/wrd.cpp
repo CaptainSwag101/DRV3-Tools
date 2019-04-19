@@ -182,7 +182,6 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     result.append(num_to_bytes((ushort)wrd_file.labels.count()));
     result.append(num_to_bytes((ushort)wrd_file.params.count()));
     //result.append(num_to_bytes((ushort)wrd_file.sublabel_offsets.count()));
-    result.append(QByteArray(4, 0x00));
 
     QByteArray code_data;
     QByteArray code_offsets;
@@ -216,12 +215,14 @@ QByteArray wrd_to_bytes(const WrdFile &wrd_file)
     }
 
     result.append(num_to_bytes((ushort)sublabel_offsets.count()));
+    result.append(QByteArray(4, 0x00));
     QByteArray sublabel_offsets_bytes;
     for (int i = 0; i < sublabel_offsets.count(); ++i)
     {
         sublabel_offsets_bytes.append(num_to_bytes<ushort>(i));                 // sublabel number
         sublabel_offsets_bytes.append(num_to_bytes(sublabel_offsets.at(i)));    // sublabel offset
     }
+
 
     QByteArray flags_data;
     for (const QString flag : wrd_file.params)
