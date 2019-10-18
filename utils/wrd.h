@@ -18,7 +18,7 @@ const WrdCmd KNOWN_CMDS[] = {
     {0x00, "FLG", {}, {0, 0}},              // Set Flag
     {0x01, "IFF", {}, {0, 0, 0}},           // If Flag
     {0x02, "WAK", {}, {0, 0, 0}},           // Wake? Work? (Seems to be used to configure game engine parameters)
-    {0x03, "IFW", {}, {0, 0, 1}},           // If WAK
+    {0x03, "IFW", {}, {0, 0, 0}},           // If WAK
     {0x04, "SWI", {}, {0}},                 // Begin switch statement
     {0x05, "CAS", {}, {1}},                 // Switch Case
     {0x06, "MPF", {}, {0, 0, 0}},           // Map Flag?
@@ -65,20 +65,20 @@ const WrdCmd KNOWN_CMDS[] = {
     {0x2F, "WIN", {}, {0, 0, 0, 0}},        // Window parameters
     {0x30, "MSC", {}, {}},
     {0x31, "CSM", {}, {}},
-    {0x32, "PST", {}, {0, 0, 1, 1, 1}},     // Post-Processing
+    {0x32, "PST", {}, {0, 0, 0, 0, 0}},     // Post-Processing
     {0x33, "KNS", {}, {0, 1, 1, 1, 1}},     // Kinematics Numeric parameters?
     {0x34, "FON", {}, {1, 1}},              // Set Font
     {0x35, "BGO", {}, {0, 0, 0, 0, 0}},     // Load Background Object
-    {0x36, "LOG", {}, {}},                  // Edit Text Backlog?
+    {0x36, "LOG", {}, {}},                  // Add next text to log (only used in class trials during nonstop debates)
     {0x37, "SPT", {}, {0}},                 // Used only in Class Trial? Always set to "non"?
     {0x38, "CDV", {}, {0,0,0,0,0,0,0,0,0,0}},
-    {0x39, "SZM", {}, {0, 0, 0, 0}},        // Size Modifier (Class Trial)?
+    {0x39, "SZM", {}, {0, 0, 0, 0}},        // Stand Position (Class Trial) (posX, posY, speed) (can be negative and floats)
     {0x3A, "PVI", {}, {0}},                 // Class Trial Chapter? Pre-trial intermission?
     {0x3B, "EXP", {}, {0}},                 // Give EXP
     {0x3C, "MTA", {}, {0}},                 // Used only in Class Trial? Usually set to "non"?
     {0x3D, "MVP", {}, {0, 0, 0}},           // Move object to its designated position?
     {0x3E, "POS", {}, {0, 0, 0, 0, 0}},     // Object/Exisal position
-    {0x3F, "ICO", {}, {0,0,0,0}},           // Display a Program World character portrait
+    {0x3F, "ICO", {}, {0, 0, 0, 0}},           // Display a Program World character portrait
     {0x40, "EAI", {}, {0,0,0,0,0,0,0,0,0,0}},  // Exisal AI
     {0x41, "COL", {}, {0, 0, 0}},           // Set object collision
     {0x42, "CFP", {}, {0,0,0,0,0,0,0,0,0}}, // Camera Follow Path? Seems to make the camera move in some way
